@@ -4,20 +4,14 @@
             <h1 class=" font-bold text-xl">Asset's Record</h1>
         </div>
         <div class="flex items-center gap-4">
-            <x-input class="w-72 rounded-3xl" placeholder="Search value"/>
-            <x-button wire:click="createNewAssets">
-                <div class="flex items-center gap-2">
-                    <span class="material-symbols-sharp font-semibold">
-                        add
-                    </span>
-                   <p>Add new assets</p>
-                </div>
-            </x-button>
         </div>
     </div>
     <div class="cursor-pointer border-b border-gray-500 p-2 space-x-3">
         <x-nav-link wire:navigate href="{{route('assets.view')}}" :active="request()->routeIs('assets.view')">
             Asset's List
+        </x-nav-link>
+        <x-nav-link wire:navigate href="{{route('assets.consumable')}}" :active="request()->routeIs('assets.consumable')">
+            Asset's Consumable
         </x-nav-link>
         <x-nav-link wire:navigate href="{{route('assets.category')}}" :active="request()->routeIs('assets.category')">
             Asset's Category

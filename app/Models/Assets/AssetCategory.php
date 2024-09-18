@@ -11,4 +11,8 @@ class AssetCategory extends Model
     protected $table = 'asset_categories';
     protected $fillable = ['name'];
 
+    public function assetsCategory(){
+        return $this->hasMany(AssetList::class, 'id');
+    }
+
 }
