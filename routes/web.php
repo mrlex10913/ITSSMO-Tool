@@ -6,10 +6,15 @@ use App\Livewire\Assets\AssetsConsumableTracker;
 use App\Livewire\Assets\AssetsLists;
 use App\Livewire\Assets\AssetsTransfer;
 use App\Livewire\Borrowers\BorrowersForm;
+use App\Livewire\Borrowers\BorrowersLogs;
+use App\Livewire\Borrowers\BorrowersReturn;
+use App\Livewire\Dashboard\ItssIntroduction;
 use App\Livewire\Examination\Admin\Questions;
 use App\Livewire\Examination\Admin\Subject;
 use App\Livewire\Examination\Coordinator\Codegenerator;
 use App\Livewire\Manuals\ITSSManual;
+use App\Livewire\UserRecords\StaffRecords;
+use App\Livewire\UserRecords\StudentRecords;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,9 +26,7 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', ItssIntroduction::class)->name('dashboard');
 });
 
 Route::middleware([
@@ -40,14 +43,23 @@ Route::middleware([
     Route::get('/subject/questions/{id}', Questions::class)->name('examination.questions');
     Route::get('/coordinator', Codegenerator::class)->name('examination.coordinator');
 
-    //Assets
-    Route::get('/assets',AssetsLists::class)->name('assets.view');
-    Route::get('/assets-category', AssetsCategory::class)->name('assets.category');
-    Route::get('/assetsConsumable', AssetsConsumable::class)->name('assets.consumable');
+
 
     //Transactions
     Route::get('/consumable-tracker', AssetsConsumableTracker::class)->name('consumable.tracker');
     Route::get('/borrowers-form', BorrowersForm::class)->name('borrower.form');
     Route::get('/assets-transfer', AssetsTransfer::class)->name('asset.form');
+
+    //Records
+    //Assets
+    Route::get('/assets',AssetsLists::class)->name('assets.view');
+    Route::get('/assets-category', AssetsCategory::class)->name('assets.category');
+    Route::get('/assetsConsumable', AssetsConsumable::class)->name('assets.consumable');
+    //User Records
+    Route::get('/staff-records', StaffRecords::class)->name('staff.records');
+    Route::get('/student-records', StudentRecords::class)->name('student.records');
+    //Borrowers
+    Route::get('/borrowers-log', BorrowersLogs::class)->name('borrowers.logs');
+    Route::get('/borrower-return', BorrowersReturn::class)->name('borrowers.return');
 
 });
