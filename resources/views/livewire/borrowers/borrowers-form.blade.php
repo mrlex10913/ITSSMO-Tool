@@ -66,8 +66,8 @@
                 <table class="w-full text-center mb-2">
                     <thead class="">
                         <th>Item Name</th>
-                        <th>Brand</th>
                         <th>Serial</th>
+                        <th>Brand</th>
                         <th>Remarks</th>
                         <th>Action</th>
                     </thead>
@@ -75,8 +75,6 @@
                         @foreach ($items as $index => $item)
                         <tr>
                             <td>
-                                {{-- <x-input id="items.{{$index}}.name" type="text" class="mt-2" wire:model="items.{{$index}}.name" required/>
-                                <x-input-error for="items.{{$index}}.name" class="mt-2"/> --}}
                                 <select wire:model.live="items.{{$index}}.name" id="items.{{$index}}.name" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-48 mt-2">
                                     <option value="">Select</option>
                                     @foreach ($availableAssets as $asset)
@@ -86,11 +84,7 @@
                                 <x-input-error for="items.{{$index}}.name" class="mt-2"/>
                             </td>
                             <td>
-                                <x-input id="items.{{$index}}.brand" type="text" class="mt-2" wire:model="items.{{$index}}.brand" />
-                                <x-input-error for="items.{{$index}}.brand" class="mt-2"/>
-                            </td>
-                            <td>
-                                <select id="items.{{$index}}.serial" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-48 mt-2" wire:model="items.{{$index}}.serial" {{ empty($item['name']) ? 'disabled' : '' }}>
+                                <select id="items.{{$index}}.serial" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-48 mt-2" wire:model.live="items.{{$index}}.serial" {{ empty($item['name']) ? 'disabled' : '' }}>
                                     <option value="">Select Serial</option>
                                     @if (!empty($availableSerials[$index]))
                                         @foreach ($availableSerials[$index] as $serial)
@@ -99,6 +93,10 @@
                                     @endif
                                 </select>
                                 <x-input-error for="items.{{$index}}.serial" class="mt-2"/>
+                            </td>
+                            <td>
+                                <x-input id="items.{{$index}}.brand" type="text" class="mt-2" wire:model="items.{{$index}}.brand" readonly/>
+                                <x-input-error for="items.{{$index}}.brand" class="mt-2"/>
                             </td>
                             <td>
                                 <x-input id="items.{{$index}}.remarks" type="text" class="mt-2" wire:model="items.{{$index}}.remarks" />
@@ -126,19 +124,21 @@
                     </div>
                 <div>
                     <x-label for="brf_status" value="{{ __('Status') }}" />
-                    <x-input id="brf_status" type="text" class="mt-2" wire:model="brf_status"/>
+                    <x-input id="brf_status" type="text" class="mt-2" wire:model="brf_status" readonly/>
                     <x-input-error for="brf_status" class="mt-2"/>
                 </div>
                 <div>
                     <x-label for="brf_releasedcheckedby" value="{{ __('Released and Checked By:') }}" />
-                    <select wire:model="brf_releasedcheckedby" id="" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-48 mt-2">
+                    <x-input id="brf_releasedcheckedby" type="text" class="mt-2" wire:model="brf_releasedcheckedby" readonly/>
+                    <x-input-error for="brf_releasedcheckedby" class="mt-2"/>
+                    {{-- <select wire:model="brf_releasedcheckedby" id="" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-48 mt-2">
                         <option value="">Select</option>
                         <option value="Alexander">Alexander</option>
                         <option value="Angel Bea">Angel Bea</option>
                         <option value="Maria Patricia">Maria Patricia</option>
                         <option value="Alvin">Alvin</option>
                         <option value="Melvin">Melvin</option>
-                    </select>
+                    </select> --}}
                     {{-- <x-input id="brf_releasedcheckedby" type="text" class="mt-2" wire:model="brf_releasedcheckedby" /> --}}
                     <x-input-error for="brf_releasedcheckedby" class="mt-2" />
                 </div>

@@ -5,6 +5,7 @@ namespace App\Livewire\Borrowers;
 use App\Models\Assets\AssetList;
 use App\Models\Borrowers\BorrowerDetails;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -35,7 +36,7 @@ class BorrowersForm extends Component
 
     public function mount(){
 
-        $this->availableAssets = AssetList::with('assetList')->where('status', 'Available')->get();
+        $this->availableAssets = AssetList::with('assetList')->where('status', 'Available')->get()->unique('asset_categories_id');
         if(empty($this->items)){
             $this->items[] = [
                 'name' => '',
@@ -55,6 +56,8 @@ class BorrowersForm extends Component
             $this->doc_tracker = 'BRF-ITSS0001';
         }
         $this->brf_notedby = 'Beau Villanueva';
+        $this->brf_status = 'Borrowed';
+        $this->brf_releasedcheckedby = Auth::user()->name;
         $this->brf_dateborrowed = Carbon::now()->format('Y-m-d');
 
     }
@@ -67,6 +70,18 @@ class BorrowersForm extends Component
             ->pluck('item_serial_itss')
             ->toArray();
 
+        }
+        if(strpos($name, '.serial') !== false)
+        {
+            $index = explode('.', $name)[0];
+
+            $selectedSerial = $this->items[$index]['serial'];
+
+            $asset = AssetList::where('item_serial_itss', $selectedSerial)->first();
+
+            if($asset){
+                $this->items[$index]['brand'] = $asset->item_name;
+            }
         }
     }
     public function updatedBrfName($value){
@@ -123,7 +138,12 @@ class BorrowersForm extends Component
                 'serial' => $item['serial'],
                 'remarks' => $item['remarks'],
             ]);
+            $asset = AssetList::where('item_serial_itss', $item['serial'])->first();
+            if ($asset) {
+                $asset->update(['status' => 'Borrowed']);
+            }
            }
+
             flash()->success('Borrower Transaction Success');
             $this->cleareFields();
 
@@ -173,8 +193,6 @@ class BorrowersForm extends Component
             $this->items[$key]['remarks'] = '';
         }
         $this->brf_receivedby = '';
-        $this->brf_status = '';
-        $this->brf_releasedcheckedby = '';
     }
     public function render()
     {

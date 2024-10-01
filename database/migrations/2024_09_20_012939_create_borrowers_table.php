@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('status')->nullable();
             $table->string('released_checkedby')->nullable();
             $table->string('notedby')->nullable();
+            $table->string('recieved_checkedby')->nullable();
             $table->timestamps();
         });
     }

@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('item_condition')->nullable();
             $table->string('remarks')->nullable();
             $table->string('status')->nullable();
+            $table->string('return_remarks')->nullable();
+            $table->dateTime('date_of_return_remarks')->nullable();
             $table->timestamps();
         });
     }
