@@ -69,13 +69,17 @@
             <span class="material-symbols-sharp"> sync_alt </span>
             <h3>Borrower's Logs</h3>
         </x-nav-link>
-        <x-nav-link wire:navigate href="{{ route('staff.records') }}" :active="request()->routeIs('staff.records')" class="flex gap-3 items-center text-slate-900 dark:text-gray-100 font-medium text-sm transition-all hover:ml-[1rem] hover:text-color-primary">
+        <x-nav-link wire:navigate href="{{ route('falco.records') }}" :active="request()->routeIs('staff.records')" class="flex gap-3 items-center text-slate-900 dark:text-gray-100 font-medium text-sm transition-all hover:ml-[1rem] hover:text-color-primary">
             <span class="material-symbols-sharp"> badge </span>
-            <h3>Staff Records</h3>
+            <h3>Falco Records</h3>
         </x-nav-link>
         <x-nav-link wire:navigate href="{{ route('student.records') }}" :active="request()->routeIs('student.records')" class="flex gap-3 items-center text-slate-900 dark:text-gray-100 font-medium text-sm transition-all hover:ml-[1rem] hover:text-color-primary">
             <span class="material-symbols-sharp"> group </span>
             <h3>Student Records</h3>
+        </x-nav-link>
+        <x-nav-link wire:navigate href="{{ route('falco') }}" :active="request()->routeIs('falco')" class="flex gap-3 items-center text-slate-900 dark:text-gray-100 font-medium text-sm transition-all hover:ml-[1rem] hover:text-color-primary">
+            <span class="material-symbols-sharp"> group </span>
+            <h3>test</h3>
         </x-nav-link>
         {{-- <div x-data="{ open: {{ request()->routeIs('borrower.form') || request()->routeIs('borrower.tracker') ? 'true' : 'false' }} }" class="relative">
             <x-nav-link @click.prevent="open = !open" :class="{ 'text-color-primary': open }" class="flex gap-3 items-center text-slate-900 dark:text-gray-100 font-medium text-sm transition-all cursor-pointer">

@@ -2,8 +2,17 @@
     <div class="max-w-full mx-auto sm:px-6 lg:px-4 max-h-[80vh] overflow-auto">
         <div class="bg-gray-100 dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg text-gray-100">
            <div class="p-4 max-h-[70vh] overflow-y-auto">
-            <h1 class="text-2xl font-bold">Staff Records</h1>
+            <h1 class="text-2xl font-bold">Falco Records</h1>
         </div>
+        {{-- <form wire:submit="import" enctype="multipart/form-data">
+            @csrf
+            <div class="space-y-2">
+                <div class="col-span-6 sm:col-span-4">
+                <input type="file" wire:model.live="file" id="file">
+                </div>
+                <button type="submit">Test</button>
+            </div>
+        </form> --}}
         <!-- Table responsive wrapper -->
             <div class="overflow-x-auto bg-white dark:bg-gray-800 h-[70vh] overflow-y-auto p-4">
                 <!-- Search input -->
@@ -48,14 +57,21 @@
                 </thead>
                 <!-- Table body -->
                 <tbody>
-                    <tr class="border-b dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-600">
-                        <th scope="row" class="px-6 py-4">
-                            Handbag
-                        </th>
-                        <td class="px-6 py-4">$129.99</td>
-                        <td class="px-6 py-4">30</td>
-                        <td class="px-6 py-4">In Stock</td>
-                    </tr>
+                    @foreach ($falcoData as $user)
+                        <tr class="border-b dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-600">
+                            <th scope="row" class="px-6 py-4">
+                                {{$user->id_number}}
+                            </th>
+                            <td class="px-6 py-4">{{$user->name}}</td>
+                            <td class="px-6 py-4">{{$user->department}}</td>
+                            <td class="px-6 py-4">
+                                <x-button>
+                                    Update
+                                </x-button>
+                            </td>
+                        </tr>
+                    @endforeach
+
                 </tbody>
                 </table>
             </div>
@@ -107,25 +123,32 @@
         <x-slot name="title">
           CSV Upload
         </x-slot>
-        <x-slot name="content">
-            <div class="space-y-2">
-                <div class="col-span-6 sm:col-span-4">
-                    <x-label for="import_csv" value="{{ __('Browse Your file') }}" />
-                    <x-input id="rf_id" type="file" class="mt-1 block w-full" wire:model="import_csv" />
-                    <x-input-error for="import_csv" class="mt-2" />
+
+            <x-slot name="content">
+                <form wire:submit.prevent="import" method="POST" enctype="multipart/form-data">
+                    @csrf
+                <div class="space-y-2">
+                    <div class="col-span-6 sm:col-span-4">
+                        <x-label for="file" value="{{ __('Browse Your file') }}" />
+                        <x-input id="file" type="file" class="mt-1 block w-full" wire:model="file" accept=".xls,.xlsx,.csv"/>
+                        <x-input-error for="file" class="mt-2" />
+                        <small>Note<b>*</b>: File type .xlsx,.csv,.xls</small>
+                    </div>
                 </div>
-            </div>
-        </x-slot>
-        <x-slot name="footer">
-            <div class="space-x-2">
-                <x-button wire:click="bulkSave">
-                    {{ __('Save') }}
-                </x-button>
-                <x-secondary-button wire:click="$set('bulkUpload', false)" wire:loading.attr="disabled">
-                    {{ __('Close') }}
-                </x-secondary-button>
-            </div>
-        </x-slot>
+
+
+            </x-slot>
+            <x-slot name="footer">
+                <div class="space-x-2">
+                    <x-button>
+                        {{ __('Save') }}
+                    </x-button>
+                    <x-secondary-button wire:click="$set('bulkUpload', false)" wire:loading.attr="disabled">
+                        {{ __('Close') }}
+                    </x-secondary-button>
+                </div>
+            </x-slot>
+        </form>
     </x-dialog-modal>
 </div>
 

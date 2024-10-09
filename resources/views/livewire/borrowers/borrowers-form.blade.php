@@ -8,8 +8,13 @@
                 <div class="flex justify-between">
                     <div>
                         <x-label for="id_number" value="{{ __('ID Number / RF-ID') }}" />
-                        <x-input id="id_number" type="text" class="mt-2" wire:model="id_number" />
+                        <x-input id="id_number" type="text" class="mt-2" wire:model.live="id_number" autofocus/>
                         <x-input-error for="id_number" class="mt-2" />
+                    </div>
+                    <div>
+                        <x-label for="contact_email" value="{{ __('Email') }}" />
+                        <x-input id="contact_email" type="text" class="mt-2" wire:model.live="contact_email" autofocus/>
+                        <x-input-error for="contact_email" class="mt-2" />
                     </div>
                     <div>
                         <x-label for="doc_tracker" value="{{ __('Doc. Tracker') }}" />
@@ -20,7 +25,7 @@
                 <div class="mt-4 flex justify-between">
                     <div>
                         <x-label for="brf_name" value="{{ __('Name') }}" />
-                        <x-input id="brf_name" type="text" class="mt-2" wire:model.live="brf_name" />
+                        <x-input id="brf_name" type="text" class="mt-2" wire:model.live="brf_name" readonly/>
                         <x-input-error for="brf_name" class="mt-2" />
                     </div>
                     <div>
@@ -72,7 +77,11 @@
                         <th>Action</th>
                     </thead>
                     <tbody>
-                        @foreach ($items as $index => $item)
+                        @php
+                        $selectedSerials = collect($items)->pluck('serial')->filter(); // Collect the already selected serials
+                    @endphp
+
+                    @foreach ($items as $index => $item)
                         <tr>
                             <td>
                                 <select wire:model.live="items.{{$index}}.name" id="items.{{$index}}.name" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-48 mt-2">
@@ -88,7 +97,13 @@
                                     <option value="">Select Serial</option>
                                     @if (!empty($availableSerials[$index]))
                                         @foreach ($availableSerials[$index] as $serial)
-                                            <option value="{{ $serial }}">{{ $serial }}</option>
+                                            @if ($serial == $item['serial'])
+                                                <!-- Keep the selected serial even if it's used -->
+                                                <option value="{{ $serial }}" selected>{{ $serial }}</option>
+                                            @elseif (!$selectedSerials->contains($serial))
+                                                <!-- Show other serials if not already selected -->
+                                                <option value="{{ $serial }}">{{ $serial }}</option>
+                                            @endif
                                         @endforeach
                                     @endif
                                 </select>
@@ -103,15 +118,16 @@
                                 <x-input-error for="items.{{$index}}.remarks" class="mt-2"/>
                             </td>
                             <td class="text-left">
-                            <button wire:click="addItem"><span class="material-symbols-sharp">
-                                add_circle
-                                </span></button>
+                                <button wire:click="addItem"><span class="material-symbols-sharp">
+                                    add_circle
+                                    </span></button>
                                 <button wire:click="removeItem({{$index}})"><span class="material-symbols-sharp">
                                     cancel
                                     </span></button>
                             </td>
                         </tr>
-                        @endforeach
+                    @endforeach
+
                     </tbody>
                 </table>
                 <h1 class="mt-2 italic text-sm text-gray-500">Other Data:</h1>
@@ -131,15 +147,6 @@
                     <x-label for="brf_releasedcheckedby" value="{{ __('Released and Checked By:') }}" />
                     <x-input id="brf_releasedcheckedby" type="text" class="mt-2" wire:model="brf_releasedcheckedby" readonly/>
                     <x-input-error for="brf_releasedcheckedby" class="mt-2"/>
-                    {{-- <select wire:model="brf_releasedcheckedby" id="" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-48 mt-2">
-                        <option value="">Select</option>
-                        <option value="Alexander">Alexander</option>
-                        <option value="Angel Bea">Angel Bea</option>
-                        <option value="Maria Patricia">Maria Patricia</option>
-                        <option value="Alvin">Alvin</option>
-                        <option value="Melvin">Melvin</option>
-                    </select> --}}
-                    {{-- <x-input id="brf_releasedcheckedby" type="text" class="mt-2" wire:model="brf_releasedcheckedby" /> --}}
                     <x-input-error for="brf_releasedcheckedby" class="mt-2" />
                 </div>
                 <div>
