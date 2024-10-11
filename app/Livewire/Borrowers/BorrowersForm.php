@@ -15,6 +15,7 @@ class BorrowersForm extends Component
 {
     public $id_number;
     public $contact_email;
+    public $rfid;
     public $doc_tracker;
     public $brf_name;
     public $brf_contact;
@@ -28,6 +29,8 @@ class BorrowersForm extends Component
     public $brf_status;
     public $brf_releasedcheckedby;
     public $brf_notedby;
+
+    public $editMode = false;
 
     public $items = [];
 
@@ -64,6 +67,10 @@ class BorrowersForm extends Component
 
 
     }
+    public function updatedRfID($value)
+    {
+        $this->rfid = ltrim($value, '0');
+    }
     public function updatedIdNumber($value)
     {
         // Remove leading zeros
@@ -71,22 +78,20 @@ class BorrowersForm extends Component
 
         $falcoRecord = FalcoData::where('card_no', $this->id_number)->first();
 
+        // if (!$falcoRecord) {
+        //     flash()->error('There is no existing data');
+        //     return; // Stop further execution
+        // }
+
         if($falcoRecord){
+            $this->rfid = $falcoRecord->card_no;
             $this->id_number = $falcoRecord->id_number;
             $this->brf_name = $falcoRecord->name;
             $this->brf_contact = $falcoRecord->contact;
             $this->contact_email = $falcoRecord->email;
             $this->brf_department = $falcoRecord->department;
             $this->brf_receivedby = $falcoRecord->name;
-        }else{
-            $this->id_number = '';
-            $this->brf_name = '';
-            $this->brf_department = '';
-            $this->brf_receivedby = '';
-            $this->brf_contact = '';
-            $this->contact_email = '';
         }
-
     }
     public function updatedItems($value, $name){
         if(strpos($name, '.name') !== false){
@@ -170,17 +175,27 @@ class BorrowersForm extends Component
                 $asset->update(['status' => 'Borrowed']);
             }
            }
-           $falcoRecord = FalcoData::where('id_number', $this->id_number)->first();
+           $falcoRecord = FalcoData::where('card_no', $this->rfid)->first();
            if ($falcoRecord) {
             // Check if the department has changed
-            if ($falcoRecord->department !== $this->brf_department || $falcoRecord->contact !== $this->brf_contact || $falcoRecord->email !== $this->contact_email) {
-                // If the department has changed, update the record
+            if ($falcoRecord->department !== $this->brf_department || $falcoRecord->contact !== $this->brf_contact || $falcoRecord->email !== $this->contact_email || $falcoRecord->id_number !== $this->contact_email) {
+
                 $falcoRecord->update([
+                    'id_number' => $this->id_number,
                     'contact' => $this->brf_contact,
                     'department' => $this->brf_department,
                     'email' => $this->contact_email
                 ]);
             }
+        }else{
+            FalcoData::create([
+                'card_no' => $this->rfid,
+                'id_number' => $this->id_number,
+                'name' => $this->brf_name,
+                'contact' => $this->brf_contact,
+                'department' => $this->brf_department,
+                'email' => $this->contact_email
+            ]);
         }
 
             flash()->success('Borrower Transaction Success');

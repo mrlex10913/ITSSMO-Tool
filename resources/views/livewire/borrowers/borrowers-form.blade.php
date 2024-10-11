@@ -5,16 +5,30 @@
                 <h1 class="text-2xl font-bold">Borrower's Form</h1>
                 <h1 class="mt-2 italic text-sm text-gray-500">Borrower's Data:</h1>
                 <hr class="mb-1">
+                <div>
+                    <x-label for="id_number" value="{{ __('Not Existing?') }}" />
+                    <div class="flex items-center">
+                        <input id="link-checkbox" type="checkbox" wire:model.live="editMode" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="link-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Kindly check the box to enable edit mode</label>
+                    </div>
+                </div>
+
                 <div class="flex justify-between">
                     <div>
                         <x-label for="id_number" value="{{ __('ID Number / RF-ID') }}" />
                         <x-input id="id_number" type="text" class="mt-2" wire:model.live="id_number" autofocus/>
                         <x-input-error for="id_number" class="mt-2" />
                     </div>
-                    <div>
+                    <div :class="{ 'text-gray-500': !$editMode }">
+                        <x-label for="id_number" value="{{ __('RF-ID Only') }}" />
+                        <x-input id="id_number" type="text" class="mt-2" wire:model.live="rfid" autofocus :readonly="!$editMode"/>
+                        <x-input-error for="id_number" class="mt-2" />
+                    </div>
+
+                    <div :class="{ 'text-gray-500': !$editMode }">
                         <x-label for="contact_email" value="{{ __('Email') }}" />
-                        <x-input id="contact_email" type="text" class="mt-2" wire:model.live="contact_email" autofocus/>
-                        <x-input-error for="contact_email" class="mt-2" />
+                        <x-input id="contact_email" type="text" class="mt-2" wire:model.live="contact_email" autofocus :readonly="!$editMode"/>
+                        <x-input-error for="contact_email" class="mt-2"/>
                     </div>
                     <div>
                         <x-label for="doc_tracker" value="{{ __('Doc. Tracker') }}" />
@@ -23,25 +37,25 @@
                     </div>
                 </div>
                 <div class="mt-4 flex justify-between">
-                    <div>
+                    <div :class="{ 'text-gray-500': !$editMode }">
                         <x-label for="brf_name" value="{{ __('Name') }}" />
-                        <x-input id="brf_name" type="text" class="mt-2" wire:model.live="brf_name" readonly/>
-                        <x-input-error for="brf_name" class="mt-2" />
+                        <x-input id="brf_name" type="text" class="mt-2" wire:model.live="brf_name" :readonly="!$editMode"/>
+                        <x-input-error for="brf_name" class="mt-2"/>
                     </div>
                     <div>
                         <x-label for="brf_contact" value="{{ __('Dept.Local # / Mobile #') }}" />
-                        <x-input id="brf_contact" type="text" class="mt-2" wire:model="brf_contact" />
+                        <x-input id="brf_contact" type="text" class="mt-2" wire:model="brf_contact" :readonly="!$editMode"/>
                         <x-input-error for="brf_contact" class="mt-2" />
                     </div>
-                    <div>
+                    <div :class="{ 'text-gray-500': !$editMode }">
                         <x-label for="brf_department" value="{{ __('Department') }}" />
-                        <x-input id="brf_department" type="text" class="mt-2" wire:model="brf_department" />
-                        <x-input-error for="brf_department" class="mt-2" />
+                        <x-input id="brf_department" type="text" class="mt-2" wire:model="brf_department" :readonly="!$editMode"/>
+                        <x-input-error for="brf_department" class="mt-2"/>
                     </div>
-                    <div>
+                    <div :class="{ 'text-gray-500': !$editMode }">
                         <x-label for="brf_authorizedby" value="{{ __('Authorized By:') }}" />
-                        <x-input id="brf_authorizedby" type="text" class="mt-2" wire:model="brf_authorizedby" />
-                        <x-input-error for="brf_authorizedby" class="mt-2" />
+                        <x-input id="brf_authorizedby" type="text" class="mt-2" wire:model="brf_authorizedby" :readonly="!$editMode"/>
+                        <x-input-error for="brf_authorizedby" class="mt-2"/>
                     </div>
                 </div>
                 <div class="mt-4 flex justify-between">
