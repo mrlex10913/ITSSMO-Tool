@@ -1,41 +1,46 @@
-<div class="py-6">
-    <div class="max-w-full mx-auto sm:px-6 lg:px-4 max-h-[75vh] overflow-auto">
-        <div class="bg-gray-100 dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg text-gray-100">
-           @include("livewire.assets.hero._hero")
-
-           <div class="mr-2 mb-2 flex justify-end gap-2">
-            <x-input type="search" wire:model.live.debounce.300ms="search" class="w-72 rounded-3xl" placeholder="Search value"/>
-            <x-button wire:click="createNewCategory">
-                Add new category
-            </x-button>
-           </div>
-           <div class="p-4 max-h-[60vh] overflow-y-auto">
-                <table class="table-auto w-full">
-                    <thead class="border-b">
-                        <tr>
-                            <th>No.</th>
-                            <th>Name</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-center">
-                        @foreach ($categories as $category)
-                        <tr class="border-b border-gray-500">
-                            <td>{{$loop->iteration}}</td>
-                            <td>{{$category->name}}</td>
-                            <td class="p-2">
-                                <x-button wire:click="updateCategoryModal({{$category->id}})">Update</x-button>
-                                <x-secondary-button wire:click="deleteCategoryModal({{$category->id}})">Delete</x-secondary-button>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                {{$categories->links()}}
-           </div>
+<div class="overflow-y-auto bg-gray-100 dark:bg-gray-900">
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold mb-4">Category Record</h2>
+        @include('livewire.assets.hero._hero')
+        <div class="flex justify-between items-center mb-4">
+            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search Value" class="px-3 py-2 bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button wire:click="createNewCategory" class="bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-opacity-50 px-4 py-2">
+                ADD NEW CATEGORY
+            </button>
         </div>
     </div>
-
+    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">No.</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Name</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Action</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                @foreach ($categories as $category)
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$loop->iteration}}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$category->name}}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <button wire:click="updateCategoryModal({{$category->id}})">
+                            <span class="material-symbols-sharp">
+                                update
+                            </span>
+                        </button>
+                        <button wire:click="deleteCategoryModal({{$category->id}})">
+                            <span class="material-symbols-sharp">
+                                delete
+                            </span>
+                        </button>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        {{$categories->links()}}
+    </div>
     {{-- Modal --}}
 
     <x-dialog-modal wire:model="NewCategory">

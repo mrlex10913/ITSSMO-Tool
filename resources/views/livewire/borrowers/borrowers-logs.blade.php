@@ -1,52 +1,65 @@
-<div class="py-6">
-    <div class="max-w-full mx-auto sm:px-6 lg:px-4 max-h-[75vh] overflow-auto">
-        <div class="bg-gray-100 dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg text-gray-100">
-           @include("livewire.borrowers.hero.herobrf")
-           <div class="mr-2 mb-2 flex justify-end gap-2">
-            <x-input type="search" wire:model.live.debounce.300ms="search" class="w-72 rounded-3xl" placeholder="Search value"/>
-           </div>
-           <div class="p-4 max-h-[60vh] overflow-y-auto">
-                <table class="table-auto w-full">
-                    <thead class="border-b">
-                        <tr>
-                            <th>No.</th>
-                            <th>Doc.Tracker</th>
-                            <th>Name</th>
-                            <th>Event</th>
-                            <th>Location</th>
-                            <th>Item</th>
-                            <th>Received By</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-center">
-                        @foreach ($brfLogs as $brf)
-                        <tr class="border-b border-gray-500">
-                            <td>{{$loop->iteration}}</td>
-                            <td>{{$brf->doc_tracker}}</td>
-                            <td>{{$brf->name}}</td>
-                            <td>{{$brf->event}}</td>
-                            <td>{{$brf->location}}</td>
-                            <td>
-                                @foreach ($brf->itemBorrow as $item)
-                                    <li>{{ $item->assetCategory->name }}</li>
-                                @endforeach
-                            </td>
-                            <td>{{$brf->receivedby}}</td>
-                            <td class="p-2">
-                                <x-button wire:click="updateBorrower({{$brf->id}})">Update</x-button>
-                                <x-secondary-button wire:click="">Delete</x-secondary-button>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                {{$brfLogs->links()}}
-           </div>
+<div class="overflow-y-auto bg-gray-100 dark:bg-gray-900">
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold mb-4">Borrower's Record</h2>
+        @include("livewire.borrowers.hero.herobrf")
+        <div class="flex justify-between items-center mb-4">
+            <input type="search" wire:model.live.debounce.300m="search" placeholder="Search Value" class="px-3 py-2 bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            {{-- <button wire:click="createNewAssets" class="bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-opacity-50 px-4 py-2">
+                ADD NEW ASSET
+            </button> --}}
         </div>
     </div>
-
-    {{-- Modal --}}
-
+    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">No.</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Doc.Tracker</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Name</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Event</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Location</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Received By</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Action</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                @foreach ($brfLogs as $brf)
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$loop->iteration}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$brf->doc_tracker}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$brf->name}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$brf->event}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$brf->location}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        @foreach ($brf->itemBorrow as $item)
+                            <li class="list-none mb-2"><span class="bg-green-700 text-xs p-1 rounded-lg text-white font-bold">{{ $item->assetCategory->name }}</span>: {{$item->serial}}</li>
+                        @endforeach
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$brf->status}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$brf->receivedby}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2" wire:click="updateBorrower({{$brf->id}})"><span class="material-symbols-sharp">
+                            update
+                            </span></button>
+                        <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" wire:click=""><span class="material-symbols-sharp">
+                            delete
+                            </span></button>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        {{$brfLogs->links()}}
+    </div>
     <x-dialog-modal wire:model="updateBorrowed" class="w-[70vw]">
         <x-slot name="title">
         </x-slot>
@@ -228,7 +241,5 @@
             </x-danger-button>
         </x-slot>
     </x-dialog-modal>
-
-
 </div>
 

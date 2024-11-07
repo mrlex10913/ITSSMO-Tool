@@ -133,9 +133,10 @@ class BorrowersReturn extends Component
         ->when($this->search, function($query){
             $query->where('doc_tracker', 'like', '%' .$this->search . '%')
             ->orWHere('id_number', 'like', '%' .$this->search . '%')
-            ->orWHere('name', 'like', '%' .$this->search . '%');
+            ->orWHere('name', 'like', '%' .$this->search . '%')
+            ->where('status', 'Return');
         })
-        ->paginate(5);
+        ->paginate(10);
         return view('livewire.borrowers.borrowers-return', compact('brfReturn'))->layout('layouts.app');
     }
 }

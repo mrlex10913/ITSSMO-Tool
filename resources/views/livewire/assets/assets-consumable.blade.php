@@ -1,49 +1,65 @@
-<div class="py-6">
-    <div class="max-w-full mx-auto sm:px-6 lg:px-4 max-h-[75vh] overflow-auto">
-        <div class="bg-gray-100 dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg text-gray-100">
-           @include("livewire.assets.hero._hero")
-
-           <div class="mr-2 mb-2 flex justify-end gap-2">
-            <x-input type="search" wire:model.live.debounce.300ms="search" class="w-72 rounded-3xl" placeholder="Search value"/>
-            <x-button wire:click="consumableModal">
-                Add new consumable
-            </x-button>
-           </div>
-           <div class="p-4 max-h-[60vh] overflow-y-auto">
-                <table class="table-auto w-full">
-                    <thead class="border-b">
-                        <tr>
-                            <th>No.</th>
-                            <th>Item Name</th>
-                            <th>Item Brand</th>
-                            <th>Specifaction</th>
-                            <th>Qty</th>
-                            <th>Assigned To</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-center">
-                        @foreach ($assetConsumable as $consumable)
-                        <tr class="border-b border-gray-500">
-                            <td>{{$loop->iteration}}</td>
-                            <td>{{$consumable->item_name}}</td>
-                            <td>{{$consumable->item_model}}</td>
-                            <td>{{$consumable->specification}}</td>
-                            <td>{{$consumable->quantity}}</td>
-                            <td>{{$consumable->assigned_to}}</td>
-                            <td class="p-2">
-                                <x-button wire:click="">Update</x-button>
-                                <x-secondary-button wire:click="">Delete</x-secondary-button>
-                            </td>
-                        </tr>
-                        @endforeach
-
-                    </tbody>
-                </table>
-           </div>
+<div class="overflow-y-auto bg-gray-100 dark:bg-gray-900">
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold mb-4">Consumable Record</h2>
+        @include('livewire.assets.hero._hero')
+        <div class="flex justify-between items-center mb-4">
+            <input type="text" placeholder="Search Value" class="px-3 py-2 bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button wire:click="consumableModal" class="bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-opacity-50 px-4 py-2">
+                ADD NEW CONSUMABLE
+            </button>
         </div>
     </div>
-
+    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">No.</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item Name</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item Brand</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Specification</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Qty</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Assigned To</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Action</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                @foreach ($assetConsumable as $consumable)
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {{$loop->iteration}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {{$consumable->item_name}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {{$consumable->item_model}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {{$consumable->specification}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {{$consumable->quantity}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {{$consumable->assigned_to}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2">
+                            <span class="material-symbols-sharp">
+                                update
+                            </span>
+                        </button>
+                        <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                            <span class="material-symbols-sharp">
+                                delete
+                            </span>
+                        </button>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
     {{-- Modal --}}
 
     <x-dialog-modal wire:model="NewConsumable">

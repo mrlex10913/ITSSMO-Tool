@@ -1,55 +1,68 @@
-<div class="py-6">
-    <div class="max-w-full mx-auto sm:px-6 lg:px-4 max-h-[80vh] overflow-auto">
-        <div class="bg-gray-100 dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg text-gray-100">
-           @include("livewire.assets.hero._hero")
-           <div class="mr-2 mb-2 flex justify-end gap-2">
-            <x-input type="search" wire:model.live.debounce.300ms="search" class="w-72 rounded-3xl" placeholder="Search value"/>
-            <x-button wire:click="createNewAssets">
-                Add new asset
-            </x-button>
-           </div>
-            <div class="p-4">
-                <table class="table-auto w-full">
-                    <thead class="text-left border-b">
-                        <tr>
-                            <th>Category</th>
-                            <th>Item Name</th>
-                            <th>Item Model</th>
-                            <th>ITSS Serial</th>
-                            <th>Purch. Serial</th>
-                            <th>Specification</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th>Assign To</th>
-                            <th class="text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($assets as $asset)
-                        <tr class="border-b">
-                            <td>{{$asset->assetList->name}}</td>
-                            <td>{{$asset->item_name}}</td>
-                            <td>{{$asset->item_model}}</td>
-                            <td>{{$asset->item_serial_itss}}</td>
-                            <td>{{$asset->item_serial_purch}}</td>
-                            <td>{{$asset->specification}}</td>
-                            <td>{{$asset->location}}</td>
-                            <td>{{$asset->status}}</td>
-                            <td>{{$asset->assigned_to}}</td>
-                            <td class="p-2 text-center">
-                                <x-button wire:click="updateAssetId({{$asset->id}})">Update</x-button>
-                                <x-secondary-button wire:click="deleteAssetId({{$asset->id}})">Delete</x-secondary-button>
-                            </td>
-                        </tr>
-                        @endforeach
-
-                    </tbody>
-                </table>
-            </div>
+<div class="overflow-y-auto bg-gray-100 dark:bg-gray-900">
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold mb-4">Asset's Record</h2>
+        @include('livewire.assets.hero._hero')
+        <div class="flex justify-between items-center mb-4">
+            <input type="text" placeholder="Search Value" class="px-3 py-2 bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button wire:click="createNewAssets" class="bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-opacity-50 px-4 py-2">
+                ADD NEW ASSET
+            </button>
         </div>
     </div>
-
-    {{-- Modal --}}
+    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Category</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item Name</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item Model</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">ITSS Serial</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Purch. Serial</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Specification</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Location</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Assign To</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Action</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                @foreach ($assets as $asset)
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->assetList->name}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->item_name}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->item_model}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->item_serial_itss}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->item_serial_purch}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-break-spaces text-sm text-gray-500 dark:text-gray-400">{{$asset->specification}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->location}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->status}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->assigned_to}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2" wire:click="updateAssetId({{$asset->id}})">
+                            <span class="material-symbols-sharp">
+                                update
+                            </span>
+                        </button>
+                        <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" wire:click="deleteAssetId({{$asset->id}})">
+                            <span class="material-symbols-sharp">
+                                delete
+                            </span>
+                        </button>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
     <x-dialog-modal wire:model="NewAssets">
         <x-slot name="title">
           {{$editMode ? 'Edit Assets' : 'Create New Asset'}}
@@ -127,7 +140,7 @@
                 </div>
                 <div class="col-span-6 sm:col-span-4">
                     <x-label for="assign_to" value="{{ __('Asigned To') }}" />
-                    <x-input id="assign_to" type="text" class="mt-1 block w-full" wire:model="assign_to" />
+                    <x-input id="assign_to" type="text" class="mt-1 block w-full" wire:model="assign_to" readonly/>
                     <x-input-error for="assign_to" class="mt-2" />
                 </div>
                 <div class="grid grid-cols-2 place-content-center gap-2">
@@ -145,64 +158,6 @@
             </div>
         </x-slot>
     </x-dialog-modal>
-
-    {{-- <x-dialog-modal wire:model="NewAssets">
-        <x-slot name="title">
-          Create New Assets
-        </x-slot>
-        <x-slot name="content">
-            <div class="space-y-2">
-                <input type="hidden" value="" id="" wire:model="subject_id">
-                <div class="col-span-6 sm:col-span-4">
-                    <x-label for="category" value="{{ __('Category') }}" />
-                    <x-input id="category" type="text" class="mt-1 block w-full" wire:model="question_text" />
-                    <x-input-error for="category" class="mt-2" />
-                </div>
-                <div class="col-span-6 sm:col-span-4">
-                    <x-label for="item_brand" value="{{ __('Item Model') }}" />
-                    <x-input id="item_brand" type="text" class="mt-1 block w-full" wire:model="question_text" />
-                    <x-input-error for="question_text" class="mt-2" />
-                </div>
-                <div class="col-span-6 sm:col-span-4">
-                    <x-label for="question_text" value="{{ __('ITSS Serial') }}" />
-                    <x-input id="question_text" type="text" class="mt-1 block w-full" wire:model="question_text" />
-                    <x-input-error for="question_text" class="mt-2" />
-                </div>
-                <div class="col-span-6 sm:col-span-4">
-                    <x-label for="question_text" value="{{ __('Purch. Serial') }}" />
-                    <x-input id="question_text" type="text" class="mt-1 block w-full" wire:model="question_text" />
-                    <x-input-error for="question_text" class="mt-2" />
-                </div>
-                <div class="col-span-6 sm:col-span-4">
-                    <x-label for="question_text" value="{{ __('Location') }}" />
-                    <x-input id="question_text" type="text" class="mt-1 block w-full" wire:model="question_text" />
-                    <x-input-error for="question_text" class="mt-2" />
-                </div>
-                <div class="col-span-6 sm:col-span-4">
-                    <x-label for="question_text" value="{{ __('Status') }}" />
-                    <x-input id="question_text" type="text" class="mt-1 block w-full" wire:model="question_text" />
-                    <x-input-error for="question_text" class="mt-2" />
-                </div>
-                <div class="col-span-6 sm:col-span-4">
-                    <x-label for="question_text" value="{{ __('Asigned To') }}" />
-                    <x-input id="question_text" type="text" class="mt-1 block w-full" wire:model="question_text" />
-                    <x-input-error for="question_text" class="mt-2" />
-                </div>
-                <div class="grid grid-cols-2 place-content-center gap-2">
-                </div>
-            </div>
-        </x-slot>
-        <x-slot name="footer">
-            <div class="space-x-2">
-                <x-button wire:click="">
-                    {{ __('Save') }}
-                </x-button>
-                <x-secondary-button wire:click="$set('NewAssets', false)" wire:loading.attr="disabled">
-                    {{ __('Close') }}
-                </x-secondary-button>
-            </div>
-        </x-slot>
-    </x-dialog-modal> --}}
 
     <x-dialog-modal wire:model="confirmDeletion">
         <x-slot name="title">

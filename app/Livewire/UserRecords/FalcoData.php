@@ -22,6 +22,8 @@ class FalcoData extends Component
 
     public $bulkUpload = false;
 
+
+
     protected $rules = [
         'file' => 'required|mimes:xlsx,xls,csv|max:2048'
     ];

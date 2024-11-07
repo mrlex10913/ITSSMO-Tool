@@ -9,6 +9,7 @@ use App\Livewire\Assets\AssetsTransfer;
 use App\Livewire\Borrowers\BorrowersForm;
 use App\Livewire\Borrowers\BorrowersLogs;
 use App\Livewire\Borrowers\BorrowersReturn;
+use App\Livewire\Borrowers\BrfReservation;
 use App\Livewire\Dashboard\ItssIntroduction;
 use App\Livewire\Examination\Admin\Questions;
 use App\Livewire\Examination\Admin\Subject;
@@ -62,6 +63,7 @@ Route::middleware([
     Route::get('/consumable-tracker', AssetsConsumableTracker::class)->name('consumable.tracker');
     Route::get('/borrowers-form', BorrowersForm::class)->name('borrower.form');
     Route::get('/assets-transfer', AssetsTransfer::class)->name('asset.form');
+    Route::get('/brf-reservation', BrfReservation::class)->name('reservation.form');
 
     //Records
     //Assets

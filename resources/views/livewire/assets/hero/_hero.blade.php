@@ -1,4 +1,15 @@
-<div class="p-2 lg:p-4 bg-gray-100 dark:bg-gray-800">
+<div class="flex space-x-4 mb-4">
+    <button wire:navigate href="{{route('assets.view')}}" class="bg-blue-500 text-white rounded px-4 py-2 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus-opacity-50">
+        Asset's List
+    </button>
+    <button wire:navigate href="{{route('assets.consumable')}}" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50">
+        Asset's Consumable
+    </button>
+    <button wire:navigate href="{{route('assets.category')}}" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50">
+        Asset's Category
+    </button>
+</div>
+{{-- <div class="p-2 lg:p-4 bg-gray-100 dark:bg-gray-800">
     <div class="flex justify-between mb-4">
         <div class="flex gap-2 items-center">
             <h1 class=" font-bold text-xl">Asset's Record</h1>
@@ -17,4 +28,4 @@
             Asset's Category
         </x-nav-link>
     </div>
-</div>
+</div> --}}

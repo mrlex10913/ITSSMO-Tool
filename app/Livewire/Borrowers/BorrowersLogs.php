@@ -110,19 +110,18 @@ class BorrowersLogs extends Component
             flash()->success('Borrowed Item has been return with remarks');
 
         // Optionally close the modal or reset some values
-        $this->reset(['updateBorrowed']);
-
+        $this->resetForm();
+        $this->updateBorrowed = false;
          }catch(ValidationException $e){
              flash()->error('Ooops! Something went wrong');
              throw $e;
          }
     }
 
-    public function resetForm()
+public function resetForm()
 {
     $this->reset([
         'brfLogs_returnremarks',
-        'brfLogs_receivedcheckedby',
         'brfLogs_retrunedBy',
         'brfLogs_status'
     ]);
@@ -139,9 +138,10 @@ public function updatingSearch(){
         ->when($this->search, function($query){
             $query->where('doc_tracker', 'like', '%' .$this->search . '%')
             ->orWHere('id_number', 'like', '%' .$this->search . '%')
-            ->orWHere('name', 'like', '%' .$this->search . '%');
+            ->orWHere('name', 'like', '%' .$this->search . '%')
+            ->where('status', 'Borrowed');
         })
-        ->paginate(5);;
+        ->paginate(10);;
         // dd($brfLogs);
         return view('livewire.borrowers.borrowers-logs', compact('brfLogs'))->layout('layouts.app');
     }

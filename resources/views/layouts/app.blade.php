@@ -23,16 +23,16 @@
         <!-- Styles -->
         @livewireStyles
     </head>
-    <body class="font-sans antialiased overflow-hidden">
-        <x-banner />
+    <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300 overflow-hidden">
+        {{-- <x-banner /> --}}
 
-        <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div class="h-screen flex flex-col overflow-hidden">
             @livewire('navigation-menu')
 
-            <div class="grid grid-cols-[15rem,auto]">
+            <div class="flex-1 mt-2 ml-2 flex flex-col md:flex-row overflow-hidden">
                 <x-side-menu />
 
-                <main>
+                <main class="flex-1 p-4 overflow-y-auto">
                     {{ $slot }}
                 </main>
 

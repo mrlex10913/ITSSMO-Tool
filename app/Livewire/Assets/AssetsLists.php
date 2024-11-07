@@ -4,12 +4,16 @@ namespace App\Livewire\Assets;
 
 use App\Models\Assets\AssetCategory;
 use App\Models\Assets\AssetList;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\Attributes\Validate;
+use Livewire\WithPagination;
 
 class AssetsLists extends Component
 {
+    use WithPagination;
+
     public $NewAssets = false;
     public $editMode = false;
     public $editAsset;
@@ -35,9 +39,22 @@ class AssetsLists extends Component
     public $specification;
 
 
-
+    public function mount(){
+        $this->assign_to = Auth::user()->name;
+    }
     public function createNewAssets(){
         $this->NewAssets = true;
+        $this->resetField();
+    }
+    public function resetField(){
+        $this->category = '';
+        $this->item_brand = '';
+        $this->item_model = '';
+        $this->itss_serial = '';
+        $this->purch_serial = '';
+        $this->specification = '';
+        $this->location = '';
+        $this->status = '';
     }
     public function saveAsset(){
         try{
@@ -54,7 +71,7 @@ class AssetsLists extends Component
                 'specification' => $this->specification
             ]);
             flash()->success('New Asset created');
-            $this->reset(['category', 'item_brand', 'item_model', 'itss_serial','purch_serial', 'location', 'status','assign_to', 'specification']);
+            $this->reset(['category', 'item_brand', 'item_model', 'itss_serial','purch_serial', 'location', 'status', 'specification']);
             $this->NewAssets = false;
         }catch(ValidationException $e){
             flash()->error('Ooops! Something went wrong');
@@ -122,7 +139,14 @@ class AssetsLists extends Component
     {
         $assets = AssetList::with('assetList')->orderBy('created_at', 'desc')
         ->where('asset_categories_id', '!=', 21)
-        ->get();
+        ->paginate(10);
+
+        // This Query will use when transfer to server
+        // $assets = AssetList::with('assetList')->orderBy('created_at', 'desc')
+        // ->where('asset_categories_id', '!=', 9)
+        // ->orWhere('asset_categories_id', '!=', 12)
+        // ->get();
+
         $categoryOption = AssetCategory::all();
         return view('livewire.assets.assets-lists', compact('categoryOption','assets'))->layout('layouts.app');
     }
