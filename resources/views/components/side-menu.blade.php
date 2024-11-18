@@ -8,15 +8,15 @@
                 </div>
             </x-nav-link>
         </li>
-        {{-- <li class="mb-2">
+        <li class="mb-2">
             <x-nav-link wire:navigate href="{{ route('itss.manual') }}" :active="request()->routeIs('itss.manual')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                 <div class="flex gap-3 items-center">
                     <span class="material-symbols-sharp"> developer_guide </span>
                     <h3>ITSSMO Manual</h3>
                 </div>
             </x-nav-link>
-        </li> --}}
-        {{-- <h1 class="text-xs text-gray-500">Brainstorm</h1>
+        </li>
+        <h1 class="text-xs text-gray-500">Brainstorm</h1>
         <li class="mb-2">
             <div x-data="{ open: {{ request()->routeIs('examination.subject') || request()->routeIs('examination.coordinator') ? 'true' : 'false' }} }" class="relative p-2 rounded">
                 <a href="" @click.prevent="open = !open" :class="{'rounded bg-gray-300 dark:bg-gray-700': open}">
@@ -35,7 +35,7 @@
                     </x-nav-link>
                 </div>
             </div>
-        </li> --}}
+        </li>
         <h1 class="text-xs text-gray-500">Transaction's</h1>
         <li class="mb-2">
             <x-nav-link wire:navigate href="{{ route('borrower.form') }}" :active="request()->routeIs('borrower.form')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">

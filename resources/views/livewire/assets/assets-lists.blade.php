@@ -3,7 +3,7 @@
         <h2 class="text-2xl font-bold mb-4">Asset's Record</h2>
         @include('livewire.assets.hero._hero')
         <div class="flex justify-between items-center mb-4">
-            <input type="text" placeholder="Search Value" class="px-3 py-2 bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input wire:model.live.debounce.300ms="search" type="text" placeholder="Search Value" class="px-3 py-2 bg-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             <button wire:click="createNewAssets" class="bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-opacity-50 px-4 py-2">
                 ADD NEW ASSET
             </button>
@@ -14,6 +14,7 @@
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Category</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item Barcode</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item Name</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item Model</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">ITSS Serial</th>
@@ -29,6 +30,8 @@
                 @foreach ($assets as $asset)
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->assetList->name}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->item_barcode}}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->item_name}}
                     </td>
@@ -98,7 +101,7 @@
                     <x-label for="purch_serial" value="{{ __('Purch. Serial') }}" />
                     <x-input id="purch_serial" type="text" class="mt-1 block w-full" wire:model="purch_serial" />
                 </div>
-                @if ($category == 20)
+                @if ($category == 9 || $category == 12)
                     <div class="col-span-6 sm:col-span-4">
                         <x-label for="specification" value="{{ __('Specification') }}" />
                         <textarea wire:model="specification" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-full" cols="30" rows="10">
@@ -143,6 +146,19 @@
                     <x-input id="assign_to" type="text" class="mt-1 block w-full" wire:model="assign_to" readonly/>
                     <x-input-error for="assign_to" class="mt-2" />
                 </div>
+                <x-label for="item_barcode" value="{{ __('Barcode Number') }}" />
+                <x-input id="item_barcode" type="text" class="mt-1 block w-full" wire:model="item_barcode" />
+                <x-input-error for="item_barcode" class="mt-2" />
+                {{-- <div x-data="{ barcode: '', triggered: false }"
+                x-init="$watch('barcode', value => {
+                    $wire.{{ $editMode ? 'updateAsset' : 'saveAsset' }}();
+                    })">
+                    <x-label for="item_barcode" value="{{ __('Barcode Number') }}" />
+                    <x-input id="item_barcode" type="text" class="mt-1 block w-full"
+                            x-model="barcode"
+                            wire:model="item_barcode" />
+                    <x-input-error for="item_barcode" class="mt-2" />
+                </div> --}}
                 <div class="grid grid-cols-2 place-content-center gap-2">
                 </div>
             </div>
@@ -159,7 +175,7 @@
         </x-slot>
     </x-dialog-modal>
 
-    <x-dialog-modal wire:model="confirmDeletion">
+    <x-dialog-modal wire:model="deleteAsset">
         <x-slot name="title">
             <div class="flex items-center gap-2">
                 <span class="material-symbols-sharp">
@@ -170,17 +186,17 @@
         </x-slot>
 
         <x-slot name="content">
-            {{ __('Are you sure you want to delete this Questions? Once your question is deleted, all of its resources and data will be permanently deleted.') }}
+            {{ __('Are you sure you want to delete this Asset? Once your asset is deleted, all of its resources and data will be permanently deleted.') }}
 
         </x-slot>
 
         <x-slot name="footer">
-            <x-secondary-button wire:click="" wire:loading.attr="disabled">
+            <x-secondary-button wire:click="$set('deleteAsset', false)" wire:loading.attr="disabled">
                 {{ __('Cancel') }}
             </x-secondary-button>
 
-            <x-danger-button class="ms-3" wire:click="" wire:loading.attr="disabled">
-                {{ __('Delete Question') }}
+            <x-danger-button class="ms-3" wire:click="deleteToAsset" wire:loading.attr="disabled">
+                {{ __('Delete Assets') }}
             </x-danger-button>
         </x-slot>
     </x-dialog-modal>

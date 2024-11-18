@@ -67,7 +67,78 @@
                 <x-input-error for="brf_event" class="mt-2" />
             </div>
         </div>
-        <div class="mt-6">
+    <div x-data="{ scannedCode: '' }"
+     x-init="$watch('scannedCode', async value => {
+         if (value) {
+             await $wire.addScannedItem(value);
+             scannedCode = '';
+         }
+     })">
+    <div class="mt-6">
+        <div class="flex gap-2 items-center">
+            <div>
+                <label>Scan the item here!</label>
+                <x-input type="text" class="w-1/4" x-model="scannedCode" />
+            </div>
+           <div>
+                <label for="">Select Category</label>
+                <select class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b82f6]">
+                    <option value="">Select</option>
+                    <option value="Consumables">Consumables</option>
+                </select>
+           </div>
+        </div>
+        <h2 class="text-lg font-semibold mb-2">Item List to be borrowed:</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-200 dark:bg-gray-700">
+                        <th class="px-4 py-2 text-left">Item Name</th>
+                        <th class="px-4 py-2 text-left">Serial</th>
+                        <th class="px-4 py-2 text-left">Brand</th>
+                        <th class="px-4 py-2 text-left">Remarks</th>
+                        <th class="px-4 py-2 text-left">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($items as $index => $item)
+                        <tr>
+                            <td class="px-4 py-2" wire:model.live="items.{{$index}}.name">
+                                {{ $item['name'] }}
+                            </td>
+
+                            <td class="px-4 py-2" wire:model.live="items.{{$index}}.serial">
+                                {{ $item['serial'] }}
+
+                            </td>
+                            <td class="px-4 py-2" wire:model="items.{{$index}}.brand">
+                                {{ $item['brand'] }}
+
+                            </td>
+                            <td class="px-4 py-2">
+                                <x-input id="items.{{$index}}.remarks" type="text" wire:model="items.{{$index}}.remarks" />
+                                <x-input-error for="items.{{$index}}.remarks" class="mt-2"/>
+                            </td>
+                            <td class="px-4 py-2">
+                                <button wire:click="removeItem({{ $index }})" class="text-red-500 hover:text-red-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+        {{-- <div class="mt-6">
+            <div>
+                <h2>Scan the item here!</h2>
+                <x-input type="text" class="w-1/4"/>
+            </div>
             <h2 class="text-lg font-semibold mb-2">Item List to be borrowed:</h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -82,7 +153,7 @@
                     </thead>
                     <tbody>
                         @php
-                            $selectedSerials = collect($items)->pluck('serial')->filter(); // Collect the already selected serials
+                            $selectedSerials = collect($items)->pluck('serial')->filter();
                         @endphp
 
                         @foreach ($items as $index => $item)
@@ -102,10 +173,8 @@
                                     @if (!empty($availableSerials[$index]))
                                         @foreach ($availableSerials[$index] as $serial)
                                             @if ($serial == $item['serial'])
-                                                <!-- Keep the selected serial even if it's used -->
                                                 <option value="{{ $serial }}" selected>{{ $serial }}</option>
                                             @elseif (!$selectedSerials->contains($serial))
-                                                <!-- Show other serials if not already selected -->
                                                 <option value="{{ $serial }}">{{ $serial }}</option>
                                             @endif
                                         @endforeach
@@ -118,7 +187,7 @@
                                 <x-input-error for="items.{{$index}}.brand" class="mt-2"/>
                             </td>
                             <td class="px-4 py-2">
-                                <x-input id="items.{{$index}}.remarks" type="text" class="mt-2" wire:model="items.{{$index}}.remarks" />
+                                <x-input id="items.{{$index}}.remarks" type="text" wire:model="items.{{$index}}.remarks" />
                                 <x-input-error for="items.{{$index}}.remarks" class="mt-2"/>
                             </td>
                             <td class="px-4 py-2">
@@ -139,7 +208,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div> --}}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
             <div>
                 <x-label for="brf_receivedby" value="{{ __('Received By:') }}" />

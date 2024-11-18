@@ -39,17 +39,36 @@ class BorrowersForm extends Component
 
     public $initialReceivedbySet = false;
 
+    public function addScannedItem($serial)
+{
+    // Query the database to find the item by serial number
+    $asset = AssetList::with('assetList')
+    ->where('item_barcode', $serial)->first();
+
+    if ($asset) {
+        $this->items[] = [
+            'name' => $asset->assetList->name,
+            'categoryId' => $asset->asset_categories_id,
+            'serial' => $asset->item_serial_itss,
+            'brand' => $asset->item_name,
+            'remarks' => ''
+        ];
+    } else {
+        session()->flash('error', 'Item not found');
+    }
+}
+
     public function mount(){
 
-        $this->availableAssets = AssetList::with('assetList')->where('status', 'Available')->get()->unique('asset_categories_id');
-        if(empty($this->items)){
-            $this->items[] = [
-                'name' => '',
-                'brand' => '',
-                'serial' => '',
-                'remarks' => '',
-            ];
-        }
+        // $this->availableAssets = AssetList::with('assetList')->where('status', 'Available')->get()->unique('asset_categories_id');
+        // if(empty($this->items)){
+        //     $this->items[] = [
+        //         'name' => '',
+        //         'brand' => '',
+        //         'serial' => '',
+        //         'remarks' => '',
+        //     ];
+        // }
 
         $latestTracker = BorrowerDetails::latest('id')->value('doc_tracker');
 
@@ -165,7 +184,7 @@ class BorrowersForm extends Component
            ]);
            foreach ($this->items as $item){
             $borrower->itemBorrow()->create([
-                'asset_category_id' => $item['name'],
+                'asset_category_id' => $item['categoryId'],
                 'brand' => $item['brand'],
                 'serial' => $item['serial'],
                 'remarks' => $item['remarks'],

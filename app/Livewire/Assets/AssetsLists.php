@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\Attributes\Validate;
 use Livewire\WithPagination;
+use Picqer\Barcode\BarcodeGeneratorPNG;
 
 class AssetsLists extends Component
 {
@@ -20,10 +21,14 @@ class AssetsLists extends Component
     public $deleteAsset = false;
     public $assetToDelete;
 
+    public $generatedBarcodeImage;
+
     #[Validate('required|string')]
     public $category;
 
     public $item_brand;
+    #[Validate('required|string')]
+    public $item_barcode;
     public $item_model;
     #[Validate('required|string')]
     public $itss_serial;
@@ -37,6 +42,7 @@ class AssetsLists extends Component
     public $assign_to;
 
     public $specification;
+    public $search = '';
 
 
     public function mount(){
@@ -61,6 +67,7 @@ class AssetsLists extends Component
             $this->validate();
             AssetList::create([
                 'asset_categories_id' => $this->category,
+                'item_barcode' => $this->item_barcode,
                 'item_name' => $this->item_brand,
                 'item_model' => $this->item_model,
                 'item_serial_itss' => $this->itss_serial,
@@ -71,7 +78,7 @@ class AssetsLists extends Component
                 'specification' => $this->specification
             ]);
             flash()->success('New Asset created');
-            $this->reset(['category', 'item_brand', 'item_model', 'itss_serial','purch_serial', 'location', 'status', 'specification']);
+            $this->reset(['category', 'item_brand', 'item_model', 'itss_serial','purch_serial', 'location', 'status', 'specification', 'item_barcode']);
             $this->NewAssets = false;
         }catch(ValidationException $e){
             flash()->error('Ooops! Something went wrong');
@@ -86,6 +93,7 @@ class AssetsLists extends Component
         $this->editAsset = $assetId;
         $assetsFind = AssetList::find($assetId);
         $this->category = $assetsFind->asset_categories_id;
+        $this->item_barcode = $assetsFind->item_barcode;
         $this->item_brand = $assetsFind->item_name;
         $this->item_model = $assetsFind->item_model;
         $this->itss_serial = $assetsFind->item_serial_itss;
@@ -102,6 +110,7 @@ class AssetsLists extends Component
             $assets = AssetList::find($this->editAsset);
             // dd($assets);
             $assets->asset_categories_id = $this->category;
+            $assets->item_barcode = $this->item_barcode;
             $assets->item_name = $this->item_brand;
             $assets->item_model = $this->item_model;
             $assets->item_serial_itss = $this->itss_serial;
@@ -137,9 +146,18 @@ class AssetsLists extends Component
     }
     public function render()
     {
-        $assets = AssetList::with('assetList')->orderBy('created_at', 'desc')
-        ->where('asset_categories_id', '!=', 21)
+
+        $assets = AssetList::when($this->search, function($query) {
+            $query->where('item_barcode', 'like', '%' . $this->search . '%')
+            ->orWhere('item_name', 'like', '%' . $this->search . '%');
+        })
+        ->orderBy('created_at', 'desc')
+        ->where('asset_categories_id', '!=', 9)
+        ->orWhere('asset_categories_id', '!=', 12)
         ->paginate(10);
+        // $assets = AssetList::with('assetList')->orderBy('created_at', 'desc')
+        // ->where('asset_categories_id', '!=', 21)
+        // ->paginate(10);
 
         // This Query will use when transfer to server
         // $assets = AssetList::with('assetList')->orderBy('created_at', 'desc')

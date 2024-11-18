@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('asset_lists', function (Blueprint $table) {
             $table->id();
             $table->foreignId('asset_categories_id')->constrained()->onDelete('cascade');
+            $table->string('item_barcode');
             $table->string('item_name');
             $table->string('item_model');
             $table->string('item_serial_itss');
@@ -21,7 +22,6 @@ return new class extends Migration
             $table->string('assigned_to');
             $table->string('location');
             $table->string('status');
-
             $table->timestamps();
         });
     }

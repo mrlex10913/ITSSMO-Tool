@@ -91,7 +91,7 @@
             </x-secondary-button>
 
             <x-danger-button class="ms-3" wire:click="deleteCategory" wire:loading.attr="disabled">
-                {{ __('Delete Question') }}
+                {{ __('Delete Category') }}
             </x-danger-button>
         </x-slot>
     </x-dialog-modal>
