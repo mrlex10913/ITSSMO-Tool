@@ -1,17 +1,18 @@
 <?php
 
-namespace App\Livewire\Borrowers;
+namespace App\Livewire;
 
+use Livewire\Component;
 use App\Models\Assets\AssetList;
 use App\Models\Borrowers\BorrowerDetails;
 use App\Models\UserRecords\FalcoData;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Livewire\Attributes\Validate;
-use Livewire\Component;
 
-class BorrowersForm extends Component
+use function Laravel\Prompts\error;
+
+class BorrowersDesktop extends Component
 {
     public $id_number;
     public $contact_email;
@@ -30,6 +31,10 @@ class BorrowersForm extends Component
     public $brf_releasedcheckedby;
     public $brf_notedby;
 
+    public $nextField = false;
+
+    public $verfiedPersonel;
+
     public $editMode = false;
 
     public $items = [];
@@ -41,26 +46,28 @@ class BorrowersForm extends Component
 
     public $scanned;
 
+
+    public $showOverlay = true;
+
     public function addScannedItem($serial)
-{
-    // Query the database to find the item by serial number
-    $asset = AssetList::with('assetList')
-    ->where('item_barcode', $serial)->first();
+    {
+        // Query the database to find the item by serial number
+        $asset = AssetList::with('assetList')
+        ->where('item_barcode', $serial)->first();
 
-    if ($asset) {
-        $this->items[] = [
-            'name' => $asset->assetList->name,
-            'categoryId' => $asset->asset_categories_id,
-            'serial' => $asset->item_serial_itss,
-            'brand' => $asset->item_name,
-            'remarks' => ''
-        ];
-        $this->scanned = '';
-    } else {
-        session()->flash('error', 'Item not found');
+        if ($asset) {
+            $this->items[] = [
+                'name' => $asset->assetList->name,
+                'categoryId' => $asset->asset_categories_id,
+                'serial' => $asset->item_serial_itss,
+                'brand' => $asset->item_name,
+                'remarks' => ''
+            ];
+            $this->scanned = '';
+        } else {
+            session()->flash('error', 'Item not found');
+        }
     }
-}
-
     public function mount(){
 
         // $this->availableAssets = AssetList::with('assetList')->where('status', 'Available')->get()->unique('asset_categories_id');
@@ -84,11 +91,9 @@ class BorrowersForm extends Component
         }
         $this->brf_notedby = 'Beau Villanueva';
         $this->brf_status = 'Borrowed';
-        $this->brf_releasedcheckedby = Auth::user()->name;
         $this->brf_dateborrowed = Carbon::now()->format('Y-m-d');
-
-
     }
+
     public function updatedRfID($value)
     {
         $this->rfid = ltrim($value, '0');
@@ -100,11 +105,6 @@ class BorrowersForm extends Component
 
         $falcoRecord = FalcoData::where('card_no', $this->id_number)->first();
 
-        // if (!$falcoRecord) {
-        //     flash()->error('There is no existing data');
-        //     return; // Stop further execution
-        // }
-
         if($falcoRecord){
             $this->rfid = $falcoRecord->card_no;
             $this->id_number = $falcoRecord->id_number;
@@ -113,8 +113,28 @@ class BorrowersForm extends Component
             $this->contact_email = $falcoRecord->email;
             $this->brf_department = $falcoRecord->department;
             $this->brf_receivedby = $falcoRecord->name;
+        }else{
+            $this->id_number = '';
+            flash()->error('Card Number is not registered');
         }
     }
+
+    public function updatedverfiedPersonel($value)
+    {
+
+        $this->verfiedPersonel = ltrim($value, '0');
+
+        $veriFiedRecord = FalcoData::where('card_no', $this->verfiedPersonel)->first();
+
+
+        if($veriFiedRecord){
+            $this->brf_releasedcheckedby = $veriFiedRecord->name;
+            $this->saveBorrowers();
+        }else{
+            $this->brf_releasedcheckedby = null;
+        }
+    }
+
     public function updatedItems($value, $name){
         if(strpos($name, '.name') !== false){
             $index = explode('.', $name)[0];
@@ -138,21 +158,24 @@ class BorrowersForm extends Component
             }
         }
     }
+
     public function updatedBrfName($value){
-    // Only set brf_receivedby if it has not been manually edited by the user
-        if (!$this->initialReceivedbySet) {
-            $this->brf_receivedby = $value;
+        // Only set brf_receivedby if it has not been manually edited by the user
+            if (!$this->initialReceivedbySet) {
+                $this->brf_receivedby = $value;
+            }
         }
-    }
+
     public function updatedBrfReceivedby(){
     // Once the user edits brf_receivedby, stop automatic updating
         $this->initialReceivedbySet = true;
     }
 
+
     public function saveBorrowers(){
 
         try{
-           $this->validate([
+            $this->validate([
             'id_number' => 'required',
             'brf_name' => 'required',
             'brf_contact' => 'required',
@@ -168,8 +191,8 @@ class BorrowersForm extends Component
             'brf_status' => 'required',
             'brf_releasedcheckedby' => 'required',
             'brf_notedby' => 'required',
-           ]);
-           $borrower = BorrowerDetails::create([
+            ]);
+            $borrower = BorrowerDetails::create([
             'id_number' => $this->id_number,
             'doc_tracker' => $this->doc_tracker,
             'name' => $this->brf_name,
@@ -184,8 +207,8 @@ class BorrowersForm extends Component
             'status' => $this->brf_status,
             'released_checkedby' => $this->brf_releasedcheckedby,
             'notedby' => $this->brf_notedby,
-           ]);
-           foreach ($this->items as $item){
+            ]);
+            foreach ($this->items as $item){
             $borrower->itemBorrow()->create([
                 'asset_category_id' => $item['categoryId'],
                 'brand' => $item['brand'],
@@ -196,9 +219,9 @@ class BorrowersForm extends Component
             if ($asset) {
                 $asset->update(['status' => 'Borrowed']);
             }
-           }
-           $falcoRecord = FalcoData::where('card_no', $this->rfid)->first();
-           if ($falcoRecord) {
+            }
+            $falcoRecord = FalcoData::where('card_no', $this->rfid)->first();
+            if ($falcoRecord) {
             // Check if the department has changed
             if ($falcoRecord->department !== $this->brf_department || $falcoRecord->contact !== $this->brf_contact || $falcoRecord->email !== $this->contact_email || $falcoRecord->id_number !== $this->contact_email) {
 
@@ -236,6 +259,7 @@ class BorrowersForm extends Component
             throw $e;
         }
     }
+
     public function addItem(){
         $this->items[] = [
             'name' => '',
@@ -271,8 +295,9 @@ class BorrowersForm extends Component
         }
         $this->brf_receivedby = '';
     }
+
     public function render()
     {
-        return view('livewire.borrowers.borrowers-form')->layout('layouts.app');
+        return view('livewire.borrowers-desktop')->layout('layouts.guest');
     }
 }

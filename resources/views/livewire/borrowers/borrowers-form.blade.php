@@ -71,14 +71,14 @@
      x-init="$watch('scannedCode', async value => {
          if (value) {
              await $wire.addScannedItem(value);
-             scannedCode = '';
+
          }
      })">
     <div class="mt-6">
         <div class="flex gap-2 items-center">
             <div>
                 <label>Scan the item here!</label>
-                <x-input type="text" class="w-1/4" x-model="scannedCode" />
+                <x-input type="text" class="w-1/4" x-model="scannedCode" wire:model="scanned" />
             </div>
            <div>
                 <label for="">Select Category</label>

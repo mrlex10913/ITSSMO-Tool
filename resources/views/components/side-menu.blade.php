@@ -36,12 +36,40 @@
                 </div>
             </div>
         </li>
+        <h1 class="text-xs text-gray-500">Department</h1>
+        <li class="mb-2">
+            <div x-data="{ open: {{ request()->routeIs('pamo.inventory') || request()->routeIs('pamo.transactions') ? 'true' : 'false' }} }" class="relative p-2 rounded">
+                <a href="" @click.prevent="open = !open" :class="{'rounded bg-gray-300 dark:bg-gray-700': open}">
+                    <div class="flex gap-3">
+                        <span class="material-symbols-sharp"> summarize </span>
+                        <h3>PAMO</h3>
+                        <span class="material-symbols-sharp transform transition-transform duration-300" :class="{'rotate-180': open}"> expand_more </span>
+                    </div>
+                </a>
+                <div x-show="open" x-collapse class="flex flex-col space-y-2 pl-10 mt-2">
+                    <x-nav-link wire:navigate href="{{ route('pamo.inventory') }}" :active="request()->routeIs('pamo.inventory')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                        Transaction's
+                    </x-nav-link>
+                    <x-nav-link wire:navigate href="{{ route('pamo.transactions') }}" :active="request()->routeIs('pamo.transactions')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                        Inventory & Supplies
+                    </x-nav-link>
+                </div>
+            </div>
+        </li>
         <h1 class="text-xs text-gray-500">Transaction's</h1>
         <li class="mb-2">
             <x-nav-link wire:navigate href="{{ route('borrower.form') }}" :active="request()->routeIs('borrower.form')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                 <div class="flex gap-3 items-center">
                     <span class="material-symbols-sharp"> handshake </span>
                     <h3>Borrower's</h3>
+                </div>
+            </x-nav-link>
+        </li>
+        <li class="mb-2">
+            <x-nav-link wire:navigate href="{{ route('assets.view') }}" :active="request()->routeIs('assets.view') || request()->routeIs('assets.category') || request()->routeIs('assets.consumable')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                <div class="flex gap-3 items-center">
+                    <span class="material-symbols-sharp"> category </span>
+                    <h3> Assets</h3>
                 </div>
             </x-nav-link>
         </li>
@@ -70,14 +98,7 @@
             </x-nav-link>
         </li> --}}
         <h1 class="text-xs text-gray-500">Record's</h1>
-        <li class="mb-2">
-            <x-nav-link wire:navigate href="{{ route('assets.view') }}" :active="request()->routeIs('assets.view') || request()->routeIs('assets.category') || request()->routeIs('assets.consumable')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
-                <div class="flex gap-3 items-center">
-                    <span class="material-symbols-sharp"> category </span>
-                    <h3> Assets</h3>
-                </div>
-            </x-nav-link>
-        </li>
+
         <li class="mb-2">
             <x-nav-link wire:navigate href="{{ route('borrowers.logs') }}" :active="request()->routeIs('borrowers.logs') || request()->routeIs('borrowers.return')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                 <div class="flex gap-3 items-center">
@@ -91,6 +112,16 @@
                 <div class="flex gap-3 items-center">
                     <span class="material-symbols-sharp"> badge </span>
                     <h3> Falco Records </h3>
+                </div>
+            </x-nav-link>
+        </li>
+        <h1 class="text-xs text-gray-500">Admin Access</h1>
+        <li class="mb-2">
+            <x-nav-link wire:navigate href="{{ route('controlPanel.admin') }}" :active="request()->routeIs('controlPanel.admin')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                <div class="flex gap-3 items-center">
+                    <span class="material-symbols-sharp"> admin_panel_settings
+                    </span>
+                    <h3> Control Panel </h3>
                 </div>
             </x-nav-link>
         </li>

@@ -30,6 +30,8 @@ class User extends Authenticatable
         'department',
         'role',
         'password',
+        'temporary_password',
+        'is_temporary_password_used',
     ];
 
     /**

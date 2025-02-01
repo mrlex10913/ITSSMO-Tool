@@ -13,6 +13,7 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Action</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Category</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item Barcode</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Item Name</th>
@@ -23,12 +24,42 @@
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Location</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Status</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Assign To</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Action</th>
+
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 @foreach ($assets as $asset)
                 <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button data-tooltip-target="tooltip-asset({{$asset->id}})" class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300" wire:click="deleteAssetId({{$asset->id}})" alt="Asset Transfer">
+                            <span class="material-symbols-sharp">
+                                move_up
+                            </span>
+                        </button>
+                        <div id="tooltip-asset({{$asset->id}})" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                            Asset Transfer
+                            <div class="tooltip-arrow" data-popper-arrow></div>
+                        </div>
+                        <button data-tooltip-target="tooltip-update({{$asset->id}})" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2" wire:click="updateAssetId({{$asset->id}})">
+                            <span class="material-symbols-sharp">
+                                update
+                            </span>
+                        </button>
+                        <div id="tooltip-update({{$asset->id}})" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                            Update Asset
+                            <div class="tooltip-arrow" data-popper-arrow></div>
+                        </div>
+                        <button data-tooltip-target="tooltip-delete({{$asset->id}})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" wire:click="deleteAssetId({{$asset->id}})">
+                            <span class="material-symbols-sharp">
+                                delete
+                            </span>
+                        </button>
+                        <div id="tooltip-delete({{$asset->id}})" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                            Delete Asset
+                            <div class="tooltip-arrow" data-popper-arrow></div>
+                        </div>
+
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->assetList->name}}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->item_barcode}}
@@ -49,18 +80,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$asset->assigned_to}}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2" wire:click="updateAssetId({{$asset->id}})">
-                            <span class="material-symbols-sharp">
-                                update
-                            </span>
-                        </button>
-                        <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" wire:click="deleteAssetId({{$asset->id}})">
-                            <span class="material-symbols-sharp">
-                                delete
-                            </span>
-                        </button>
-                    </td>
+
                 </tr>
                 @endforeach
             </tbody>
@@ -101,7 +121,7 @@
                     <x-label for="purch_serial" value="{{ __('Purch. Serial') }}" />
                     <x-input id="purch_serial" type="text" class="mt-1 block w-full" wire:model="purch_serial" />
                 </div>
-                @if ($category == 9 || $category == 12)
+                @if ($category == 9 || $category == 12 || $category == 3)
                     <div class="col-span-6 sm:col-span-4">
                         <x-label for="specification" value="{{ __('Specification') }}" />
                         <textarea wire:model="specification" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-full" cols="30" rows="10">

@@ -14,6 +14,7 @@
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">No.</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Action</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Doc.Tracker</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Name</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Event</th>
@@ -23,13 +24,26 @@
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Return Date</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Status</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Received By</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase dark:text-gray-300 tracking-wider">Action</th>
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 @foreach ($brfLogs as $brf)
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$loop->iteration}}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button data-tooltip-target="tooltip-update({{$brf->id}})" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2" wire:click="updateBorrower({{$brf->id}})">
+                            <span class="material-symbols-sharp">
+                            update
+                            </span>
+                        </button>
+                        <div id="tooltip-update({{$brf->id}})" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                            Update Borrow
+                            <div class="tooltip-arrow" data-popper-arrow></div>
+                        </div>
+                        <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" wire:click=""><span class="material-symbols-sharp">
+                            delete
+                            </span></button>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$brf->doc_tracker}}
                     </td>
@@ -52,14 +66,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{$brf->receivedby}}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2" wire:click="updateBorrower({{$brf->id}})"><span class="material-symbols-sharp">
-                            update
-                            </span></button>
-                        <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" wire:click=""><span class="material-symbols-sharp">
-                            delete
-                            </span></button>
-                    </td>
+
                 </tr>
                 @endforeach
             </tbody>
