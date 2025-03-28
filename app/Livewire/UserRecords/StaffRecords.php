@@ -21,6 +21,6 @@ class StaffRecords extends Component
 
     public function render()
     {
-        return view('livewire.user-records.staff-records')->layout('layouts.app');
+        return view('livewire.user-records.staff-records');
     }
 }

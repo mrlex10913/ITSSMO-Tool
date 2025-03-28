@@ -58,6 +58,6 @@ class FalcoData extends Component
     public function render()
     {
         $falcoData = UserRecordsFalcoData::all();
-        return view('livewire.user-records.falco-data', compact('falcoData'))->layout('layouts.app');
+        return view('livewire.user-records.falco-data', compact('falcoData'));
     }
 }

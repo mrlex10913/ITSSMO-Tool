@@ -20,6 +20,6 @@ class Codegenerator extends Component
     }
     public function render()
     {
-        return view('livewire.examination.coordinator.codegenerator')->layout('layouts.app');
+        return view('livewire.examination.coordinator.codegenerator');
     }
 }

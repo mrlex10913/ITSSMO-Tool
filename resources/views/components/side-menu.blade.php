@@ -47,6 +47,9 @@
                     </div>
                 </a>
                 <div x-show="open" x-collapse class="flex flex-col space-y-2 pl-10 mt-2">
+                    <x-nav-link wire:navigate href="{{ route('pamo.barcode') }}" :active="request()->routeIs('pamo.barcode')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                        Barcode Generator
+                    </x-nav-link>
                     <x-nav-link wire:navigate href="{{ route('pamo.inventory') }}" :active="request()->routeIs('pamo.inventory')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                         Transaction's
                     </x-nav-link>

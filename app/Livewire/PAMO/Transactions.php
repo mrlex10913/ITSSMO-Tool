@@ -8,6 +8,6 @@ class Transactions extends Component
 {
     public function render()
     {
-        return view('livewire.p-a-m-o.transactions')->layout('layouts.app');
+        return view('livewire.p-a-m-o.transactions');
     }
 }

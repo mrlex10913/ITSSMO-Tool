@@ -137,6 +137,6 @@ class UsersControl extends Component
     {
         $userAccess = User::all();
         $this->breadCrumbUsersPanel();
-        return view('livewire.control-panel.users-control', compact('userAccess'))->layout('layouts.app');
+        return view('livewire.control-panel.users-control', compact('userAccess'));
     }
 }

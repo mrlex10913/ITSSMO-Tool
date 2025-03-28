@@ -8,6 +8,6 @@ class ITSSManual extends Component
 {
     public function render()
     {
-        return view('livewire.manuals.i-t-s-s-manual')->layout('layouts.app');
+        return view('livewire.manuals.i-t-s-s-manual');
     }
 }

@@ -166,6 +166,6 @@ class AssetsLists extends Component
         // ->get();
 
         $categoryOption = AssetCategory::all();
-        return view('livewire.assets.assets-lists', compact('categoryOption','assets'))->layout('layouts.app');
+        return view('livewire.assets.assets-lists', compact('categoryOption','assets'));
     }
 }

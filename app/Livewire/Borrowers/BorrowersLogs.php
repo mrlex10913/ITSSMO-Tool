@@ -143,6 +143,6 @@ public function updatingSearch(){
         })
         ->paginate(10);;
         // dd($brfLogs);
-        return view('livewire.borrowers.borrowers-logs', compact('brfLogs'))->layout('layouts.app');
+        return view('livewire.borrowers.borrowers-logs', compact('brfLogs'));
     }
 }

@@ -137,6 +137,6 @@ class BorrowersReturn extends Component
             ->where('status', 'Return');
         })
         ->paginate(10);
-        return view('livewire.borrowers.borrowers-return', compact('brfReturn'))->layout('layouts.app');
+        return view('livewire.borrowers.borrowers-return', compact('brfReturn'));
     }
 }

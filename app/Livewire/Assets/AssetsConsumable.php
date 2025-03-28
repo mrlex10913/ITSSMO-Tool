@@ -66,6 +66,6 @@ class AssetsConsumable extends Component
         ->orderBy('created_at', 'desc')
         ->where('asset_categories_id', '=', 21)
         ->get();
-        return view('livewire.assets.assets-consumable', compact('assetConsumable'))->layout('layouts.app');
+        return view('livewire.assets.assets-consumable', compact('assetConsumable'));
     }
 }

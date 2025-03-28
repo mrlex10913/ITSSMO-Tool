@@ -8,6 +8,6 @@ class AssetsConsumableTracker extends Component
 {
     public function render()
     {
-        return view('livewire.assets.assets-consumable-tracker')->layout('layouts.app');
+        return view('livewire.assets.assets-consumable-tracker');
     }
 }

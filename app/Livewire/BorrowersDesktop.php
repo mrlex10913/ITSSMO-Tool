@@ -298,6 +298,6 @@ class BorrowersDesktop extends Component
 
     public function render()
     {
-        return view('livewire.borrowers-desktop')->layout('layouts.guest');
+        return view('livewire.borrowers-desktop');
     }
 }

@@ -1,0 +1,33 @@
+/* Custom scrollable table styles */
+.scrollable-table-container {
+    max-height: 300px; /* Adjust height as needed */
+    overflow-y: auto;
+    display: block;
+  }
+
+  .scrollable-table-container thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #1e2937; /* Match your dark header color */
+  }
+
+  /* For Firefox */
+  .scrollable-table-container {
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 #1f2937;
+  }
+
+  /* For Chrome, Edge, and Safari */
+  .scrollable-table-container::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollable-table-container::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+
+  .scrollable-table-container::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+    border-radius: 4px;
+  }

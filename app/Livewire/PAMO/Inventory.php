@@ -8,6 +8,6 @@ class Inventory extends Component
 {
     public function render()
     {
-        return view('livewire.p-a-m-o.inventory')->layout('layouts.app');
+        return view('livewire.p-a-m-o.inventory');
     }
 }

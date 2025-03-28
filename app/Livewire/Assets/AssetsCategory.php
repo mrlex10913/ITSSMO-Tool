@@ -99,6 +99,6 @@ class AssetsCategory extends Component
         $categories = AssetCategory::when($this->search, function($query) {
             $query->where('name', 'like', '%' . $this->search . '%');
         })->paginate(5);
-        return view('livewire.assets.assets-category', compact('categories'))->layout('layouts.app');
+        return view('livewire.assets.assets-category', compact('categories'));
     }
 }

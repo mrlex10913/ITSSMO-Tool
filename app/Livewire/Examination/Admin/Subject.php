@@ -41,6 +41,6 @@ class Subject extends Component
     public function render()
     {
         $subjects = QnASubject::orderBy('created_at', 'desc')->get();
-        return view('livewire.examination.admin.subject', compact('subjects'))->layout('layouts.app');
+        return view('livewire.examination.admin.subject', compact('subjects'));
     }
 }

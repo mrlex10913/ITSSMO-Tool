@@ -157,6 +157,6 @@ class Questions extends Component
         // $fetchQuestions = QnAQUestion::with('questionChoices')->get();
         // $test = $this->testId ? $this->viewId($this->testId) : null;
         $selectSubject = QnASubject::orderBy('created_at', 'desc')->get();
-        return view('livewire.examination.admin.questions', compact('selectSubject'))->layout('layouts.app');
+        return view('livewire.examination.admin.questions', compact('selectSubject'));
     }
 }

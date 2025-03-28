@@ -22,6 +22,7 @@ use App\Livewire\Examination\Admin\Questions;
 use App\Livewire\Examination\Admin\Subject;
 use App\Livewire\Examination\Coordinator\Codegenerator;
 use App\Livewire\Manuals\ITSSManual;
+use App\Livewire\PAMO\BarcodeGenerator;
 use App\Livewire\PAMO\Dashboard;
 use App\Livewire\PAMO\Inventory;
 use App\Livewire\PAMO\Transactions;
@@ -72,6 +73,7 @@ Route::middleware([
     Route::get('/pamo/dashboard', Dashboard::class)->name('pamo.dashboard');
     Route::get('/pamo/invetory', Inventory::class)->name('pamo.inventory');
     Route::get('/pamo/transactions', Transactions::class)->name('pamo.transactions');
+    Route::get('/pamo/generateBarcode', BarcodeGenerator::class)->name('pamo.barcode');
 
 
 });

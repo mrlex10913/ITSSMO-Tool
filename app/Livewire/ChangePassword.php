@@ -28,6 +28,6 @@ class ChangePassword extends Component
     }
     public function render()
     {
-        return view('livewire.change-password')->layout('layouts.app');
+        return view('livewire.change-password');
     }
 }

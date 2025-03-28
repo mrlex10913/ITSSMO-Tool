@@ -13,6 +13,6 @@ class AdminControll extends Component
     public function render()
     {
         $this->breadCrumbControlPanel();
-        return view('livewire.control-panel.admin-controll')->layout('layouts.app');
+        return view('livewire.control-panel.admin-controll');
     }
 }
