@@ -74,7 +74,7 @@ Route::middleware([
     Route::get('/pamo/invetory', Inventory::class)->name('pamo.inventory');
     Route::get('/pamo/transactions', Transactions::class)->name('pamo.transactions');
     Route::get('/pamo/generateBarcode', BarcodeGenerator::class)->name('pamo.barcode');
-
+    Route::get('/print-barcode-view', [BarcodeGenerator::class, 'printBarcodes'])->name('print-barcode-view');
 
 });
 Route::get('/password/change', ChangePassword::class)->name('password.change');
