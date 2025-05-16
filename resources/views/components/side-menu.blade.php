@@ -51,10 +51,10 @@
                         Barcode Generator
                     </x-nav-link>
                     <x-nav-link wire:navigate href="{{ route('pamo.inventory') }}" :active="request()->routeIs('pamo.inventory')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
-                        Transaction's
+                        Inventory & Supplies
                     </x-nav-link>
                     <x-nav-link wire:navigate href="{{ route('pamo.transactions') }}" :active="request()->routeIs('pamo.transactions')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
-                        Inventory & Supplies
+                         Transaction's
                     </x-nav-link>
                 </div>
             </div>
