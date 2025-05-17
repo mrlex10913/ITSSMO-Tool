@@ -9,9 +9,11 @@ use App\Models\PAMO\PamoLocations;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Layout('layouts.pamo')]
 class Inventory extends Component
 {
     use WithPagination;

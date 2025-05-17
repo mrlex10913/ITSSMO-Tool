@@ -38,26 +38,16 @@
         </li>
         <h1 class="text-xs text-gray-500">Department</h1>
         <li class="mb-2">
-            <div x-data="{ open: {{ request()->routeIs('pamo.inventory') || request()->routeIs('pamo.transactions') ? 'true' : 'false' }} }" class="relative p-2 rounded">
-                <a href="" @click.prevent="open = !open" :class="{'rounded bg-gray-300 dark:bg-gray-700': open}">
-                    <div class="flex gap-3">
-                        <span class="material-symbols-sharp"> summarize </span>
+           <x-nav-link wire:navigate href="{{ route('pamo.dashboard') }}" :active="request()->routeIs('pamo.*')"
+                    class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                    <div class="flex gap-3 items-center">
+                        <span class="material-symbols-sharp"> inventory </span>
                         <h3>PAMO</h3>
-                        <span class="material-symbols-sharp transform transition-transform duration-300" :class="{'rotate-180': open}"> expand_more </span>
+                       @if(auth()->user()->isDeveloper())
+                            <span class="text-xs bg-blue-500 text-white px-1 rounded">Dev</span>
+                       @endif
                     </div>
-                </a>
-                <div x-show="open" x-collapse class="flex flex-col space-y-2 pl-10 mt-2">
-                    <x-nav-link wire:navigate href="{{ route('pamo.barcode') }}" :active="request()->routeIs('pamo.barcode')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
-                        Barcode Generator
-                    </x-nav-link>
-                    <x-nav-link wire:navigate href="{{ route('pamo.inventory') }}" :active="request()->routeIs('pamo.inventory')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
-                        Inventory & Supplies
-                    </x-nav-link>
-                    <x-nav-link wire:navigate href="{{ route('pamo.transactions') }}" :active="request()->routeIs('pamo.transactions')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
-                         Transaction's
-                    </x-nav-link>
-                </div>
-            </div>
+                </x-nav-link>
         </li>
         <h1 class="text-xs text-gray-500">Transaction's</h1>
         <li class="mb-2">

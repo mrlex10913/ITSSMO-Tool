@@ -68,4 +68,28 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function hasRole($roles): bool
+    {
+        $userRole = $this->role;
+
+        // If no role is set, return false
+        if (!$userRole) {
+            return false;
+        }
+
+        // Convert single role to array for consistent handling
+        $roles = is_array($roles) ? $roles : [$roles];
+
+        // Check if user's role is in the provided roles
+        return in_array($userRole, $roles);
+    }
+     /**
+     * Check if the user is a developer
+     *
+     * @return bool
+     */
+    public function isDeveloper(): bool
+    {
+        return $this->hasRole('Developer') || $this->is_developer;
+    }
 }

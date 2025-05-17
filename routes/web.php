@@ -70,11 +70,11 @@ Route::middleware([
     Route::get('/control-panel/userControl', UsersControl::class)->name('controlPanel.user');
 
     //PAMO
-    Route::get('/pamo/dashboard', Dashboard::class)->name('pamo.dashboard');
-    Route::get('/pamo/invetory', Inventory::class)->name('pamo.inventory');
-    Route::get('/pamo/transactions', Transactions::class)->name('pamo.transactions');
-    Route::get('/pamo/generateBarcode', BarcodeGenerator::class)->name('pamo.barcode');
-    Route::get('/print-barcode-view', [BarcodeGenerator::class, 'printBarcodes'])->name('print-barcode-view');
+    // Route::get('/pamo/dashboard', Dashboard::class)->name('pamo.dashboard');
+    // Route::get('/pamo/invetory', Inventory::class)->name('pamo.inventory');
+    // Route::get('/pamo/transactions', Transactions::class)->name('pamo.transactions');
+    // Route::get('/pamo/generateBarcode', BarcodeGenerator::class)->name('pamo.barcode');
+    // Route::get('/print-barcode-view', [BarcodeGenerator::class, 'printBarcodes'])->name('print-barcode-view');
 
 });
 Route::get('/password/change', ChangePassword::class)->name('password.change');
@@ -82,6 +82,13 @@ Route::get('/password/change', ChangePassword::class)->name('password.change');
 // Route::get('/desktop/borrowers', BorrowersDesktop::class)->name('desktop.borrowers');
 Route::middleware(['ip.filter'])->group(function(){
     Route::get('/desktop/borrowers', BorrowersDesktop::class)->name('desktop.borrowers');
+});
+
+Route::middleware(['auth', 'role:Developer'])->prefix('pamo')->group(function(){
+    Route::get('/dashboard', Dashboard::class)->name('pamo.dashboard');
+    Route::get('/inventory', Inventory::class)->name('pamo.inventory');
+    Route::get('/barcode', BarcodeGenerator::class)->name('pamo.barcode');
+    Route::get('/transactions', Transactions::class)->name('pamo.transactions');
 });
 
 

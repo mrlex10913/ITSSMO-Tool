@@ -5,7 +5,7 @@
             <div class="w-full">
                 <div class="bg-white rounded-lg shadow">
                     <div class="flex justify-between items-center p-4">
-                        <h2 class="text-xl font-semibold text-gray-800">Purchasing and Management Office</h2>
+                        <h2 class="text-xl font-semibold text-gray-800">Inventory & Supplies Overview</h2>
                         <div class="flex space-x-2">
                             <button
                                 type="button"
