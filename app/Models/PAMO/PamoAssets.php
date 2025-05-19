@@ -10,7 +10,7 @@ class PamoAssets extends Model
 {
     use HasFactory;
     protected $fillable = [
-       'po_number',
+        'po_number',
         'property_tag_number',
         'barcode',
         'brand',
@@ -60,6 +60,19 @@ class PamoAssets extends Model
             ->whereNull('assigned_to')
             ->where('status', 'available')
             ->get();
+    }
+    public function getCurrentValue()
+    {
+        if (!$this->purchase_date || !$this->purchase_value) {
+            return 0;
+        }
+
+        $age = now()->diffInYears($this->purchase_date);
+        $depreciationRate = 0.2; // 20% per year (example)
+        $maxDepreciation = 0.8; // Maximum 80% depreciation
+
+        $depreciation = min($age * $depreciationRate, $maxDepreciation);
+        return $this->purchase_value * (1 - $depreciation);
     }
 
 }

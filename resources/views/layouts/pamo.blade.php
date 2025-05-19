@@ -10,8 +10,10 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -58,7 +60,8 @@
                 <!-- Logo -->
                 <div class="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
                     <a href="{{ route('dashboard') }}" class="flex items-center">
-                        <span class="text-xl font-semibold text-gray-800 dark:text-white">PAMO</span>
+
+                        <span class="text-xl font-semibold text-gray-800 dark:text-white"><i class="fas fa-laptop mr-2 text-primary-600"></i> PAMO</span>
                     </a>
                     <button @click="sidebarOpen = false" class="lg:hidden text-gray-500 focus:outline-none">
                         <span class="material-symbols-sharp text-2xl">close</span>
@@ -109,6 +112,13 @@
                             </x-nav-link>
                         </li>
                         <li>
+                            <x-nav-link wire:navigate href="{{ route('pamo.assetTracker') }}" :active="request()->routeIs('pamo.assetTracker')"
+                                    class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <span class="material-symbols-sharp">inventory_2</span>
+                                <span class="ml-3">Asset's Tracker</span>
+                            </x-nav-link>
+                        </li>
+                        <li>
                             <x-nav-link wire:navigate href="{{ route('pamo.barcode') }}" :active="request()->routeIs('pamo.barcode')"
                                     class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
                                 <span class="material-symbols-sharp">qr_code_scanner</span>
@@ -149,11 +159,11 @@
             <div class="flex-1 overflow-y-auto">
                 <main class="py-16 lg:py-6 px-4 lg:px-8">
                     <!-- Page Heading -->
-                    <div class="mb-6 mt-4 lg:mt-0">
+                    {{-- <div class="mb-6 mt-4 lg:mt-0">
                         <h1 class="text-xl lg:text-2xl font-semibold text-gray-800 dark:text-white">
                             @yield('header', 'Purchasing and Asset Management Office (PAMO)')
                         </h1>
-                    </div>
+                    </div> --}}
 
                     <!-- Main Content -->
                     {{ $slot }}

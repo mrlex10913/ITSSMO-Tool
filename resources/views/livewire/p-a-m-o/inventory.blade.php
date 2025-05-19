@@ -43,7 +43,7 @@
         </div>
 
         <!-- Dashboard Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {{-- <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-blue-600 text-white rounded-lg shadow">
                 <div class="p-4">
                     <div class="flex justify-between">
@@ -104,7 +104,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         <!-- Inventory Content -->
         <div class="bg-white rounded-lg shadow">

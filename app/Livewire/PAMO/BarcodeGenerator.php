@@ -6,9 +6,11 @@ use App\Models\PAMO\Barcode;
 use Illuminate\Support\Facades\View;
 use Livewire\Component;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Layout;
 use Picqer\Barcode\BarcodeGeneratorHTML;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 
+#[Layout('layouts.pamo')]
 class BarcodeGenerator extends Component
 {
     public $qty;
