@@ -1,4 +1,37 @@
 <div>
+    @if (session()->has('message'))
+        <div class="mb-4 rounded-md bg-green-50 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">
+                        {{ session('message') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="mb-4 rounded-md bg-red-50 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">
+                        {{ session('error') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
     <div class="p-0">
         <!-- Header and Quick Stats -->
         <div class="mb-6 space-y-4">
@@ -191,25 +224,117 @@
                         <!-- Assets Tab -->
                         <div x-show="activeTab === 'assets'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                             <button
-                                @click="$dispatch('open-modal', 'add-item-modal')"
+                                x-data="{}"
+                                @click="
+                                    $wire.openAddItemModal();
+                                    $nextTick(() => {
+                                        $dispatch('open-modal', 'add-item-modal');
+                                    });
+                                "
                                 class="inline-flex items-center px-4 py-2 my-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:border-blue-800 focus:ring ring-blue-300 disabled:opacity-25 transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                                 </svg>
                                 Add Item
                             </button>
+
+                            <button
+                                x-data="{}"
+                                @click="
+                                    $wire.openBulkAddModal();
+                                    $nextTick(() => {
+                                        $dispatch('open-modal', 'bulk-add-modal');
+                                    });
+                                "
+                                class="inline-flex items-center px-4 py-2 my-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-800 focus:outline-none focus:border-green-800 focus:ring ring-green-300 disabled:opacity-25 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clip-rule="evenodd" />
+                                </svg>
+                                Bulk Add
+                            </button>
+                            <div class="flex items-center space-x-4 mb-4">
+                                <div>
+                                    <input type="checkbox" id="select-all" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" wire:model.live="selectAll">
+                                    <label for="select-all" class="ml-2 text-sm text-gray-700">Select All</label>
+                                </div>
+
+                                <div x-data="{ open: false }" class="relative">
+                                    <button
+                                        @click="open = !open"
+                                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                                        :disabled="$wire.selectedAssets.length === 0"
+                                    >
+                                        Bulk Actions
+                                        <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                    <div
+                                        x-show="open"
+                                        @click.away="open = false"
+                                        class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                        role="menu"
+                                        aria-orientation="vertical"
+                                        aria-labelledby="menu-button"
+                                        tabindex="-1"
+                                        style="display: none;"
+                                    >
+                                        <div class="py-1" role="none">
+                                            <button
+                                            @click="
+                                                $wire.bulkAssignLocation();
+                                                $nextTick(() => {
+                                                $dispatch('open-modal', 'assign-modal');
+                                                });
+                                                open = false;
+                                            "
+                                            class="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Assign to Location</button>
+                                            <button
+                                            @click="
+                                                $wire.bulkAssignUser();
+                                                $nextTick(() => {
+                                                $dispatch('open-modal', 'assign-modal');
+                                                });
+                                                open = false;
+                                            "
+                                             class="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Assign to User</button>
+                                            <button
+                                             @click="
+                                                $wire.bulkTransfer();
+                                                $nextTick(() => {
+                                                $dispatch('open-modal', 'assign-modal');
+                                                });
+                                                open = false;
+                                            "
+                                             class="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Transfer Assets</button>
+                                            <button
+                                            @click="
+                                                $wire.bulkUpdateStatus();
+                                                $nextTick(() => {
+                                                $dispatch('open-modal', 'updatestatus-modal');
+                                                });
+                                                open = false;
+                                            "
+                                            class="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Update Status</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
+                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <span class="sr-only">Select</span>
+                                            </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                P.O Number
+                                                PO Number
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Property Tag
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Item Description
+                                                Description
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Major Category
@@ -231,103 +356,112 @@
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         <!-- Static Asset Data -->
                                         @forelse($assetsList as $asset)
-                                            <tr>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {{ $asset->po_number ?? 'N/A' }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {{ $asset->property_tag_number }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {{ $asset->description }}
-                                                </td>
-                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        @if($asset->category && $asset->category->parent)
-                                                            {{ $asset->category->parent->name }}
-                                                        @else
-                                                            Uncategorized
-                                                        @endif
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {{ $asset->category->name ?? 'Uncategorized' }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    @if($asset->status == 'available')
-                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                            Available
-                                                        </span>
-                                                    @elseif($asset->status == 'in-use')
-                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                            In Use
-                                                        </span>
-                                                    @elseif($asset->status == 'maintenance')
-                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                            Under Repair
-                                                        </span>
-                                                    @elseif($asset->status == 'disposed')
-                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                            Disposed
-                                                        </span>
-                                                    @endif
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    <span>&#8369;</span> {{ number_format($asset->purchase_value, 2) ?? '0.00' }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <div class="flex space-x-2">
-                                                        <button class="text-blue-600 hover:text-blue-900" title="View Details">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                            </svg>
-                                                        </button>
-                                                        <button class="text-indigo-600 hover:text-indigo-900" title="Edit"
-                                                            wire:click="editAsset({{ $asset->id }})">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                        </button>
-                                                        <button class="text-red-600 hover:text-red-900" title="Delete"
-                                                            wire:click="confirmDeleteAsset({{ $asset->id }})">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                                    No assets found. Click "Add Item" to create one.
-                                                </td>
-                                            </tr>
-                                        @endforelse
+                                        <tr>
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <input type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" wire:model="selectedAssets" value="{{ $asset->id }}">
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {{ $asset->po_number ?? 'N/A' }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ $asset->property_tag_number }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ $asset->description ?? 'No description' }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ $asset->category && $asset->category->parent ? $asset->category->parent->name : 'Uncategorized' }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ $asset->category ? $asset->category->name : 'Uncategorized' }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                @if($asset->status == 'available')
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                        Available
+                                                    </span>
+                                                @elseif ($asset->status == 'Working')
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                        Working
+                                                    </span>
+                                                @elseif($asset->status == 'in-use')
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                        In Use
+                                                    </span>
+                                                @elseif($asset->status == 'maintenance')
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                        Under Repair
+                                                    </span>
+                                                @elseif($asset->status == 'disposed')
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                        Disposed
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <span>&#8369;</span> {{ number_format($asset->purchase_value ?? 0, 2) }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <div class="flex space-x-2">
+                                                    <button
+                                                        wire:click="viewAsset({{ $asset->id }})"
+                                                        class="text-blue-600 hover:text-blue-900"
+                                                        title="View Details">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        x-data="{}"
+                                                        @click="
+                                                            $wire.editAsset({{ $asset->id }});
+                                                            $nextTick(() => {
+                                                                $dispatch('open-modal', 'add-item-modal');
+                                                            });
+                                                        "
+                                                        class="text-indigo-600 hover:text-indigo-900"
+                                                        title="Edit Asset">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        wire:click="confirmDeleteAsset({{ $asset->id }})"
+                                                        class="text-red-600 hover:text-red-900"
+                                                        title="Delete Asset">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                No assets found. Click "Add Item" to create one.
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                     </tbody>
                                 </table>
                             </div>
                             <!-- Pagination -->
-                            <div class="py-3">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex-1 flex justify-between sm:hidden">
-                                        {{ $assetsList->links() }}
-                                    </div>
-                                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                                        <div>
-                                            <p class="text-sm text-gray-700">
-                                                Showing
-                                                <span class="font-medium">{{ $assetsList->firstItem() }}</span>
-                                                to
-                                                <span class="font-medium">{{ $assetsList->lastItem() }}</span>
-                                                of
-                                                <span class="font-medium">{{ $assetsList->total() }}</span>
-                                                results
-                                            </p>
-                                        </div>
-                                        <div>
-                                            {{ $assetsList->links() }}
-                                        </div>
-                                    </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Showing
+                                        <span class="font-medium">{{ $assetsList->firstItem() ?: 0 }}</span>
+                                        to
+                                        <span class="font-medium">{{ $assetsList->lastItem() ?: 0 }}</span>
+                                        of
+                                        <span class="font-medium">{{ $assetsList->total() }}</span>
+                                        results
+                                    </p>
+                                </div>
+                                <div>
+                                    {{ $assetsList->links() }}
                                 </div>
                             </div>
 
@@ -465,969 +599,12 @@
             </div>
         </div>
     </div>
-
-    <!-- Add Item Modal -->
-    <div
-        x-data="{ open: false, activeTab: 'asset' }"
-        @open-modal.window="if ($event.detail === 'add-item-modal') { open = true; activeTab = 'asset'; }"
-        @keydown.escape.window="open = false"
-        x-show="open"
-        style="display: none;"
-        class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
-    >
-        <div
-            x-show="open"
-            class="fixed inset-0 transform transition-all"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            @click="open = false"
-        >
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-
-        <div
-            x-show="open"
-            class="mb-6 bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full sm:max-w-2xl sm:mx-auto"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        >
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">
-                    {{ $editingAssetId ? 'Edit Inventory Item' : 'Add Inventory Item' }}
-                </h2>
-
-                <div class="mt-4">
-                    <!-- Tabs -->
-                    <div class="border-b border-gray-200">
-                        <nav class="-mb-px flex space-x-8">
-                            <button
-                                @click="activeTab = 'asset'"
-                                :class="{'border-blue-500 text-blue-600': activeTab === 'asset', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'asset'}"
-                                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                Asset
-                            </button>
-                            <button
-                                @click="activeTab = 'consumable'"
-                                :class="{'border-blue-500 text-blue-600': activeTab === 'consumable', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'consumable'}"
-                                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                Consumable
-                            </button>
-                        </nav>
-                    </div>
-
-                    <!-- Asset Form -->
-                    <div x-show="activeTab === 'asset'" class="mt-4">
-                        <form wire:submit.prevent="saveAsset">
-                            <!-- Required Asset Information -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <x-label for="asset_po_number" value="P.O. Number" />
-                                    <x-input wire:model="asset.po_number" id="asset_po_number" type="text" class="mt-1 block w-full" />
-                                </div>
-                                <div>
-                                    <x-label for="asset_property_tag" value="Property/Tag Number *" />
-                                    <x-input wire:model="asset.property_tag_number" id="asset_property_tag" type="text" class="mt-1 block w-full" />
-                                    @error('asset.property_tag_number') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-
-                            <!-- Device Information -->
-                            <div class="mb-4">
-                                <div class="mb-2">
-                                    <h3 class="text-sm font-medium text-gray-700">Device Information</h3>
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <x-label for="asset_brand" value="Brand" />
-                                        <x-input wire:model="asset.brand" id="asset_brand" type="text" class="mt-1 block w-full" />
-                                    </div>
-                                    <div>
-                                        <x-label for="asset_model" value="Model" />
-                                        <x-input wire:model="asset.model" id="asset_model" type="text" class="mt-1 block w-full" />
-                                    </div>
-                                    <div>
-                                        <x-label for="asset_serial" value="Serial Number" />
-                                        <x-input wire:model="asset.serial_number" id="asset_serial" type="text" class="mt-1 block w-full" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Identification and Status -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <x-label for="asset_barcode" value="Barcode/Inventory ID" />
-                                    <x-input wire:model="asset.barcode" id="asset_barcode" type="text" class="mt-1 block w-full" />
-                                </div>
-                                <div>
-                                    <x-label for="asset_status" value="Status *" />
-                                    <select wire:model="asset.status" id="asset_status" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                        <option value="">Select Status</option>
-                                        <option value="available">Available</option>
-                                        <option value="in-use">In Use</option>
-                                        <option value="maintenance">Under Repair</option>
-                                        <option value="disposed">Disposed</option>
-                                    </select>
-                                    @error('asset.status') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-
-                            <!-- Categorization -->
-                            <div class="mb-4">
-                                <x-label value="Category *" />
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <select
-                                            wire:model.live="asset.major_category_id"
-                                            id="asset_major_category"
-                                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                            <option value="">Select Major Category</option>
-                                            @foreach($majorCategories as $major)
-                                                <option value="{{ $major->id }}">{{ $major->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('asset.major_category_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                                    </div>
-                                    <div>
-                                        <select
-                                            wire:model="asset.category_id"
-                                            id="asset_category"
-                                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                            @if(!$asset['major_category_id']) disabled @endif
-                                        >
-                                            <option value="">Select Minor Category</option>
-                                            @foreach($minorCategories as $minor)
-                                                <option value="{{ $minor->id }}">{{ $minor->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('asset.category_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Financial Information -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <x-label for="asset_purchase_date" value="Purchase Date" />
-                                    <x-input wire:model="asset.purchase_date" id="asset_purchase_date" type="date" class="mt-1 block w-full" />
-                                </div>
-                                <div>
-                                    <x-label for="asset_value" value="Purchase Value" />
-                                    <div class="mt-1 relative rounded-md shadow-sm">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="text-gray-500 sm:text-sm">&#8369;</span>
-                                        </div>
-                                        <x-input wire:model="asset.purchase_value" id="asset_value" type="number" step="0.01" class="block w-full pl-7" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Description -->
-                            <div class="mb-4">
-                                <x-label for="asset_description" value="Description" />
-                                <textarea wire:model="asset.description" id="asset_description" rows="3" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"></textarea>
-                            </div>
-
-                            <div class="mt-6 flex justify-end">
-                                <button
-                                    type="button"
-                                    @click="open = false"
-                                    class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                >
-                                    Cancel
-                                </button>
-
-                                <button
-                                    type="submit"
-                                    wire:loading.attr="disabled"
-                                    class="ml-3 inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-25"
-                                >
-                                    <span wire:loading.remove wire:target="saveAsset">{{ $editingAssetId ? 'Update' : 'Save' }} Item</span>
-                                    <span wire:loading wire:target="saveAsset">
-                                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Processing...
-                                    </span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Consumable Form (simplified) -->
-                    <div x-show="activeTab === 'consumable'" class="mt-4">
-                        <form wire:submit.prevent="saveConsumable">
-                            <!-- Your consumable form fields here -->
-                            <p class="py-4 text-center text-gray-500">Consumable form implementation in progress</p>
-
-                            <div class="mt-6 flex justify-end">
-                                <button
-                                    type="button"
-                                    @click="open = false"
-                                    class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Asset Deletion Confirmation Modal -->
-    <div
-        x-data="{ open: @entangle('confirmingAssetDeletion') }"
-        x-show="open"
-        style="display: none;"
-        class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
-    >
-        <div
-            x-show="open"
-            class="fixed inset-0 transform transition-all"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            @click="open = false"
-        >
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-
-        <div
-            x-show="open"
-            class="mb-6 bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full sm:max-w-lg sm:mx-auto"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        >
-            <div class="p-6">
-                <h3 class="text-lg font-medium text-gray-900">Confirm Asset Deletion</h3>
-                <p class="mt-2 text-sm text-gray-500">
-                    Are you sure you want to delete this asset? This action cannot be undone.
-                </p>
-                <div class="mt-6 flex justify-end space-x-3">
-                    <button
-                        type="button"
-                        wire:click="$set('confirmingAssetDeletion', false)"
-                        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        wire:click="deleteAsset"
-                        class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                    >
-                        Delete Asset
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Manage Categories Modal -->
-   <div
-    x-data="{ open: false, mode: 'list', editingCategory: null }"
-    @open-modal.window="if ($event.detail === 'manage-categories-modal') { open = true; mode = 'list'; }"
-    @keydown.escape.window="open = false"
-    x-show="open"
-    style="display: none;"
-    class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
-    >
-        <div
-            x-show="open"
-            class="fixed inset-0 transform transition-all"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            @click="open = false"
-        >
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-
-        <div
-            x-show="open"
-            class="mb-6 bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full sm:max-w-3xl sm:mx-auto"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        >
-
-            <div class="p-6">
-                <!-- Header -->
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-medium text-gray-900" x-text="mode === 'list' ? 'Manage Categories' : (mode === 'add' ? 'Add Category' : 'Edit Category')"></h2>
-                    <button @click="open = false" class="text-gray-400 hover:text-gray-500">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Flash messages -->
-                @if (session()->has('message'))
-                    <div class="rounded-md bg-green-50 p-4 mb-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-green-800">
-                                    {{ session('message') }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                @if (session()->has('error'))
-                    <div class="rounded-md bg-red-50 p-4 mb-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-red-800">
-                                    {{ session('error') }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- List Mode -->
-                <div x-show="mode === 'list'" x-data="{ expandedCategories: {} }">
-                    <div class="flex justify-end mb-4">
-                        <button
-                            @click="mode = 'add'; editingCategory = null"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                            </svg>
-                            Add New Category
-                        </button>
-                    </div>
-
-                    <!-- Categories Table -->
-                    <div class="mt-2 overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Category Name
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Type
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Parent Category
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <!-- Major Categories -->
-                                @forelse($categories->where('type', 'major') as $majorCategory)
-                                    <!-- Major category row -->
-                                    <tr class="bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <div class="flex items-center">
-                                                <button @click="expandedCategories[{{ $majorCategory->id }}] = !expandedCategories[{{ $majorCategory->id }}]"
-                                                        class="mr-2 text-gray-500 hover:text-gray-700 focus:outline-none">
-                                                    <svg x-show="!expandedCategories[{{ $majorCategory->id }}]" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                                    </svg>
-                                                    <svg x-show="expandedCategories[{{ $majorCategory->id }}]" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" />
-                                                    </svg>
-                                                </button>
-                                                <span>{{ $majorCategory->name }}</span>
-                                                <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-200 text-gray-800">
-                                                    {{ $categories->where('type', 'minor')->where('parent_id', $majorCategory->id)->count() }}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                Major
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            -
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button
-                                                @click="mode = 'edit'; editingCategory = {
-                                                    id: {{ $majorCategory->id }},
-                                                    name: '{{ $majorCategory->name }}',
-                                                    type: 'major',
-                                                    parent_id: null,
-                                                    description: '{{ $majorCategory->description ?? '' }}'
-                                                }"
-                                                class="text-indigo-600 hover:text-indigo-900 mr-3"
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                @click="$wire.confirmDeleteCategory({{ $majorCategory->id }})"
-                                                class="text-red-600 hover:text-red-900"
-                                            >
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-
-                                    <!-- Minor categories for this major category -->
-                                    @foreach($categories->where('type', 'minor')->where('parent_id', $majorCategory->id) as $minorCategory)
-                                        <tr
-                                            x-show="expandedCategories[{{ $majorCategory->id }}]"
-                                            x-transition:enter="transition ease-out duration-200"
-                                            x-transition:enter-start="opacity-0 transform -translate-y-2"
-                                            x-transition:enter-end="opacity-100 transform translate-y-0"
-                                            x-transition:leave="transition ease-in duration-150"
-                                            x-transition:leave-start="opacity-100 transform translate-y-0"
-                                            x-transition:leave-end="opacity-0 transform -translate-y-2"
-                                            x-cloak
-                                            class="bg-gray-100">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 pl-10">
-                                                <span class="ml-5">{{ $minorCategory->name }}</span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Minor
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $majorCategory->name }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    @click="mode = 'edit'; editingCategory = {
-                                                        id: {{ $minorCategory->id }},
-                                                        name: '{{ $minorCategory->name }}',
-                                                        type: 'minor',
-                                                        parent_id: {{ $minorCategory->parent_id }},
-                                                        description: '{{ $minorCategory->description ?? '' }}'
-                                                    }"
-                                                    class="text-indigo-600 hover:text-indigo-900 mr-3"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    @click="$wire.confirmDeleteCategory({{ $minorCategory->id }})"
-                                                    class="text-red-600 hover:text-red-900"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                            No categories found. Click "Add New Category" to create one.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Add/Edit Mode -->
-                <div x-show="mode === 'add' || mode === 'edit'">
-                    <form wire:submit.prevent="saveCategory">
-                        <div class="space-y-4">
-                            <div>
-                                <x-label for="category_name" value="Category Name" />
-                                <x-input
-                                    id="category_name"
-                                    type="text"
-                                    class="mt-1 block w-full"
-                                    x-bind:value="editingCategory ? editingCategory.name : ''"
-                                    wire:model="category.name"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <x-label for="category_type" value="Category Type" />
-                                <select
-                                    id="category_type"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                    x-on:change="editingCategory ? editingCategory.type = $event.target.value : null"
-                                    wire:model="category.type"
-                                >
-                                    <option value="major">Major Category</option>
-                                    <option value="minor">Minor Category</option>
-                                </select>
-                                <p class="mt-1 text-sm text-gray-500">Major categories are top-level categories. Minor categories belong to a major category.</p>
-                            </div>
-
-                            <div x-show="!editingCategory || editingCategory.type === 'minor'">
-                                <x-label for="parent_category" value="Parent Category" />
-                                <select
-                                    id="parent_category"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                    x-on:change="editingCategory ? editingCategory.parent_id = $event.target.value : null"
-                                    wire:model="category.parent_id"
-                                    x-bind:disabled="editingCategory && editingCategory.type === 'major'"
-                                >
-                                    <option value="">Select Parent Category</option>
-                                        @foreach($majorCategories as $major)
-                                            <option value="{{ $major->id }}">{{ $major->name }}</option>
-                                        @endforeach
-                                </select>
-                            </div>
-
-                            <div>
-                                <x-label for="category_description" value="Description (Optional)" />
-                                <textarea
-                                    id="category_description"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                    rows="3"
-                                    x-bind:value="editingCategory ? editingCategory.description : ''"
-                                    wire:model="category.description"
-                                ></textarea>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 flex justify-end space-x-3">
-                            <button
-                                type="button"
-                                @click="mode = 'list'"
-                                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="button"
-                                @click="$wire.saveCategory(editingCategory ? editingCategory.id : null); mode = 'list';"
-                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition"
-                            >
-                                Save Category
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Category Deletion Confirmation Modal -->
-    <div
-    x-data="{ open: @entangle('confirmingCategoryDeletion') }"
-    x-show="open"
-    style="display: none;"
-    class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
-    >
-        <div
-            x-show="open"
-            class="fixed inset-0 transform transition-all"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            @click="open = false"
-        >
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-
-        <div
-            x-show="open"
-            class="mb-6 bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full sm:max-w-lg sm:mx-auto"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        >
-            <div class="p-6">
-                <h3 class="text-lg font-medium text-gray-900">Confirm Category Deletion</h3>
-                <p class="mt-2 text-sm text-gray-500">
-                    Are you sure you want to delete this category? This action cannot be undone.
-                </p>
-                <div class="mt-6 flex justify-end space-x-3">
-                    <button
-                        type="button"
-                        wire:click="$set('confirmingCategoryDeletion', false)"
-                        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        wire:click="deleteCategory"
-                        class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-25 transition"
-                    >
-                        Delete Category
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Manage Locations Modal -->
-    <div
-        x-data="{ open: false, mode: 'list', editingLocation: null }"
-        @open-modal.window="if ($event.detail === 'manage-locations-modal') { open = true; mode = 'list'; }"
-        @keydown.escape.window="open = false"
-        x-show="open"
-        style="display: none;"
-        class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
-    >
-        <div
-            x-show="open"
-            class="fixed inset-0 transform transition-all"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            @click="open = false"
-        >
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-
-        <div
-            x-show="open"
-            class="mb-6 bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full sm:max-w-3xl sm:mx-auto"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        >
-            <div class="p-6">
-                <!-- Header -->
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-medium text-gray-900" x-text="mode === 'list' ? 'Manage Locations' : (mode === 'add' ? 'Add Location' : 'Edit Location')"></h2>
-                    <button @click="open = false" class="text-gray-400 hover:text-gray-500">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Flash messages -->
-                @if (session()->has('message'))
-                    <div class="rounded-md bg-green-50 p-4 mb-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-green-800">
-                                    {{ session('message') }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                @if (session()->has('error'))
-                    <div class="rounded-md bg-red-50 p-4 mb-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-red-800">
-                                    {{ session('error') }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- List Mode -->
-                <div x-show="mode === 'list'">
-                    <div class="flex justify-end mb-4">
-                        <button
-                            @click="mode = 'add'; editingLocation = null"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                            </svg>
-                            Add New Location
-                        </button>
-                    </div>
-
-                    <!-- Locations Table -->
-                    <div class="mt-2 overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Location Name
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Code
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Type
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($locationsList as $loc)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {{ $loc->name }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $loc->code ?? 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                {{ ucfirst($loc->type) }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            @if($loc->is_active)
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Active
-                                                </span>
-                                            @else
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                    Inactive
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button
-                                                @click="mode = 'edit'; editingLocation = {
-                                                    id: {{ $loc->id }},
-                                                    name: '{{ $loc->name }}',
-                                                    code: '{{ $loc->code ?? '' }}',
-                                                    address: '{{ $loc->address ?? '' }}',
-                                                    type: '{{ $loc->type }}',
-                                                    description: '{{ $loc->description ?? '' }}',
-                                                    is_active: {{ $loc->is_active ? 'true' : 'false' }}
-                                                }"
-                                                class="text-green-600 hover:text-green-900 mr-3"
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                @click="$wire.confirmDeleteLocation({{ $loc->id }})"
-                                                class="text-red-600 hover:text-red-900"
-                                            >
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                            No locations found. Click "Add New Location" to create one.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Add/Edit Mode -->
-                <div x-show="mode === 'add' || mode === 'edit'">
-                    <form wire:submit.prevent="saveLocation">
-                        <div class="space-y-4">
-                            <div>
-                                <x-label for="location_name" value="Location Name" />
-                                <x-input
-                                    id="location_name"
-                                    type="text"
-                                    class="mt-1 block w-full"
-                                    x-bind:value="editingLocation ? editingLocation.name : ''"
-                                    wire:model="location.name"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <x-label for="location_code" value="Location Code (Optional)" />
-                                <x-input
-                                    id="location_code"
-                                    type="text"
-                                    class="mt-1 block w-full"
-                                    x-bind:value="editingLocation ? editingLocation.code : ''"
-                                    wire:model="location.code"
-                                />
-                            </div>
-
-                            <div>
-                                <x-label for="location_type" value="Location Type" />
-                                <select
-                                    id="location_type"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                    x-on:change="editingLocation ? editingLocation.type = $event.target.value : null"
-                                    wire:model="location.type"
-                                >
-                                    <option value="office">Office</option>
-                                    <option value="storage">Storage</option>
-                                    <option value="warehouse">Warehouse</option>
-                                    <option value="remote">Remote Site</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <x-label for="location_address" value="Address (Optional)" />
-                                <x-input
-                                    id="location_address"
-                                    type="text"
-                                    class="mt-1 block w-full"
-                                    x-bind:value="editingLocation ? editingLocation.address : ''"
-                                    wire:model="location.address"
-                                />
-                            </div>
-
-                            <div>
-                                <x-label for="location_description" value="Description (Optional)" />
-                                <textarea
-                                    id="location_description"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                    rows="3"
-                                    x-bind:value="editingLocation ? editingLocation.description : ''"
-                                    wire:model="location.description"
-                                ></textarea>
-                            </div>
-
-                            <div class="flex items-center">
-                                <input
-                                    id="location_active"
-                                    type="checkbox"
-                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                    x-bind:checked="editingLocation ? editingLocation.is_active : true"
-                                    wire:model="location.is_active"
-                                />
-                                <label for="location_active" class="ml-2 block text-sm text-gray-900">
-                                    Active
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 flex justify-end space-x-3">
-                            <button
-                                type="button"
-                                @click="mode = 'list'"
-                                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="button"
-                                @click="$wire.saveLocation(editingLocation ? editingLocation.id : null); mode = 'list';"
-                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-25 transition"
-                            >
-                                Save Location
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Location Deletion Confirmation Modal -->
-    <div
-        x-data="{ open: @entangle('confirmingLocationDeletion') }"
-        x-show="open"
-        style="display: none;"
-        class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
-    >
-        <div
-            x-show="open"
-            class="fixed inset-0 transform transition-all"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            @click="open = false"
-        >
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-
-        <div
-            x-show="open"
-            class="mb-6 bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full sm:max-w-lg sm:mx-auto"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        >
-            <div class="p-6">
-                <h3 class="text-lg font-medium text-gray-900">Confirm Location Deletion</h3>
-                <p class="mt-2 text-sm text-gray-500">
-                    Are you sure you want to delete this location? This action cannot be undone.
-                </p>
-                <div class="mt-6 flex justify-end space-x-3">
-                    <button
-                        type="button"
-                        wire:click="$set('confirmingLocationDeletion', false)"
-                        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        wire:click="deleteLocation"
-                        class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                    >
-                        Delete Location
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('livewire.p-a-m-o.partials.inventory-detail-modal')
+    @include('livewire.p-a-m-o.partials.inventory-additem-modal')
+    @include('livewire.p-a-m-o.partials.inventory-delete-modal')
+    @include('livewire.p-a-m-o.partials.inventory-managecategories-modal')
+    @include('livewire.p-a-m-o.partials.inventory-managelocations-modal')
+    @include('livewire.p-a-m-o.partials.inventory-updatestatus-modal')
+    @include('livewire.p-a-m-o.partials.inventory-assign-modal')
+    @include('livewire.p-a-m-o.partials.inventory-bulkadd-modal')
 </div>

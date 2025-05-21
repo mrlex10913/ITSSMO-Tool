@@ -40,25 +40,25 @@
             <div class="p-4">
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex space-x-2">
-                        <select wire:model="categoryId" class="text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                        <select wire:model.live="categoryId" class="text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                             <option value="">All Categories</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                             @endforeach
                         </select>
-                        <select wire:model="department" class="text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                        <select wire:model.live="department" class="text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                             <option value="">All Departments</option>
                             @foreach($departments as $dept)
                                 <option value="{{ $dept }}">{{ $dept }}</option>
                             @endforeach
                         </select>
-                        <select wire:model="locationId" class="text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                        <select wire:model.live="locationId" class="text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                             <option value="">All Locations</option>
                             @foreach($locations as $loc)
                                 <option value="{{ $loc->id }}">{{ $loc->name }}</option>
                             @endforeach
                         </select>
-                        <select wire:model="status" class="text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                        <select wire:model.live="status" class="text-xs border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                             <option value="">All Statuses</option>
                             @foreach($statuses as $stat)
                                 <option value="{{ $stat }}">{{ ucfirst($stat) }}</option>

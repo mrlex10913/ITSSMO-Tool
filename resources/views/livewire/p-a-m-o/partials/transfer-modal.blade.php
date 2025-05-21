@@ -60,11 +60,19 @@
                         <!-- From Location -->
                         <div class="mb-4">
                             <label for="fromLocation" class="block text-sm font-medium text-gray-700">Current Location</label>
-                            <select id="fromLocation" wire:model="fromLocationId" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm" disabled>
-                                @foreach($locations as $location)
-                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
-                                @endforeach
-                            </select>
+
+                            @if($selectedAsset && $selectedAsset->location_id)
+                                <select id="fromLocation" wire:model="fromLocationId" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm" disabled>
+                                    @foreach($locations as $location)
+                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <div class="mt-1 block w-full p-2 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-500">
+                                    No assigned location
+                                </div>
+                                <input type="hidden" wire:model="fromLocationId" value="">
+                            @endif
                         </div>
 
                         <!-- To Location -->
