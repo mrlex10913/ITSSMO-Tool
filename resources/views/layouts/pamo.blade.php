@@ -13,7 +13,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script> --}}
+    {{-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -125,20 +128,22 @@
                                 <span class="ml-3">Barcode Generator</span>
                             </x-nav-link>
                         </li>
-                        <li>
+                        {{-- <li>
                             <x-nav-link wire:navigate href="{{ route('pamo.transactions') }}" :active="request()->routeIs('pamo.transactions')"
                                     class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
                                 <span class="material-symbols-sharp">swap_horiz</span>
                                 <span class="ml-3">Transactions</span>
                             </x-nav-link>
-                        </li>
-                        <li>
-                            <x-nav-link wire:navigate href="{{ route('dashboard') }}"
-                                    class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <span class="material-symbols-sharp">arrow_back</span>
-                                <span class="ml-3">Back to Main System</span>
-                            </x-nav-link>
-                        </li>
+                        </li> --}}
+                        @if(strtolower(Auth::user()->role) === 'administrator' || strtolower(Auth::user()->role) === 'developer')
+                            <li>
+                                <x-nav-link wire:navigate href="{{ route('dashboard') }}"
+                                        class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <span class="material-symbols-sharp">arrow_back</span>
+                                    <span class="ml-3">Back to Main System</span>
+                                </x-nav-link>
+                            </li>
+                        @endif
                     </ul>
                 </nav>
 
@@ -250,6 +255,8 @@
     </div>
 
     @stack('modals')
+    @stack('scripts')
+    {{-- <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script> --}}
     @livewireScripts
 </body>
 </html>

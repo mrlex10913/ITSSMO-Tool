@@ -5,7 +5,17 @@
             <h2 class="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
             <p class="text-gray-600">Asset statistics, trends, and recent movements</p>
         </div>
-
+        {{-- <div wire:init="loadDashboardData" class="min-h-screen">
+            <div wire:loading.flex wire:target="loadDashboardData" class="items-center justify-center min-h-[400px]">
+                <div class="text-center">
+                    <svg class="inline w-8 h-8 mr-2 text-gray-200 animate-spin fill-primary-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+                        <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+                    </svg>
+                    <p class="mt-2 text-gray-500">Loading dashboard data...</p>
+                </div>
+            </div>
+        </div> --}}
         <!-- Date Range Filter -->
         <div class="bg-white rounded-lg shadow p-4 mb-6">
             <div class="flex flex-wrap items-center justify-between">
@@ -44,7 +54,7 @@
                 </div>
                 <div class="mt-4">
                     <div class="flex items-center text-sm">
-                        <span class="text-gray-500">{{ $valueData['totalValue'] ? '$'.number_format($valueData['totalValue'], 2) : '$0.00' }} total value</span>
+                        <span class="text-gray-500">{{ $valueData['totalValue'] ? '₱'.number_format($valueData['totalValue'], 2) : '₱0.00' }} total value</span>
                     </div>
                 </div>
             </div>
@@ -118,7 +128,9 @@
                     </div>
                 </div>
                 <div class="p-4">
-                    <canvas id="acquisitionChart" height="250"></canvas>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="acquisitionChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -369,15 +381,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div class="bg-gray-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Total Asset Value</p>
-                        <p class="text-xl font-semibold text-gray-800">${{ number_format($valueData['totalValue'] ?? 0, 2) }}</p>
+                        <p class="text-xl font-semibold text-gray-800">₱{{ number_format($valueData['totalValue'] ?? 0, 2) }}</p>
                     </div>
                     <div class="bg-gray-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Current Book Value</p>
-                        <p class="text-xl font-semibold text-gray-800">${{ number_format($valueData['currentValue'] ?? 0, 2) }}</p>
+                        <p class="text-xl font-semibold text-gray-800">₱{{ number_format($valueData['currentValue'] ?? 0, 2) }}</p>
                     </div>
                     <div class="bg-gray-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Total Depreciation</p>
-                        <p class="text-xl font-semibold text-gray-800">${{ number_format($valueData['depreciation'] ?? 0, 2) }}</p>
+                        <p class="text-xl font-semibold text-gray-800">₱{{ number_format($valueData['depreciation'] ?? 0, 2) }}</p>
                         <div class="flex items-center text-xs mt-1">
                             <span class="text-gray-500">{{ $valueData['depreciationRate'] ?? 0 }}% of total value</span>
                         </div>
@@ -392,416 +404,448 @@
     </main>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        initCharts();
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create empty charts first
+            initEmptyCharts();
 
-        // Listen for Livewire updates to refresh charts
-        window.addEventListener('dashboardDataUpdated', function() {
-            updateCharts();
+            // Listen for data updates
+            Livewire.on('dashboardDataUpdated', function() {
+                console.log('Dashboard data updated event received');
+                updateAllCharts();
+            });
         });
-    });
 
-    let acquisitionChart, statusChart, departmentChart, typeChart, maintenanceChart, transferTrendChart, depreciationChart;
+        let acquisitionChart, statusChart, departmentChart, typeChart,
+        maintenanceChart, transferTrendChart, depreciationChart;
 
-    function initCharts() {
-        // Initialize all charts with placeholder data
-        createAcquisitionChart();
-        createStatusChart();
-        createDepartmentChart();
-        createTypeChart();
-        createMaintenanceChart();
-        createTransferTrendChart();
-        createDepreciationChart();
-
-        // Get real data
-        updateCharts();
-    }
-
-    function updateCharts() {
-        updateAcquisitionChart();
-        updateStatusChart();
-        updateDepartmentChart();
-        updateTypeChart();
-        updateMaintenanceChart();
-        updateTransferTrendChart();
-        updateDepreciationChart();
-    }
-
-    function createAcquisitionChart() {
-        const ctx = document.getElementById('acquisitionChart').getContext('2d');
-        acquisitionChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'New Assets',
-                    data: [],
-                    borderColor: '#0ea5e9',
-                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                    tension: 0.3,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function updateAcquisitionChart() {
-        if (acquisitionChart) {
-            // Get data from Livewire component
-            const data = @this.acquisitionTrend;
-
-            if (data && data.labels && data.data) {
-                acquisitionChart.data.labels = data.labels;
-                acquisitionChart.data.datasets[0].data = data.data;
-                acquisitionChart.update();
-            }
+        function initEmptyCharts() {
+            console.log('Creating empty chart containers');
+            createAcquisitionChart();
+            createStatusChart();
+            createDepartmentChart();
+            createTypeChart();
+            createMaintenanceChart();
+            createTransferTrendChart();
+            createDepreciationChart();
         }
-    }
 
-    function createStatusChart() {
-        const ctx = document.getElementById('statusChart').getContext('2d');
-        statusChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                    backgroundColor: [
-                        '#22c55e', // green
-                        '#eab308', // yellow
-                        '#ef4444', // red
-                        '#d1d5db'  // gray
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                cutout: '70%'
-            }
-        });
-    }
-
-    function updateStatusChart() {
-        if (statusChart) {
-            const data = @this.statusDistribution;
-
-            if (data && data.labels && data.data) {
-                // Add custom colors based on status
-                const colors = data.labels.map(status => {
-                    const label = status.toLowerCase();
-                    if (label.includes('active')) return '#22c55e';
-                    if (label.includes('transfer')) return '#eab308';
-                    if (label.includes('maintenance')) return '#ef4444';
-                    return '#d1d5db';
-                });
-
-                statusChart.data.labels = data.labels;
-                statusChart.data.datasets[0].data = data.data;
-                statusChart.data.datasets[0].backgroundColor = colors;
-                statusChart.update();
-            }
+        function updateAllCharts() {
+            console.log('Updating all charts with new data');
+            // Add a slight delay to ensure data is fully processed
+            setTimeout(() => {
+                updateAcquisitionChart();
+                updateStatusChart();
+                updateDepartmentChart();
+                updateTypeChart();
+                updateMaintenanceChart();
+                updateTransferTrendChart();
+                updateDepreciationChart();
+            }, 300);
         }
-    }
 
-    function createDepartmentChart() {
-        const ctx = document.getElementById('departmentChart').getContext('2d');
-        departmentChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Number of Assets',
-                    data: [],
-                    backgroundColor: '#0ea5e9',
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
-                }
-            }
-        });
-    }
+        function initCharts() {
+            console.log('Initializing charts');
+            createAcquisitionChart();
+            createStatusChart();
+            createDepartmentChart();
+            createTypeChart();
+            createMaintenanceChart();
+            createTransferTrendChart();
+            createDepreciationChart();
 
-    function updateDepartmentChart() {
-        if (departmentChart) {
-            const data = @this.departmentDistribution;
-
-            if (data && data.labels && data.data) {
-                departmentChart.data.labels = data.labels;
-                departmentChart.data.datasets[0].data = data.data;
-                departmentChart.update();
-            }
+            // Immediately update with data
+            setTimeout(() => {
+                updateCharts();
+            }, 100);
         }
-    }
 
-    function createTypeChart() {
-        const ctx = document.getElementById('typeChart').getContext('2d');
-        typeChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                    backgroundColor: [
-                        '#0ea5e9', // primary
-                        '#7dd3fc', // primary light
-                        '#22c55e', // green
-                        '#eab308', // yellow
-                        '#a855f7'  // purple
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
-    }
-
-    function updateTypeChart() {
-        if (typeChart) {
-            const data = @this.categoryDistribution;
-
-            if (data && data.labels && data.data) {
-                // Limit to first 5 categories for better visualization
-                const labels = data.labels.slice(0, 5);
-                const chartData = data.data.slice(0, 5);
-
-                // Add "Other" category if there are more than 5
-                if (data.labels.length > 5) {
-                    labels.push('Other');
-                    const otherSum = data.data.slice(5).reduce((sum, val) => sum + val, 0);
-                    chartData.push(otherSum);
-                }
-
-                typeChart.data.labels = labels;
-                typeChart.data.datasets[0].data = chartData;
-                typeChart.update();
-            }
+        function updateCharts() {
+            updateAcquisitionChart();
+            updateStatusChart();
+            updateDepartmentChart();
+            updateTypeChart();
+            updateMaintenanceChart();
+            updateTransferTrendChart();
+            updateDepreciationChart();
         }
-    }
 
-    function createMaintenanceChart() {
-        const ctx = document.getElementById('maintenanceChart').getContext('2d');
-        maintenanceChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Maintenance Events',
-                    data: [],
-                    backgroundColor: '#ef4444',
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function updateMaintenanceChart() {
-        if (maintenanceChart) {
-            const data = @this.maintenanceStats;
-
-            if (data && data.monthly && data.monthly.labels && data.monthly.data) {
-                maintenanceChart.data.labels = data.monthly.labels;
-                maintenanceChart.data.datasets[0].data = data.monthly.data;
-                maintenanceChart.update();
-            }
-        }
-    }
-
-    function createTransferTrendChart() {
-        const ctx = document.getElementById('transferTrendChart').getContext('2d');
-        transferTrendChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Transfers',
-                    data: [],
-                    borderColor: '#0ea5e9',
-                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                    tension: 0.3,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function updateTransferTrendChart() {
-        if (transferTrendChart) {
-            const data = @this.transferStats;
-
-            if (data && data.weekly && data.weekly.labels && data.weekly.data) {
-                transferTrendChart.data.labels = data.weekly.labels;
-                transferTrendChart.data.datasets[0].data = data.weekly.data;
-                transferTrendChart.update();
-            }
-        }
-    }
-
-    function createDepreciationChart() {
-        const ctx = document.getElementById('depreciationChart').getContext('2d');
-        depreciationChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [
-                    {
-                        label: 'Asset Value',
+        function createAcquisitionChart() {
+            const ctx = document.getElementById('acquisitionChart').getContext('2d');
+            acquisitionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'New Assets',
                         data: [],
                         borderColor: '#0ea5e9',
-                        backgroundColor: 'transparent',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
                         tension: 0.3,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Book Value',
-                        data: [],
-                        borderColor: '#22c55e',
-                        backgroundColor: 'transparent',
-                        tension: 0.3,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Depreciation',
-                        data: [],
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        tension: 0.3,
-                        fill: true,
-                        yAxisID: 'y1'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
+                        fill: true
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Value ($)'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
                         }
                     },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Depreciation ($)'
-                        },
-                        grid: {
-                            drawOnChartArea: false,
-                        },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
                     }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    function updateDepreciationChart() {
-        if (depreciationChart) {
-            const data = @this.valueData;
+        function updateAcquisitionChart() {
+            if (!acquisitionChart) return;
 
-            if (data && data.yearly && data.yearly.labels) {
-                depreciationChart.data.labels = data.yearly.labels;
-                depreciationChart.data.datasets[0].data = data.yearly.purchaseValues;
-                depreciationChart.data.datasets[1].data = data.yearly.bookValues;
-                depreciationChart.data.datasets[2].data = data.yearly.depreciations;
-                depreciationChart.update();
+            const data = @js($acquisitionTrend);
+            console.log('Updating acquisition chart with:', data);
+
+            if (data && Array.isArray(data.labels) && Array.isArray(data.data)) {
+                acquisitionChart.data.labels = data.labels;
+                acquisitionChart.data.datasets[0].data = data.data;
+                acquisitionChart.update('none'); // Use 'none' for better performance
+            } else {
+                console.warn('Invalid acquisition data structure:', data);
             }
         }
-    }
+
+        function createStatusChart() {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#22c55e', // green
+                            '#eab308', // yellow
+                            '#ef4444', // red
+                            '#d1d5db'  // gray
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function updateStatusChart() {
+            if (statusChart) {
+                const data = @this.statusDistribution;
+
+                if (data && data.labels && data.data) {
+                    // Add custom colors based on status
+                    const colors = data.labels.map(status => {
+                        const label = status.toLowerCase();
+                        if (label.includes('active')) return '#22c55e';
+                        if (label.includes('transfer')) return '#eab308';
+                        if (label.includes('maintenance')) return '#ef4444';
+                        return '#d1d5db';
+                    });
+
+                    statusChart.data.labels = data.labels;
+                    statusChart.data.datasets[0].data = data.data;
+                    statusChart.data.datasets[0].backgroundColor = colors;
+                    statusChart.update();
+                }
+            }
+        }
+
+        function createDepartmentChart() {
+            const ctx = document.getElementById('departmentChart').getContext('2d');
+            departmentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Number of Assets',
+                        data: [],
+                        backgroundColor: '#0ea5e9',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDepartmentChart() {
+            if (departmentChart) {
+                const data = @this.departmentDistribution;
+
+                if (data && data.labels && data.data) {
+                    departmentChart.data.labels = data.labels;
+                    departmentChart.data.datasets[0].data = data.data;
+                    departmentChart.update();
+                }
+            }
+        }
+
+        function createTypeChart() {
+            const ctx = document.getElementById('typeChart').getContext('2d');
+            typeChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#0ea5e9', // primary
+                            '#7dd3fc', // primary light
+                            '#22c55e', // green
+                            '#eab308', // yellow
+                            '#a855f7'  // purple
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTypeChart() {
+            if (typeChart) {
+                const data = @this.categoryDistribution;
+
+                if (data && data.labels && data.data) {
+                    // Limit to first 5 categories for better visualization
+                    const labels = data.labels.slice(0, 5);
+                    const chartData = data.data.slice(0, 5);
+
+                    // Add "Other" category if there are more than 5
+                    if (data.labels.length > 5) {
+                        labels.push('Other');
+                        const otherSum = data.data.slice(5).reduce((sum, val) => sum + val, 0);
+                        chartData.push(otherSum);
+                    }
+
+                    typeChart.data.labels = labels;
+                    typeChart.data.datasets[0].data = chartData;
+                    typeChart.update();
+                }
+            }
+        }
+
+        function createMaintenanceChart() {
+            const ctx = document.getElementById('maintenanceChart').getContext('2d');
+            maintenanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Maintenance Events',
+                        data: [],
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateMaintenanceChart() {
+            if (maintenanceChart) {
+                const data = @this.maintenanceStats;
+
+                if (data && data.monthly && data.monthly.labels && data.monthly.data) {
+                    maintenanceChart.data.labels = data.monthly.labels;
+                    maintenanceChart.data.datasets[0].data = data.monthly.data;
+                    maintenanceChart.update();
+                }
+            }
+        }
+
+        function createTransferTrendChart() {
+            const ctx = document.getElementById('transferTrendChart').getContext('2d');
+            transferTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Transfers',
+                        data: [],
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTransferTrendChart() {
+            if (transferTrendChart) {
+                const data = @this.transferStats;
+
+                if (data && data.weekly && data.weekly.labels && data.weekly.data) {
+                    transferTrendChart.data.labels = data.weekly.labels;
+                    transferTrendChart.data.datasets[0].data = data.weekly.data;
+                    transferTrendChart.update();
+                }
+            }
+        }
+
+        function createDepreciationChart() {
+            const ctx = document.getElementById('depreciationChart').getContext('2d');
+            depreciationChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Asset Value',
+                            data: [],
+                            borderColor: '#0ea5e9',
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Book Value',
+                            data: [],
+                            borderColor: '#22c55e',
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Depreciation',
+                            data: [],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Value (₱)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Depreciation (₱)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDepreciationChart() {
+            if (depreciationChart) {
+                const data = @this.valueData;
+
+                if (data && data.yearly && data.yearly.labels) {
+                    depreciationChart.data.labels = data.yearly.labels;
+                    depreciationChart.data.datasets[0].data = data.yearly.purchaseValues;
+                    depreciationChart.data.datasets[1].data = data.yearly.bookValues;
+                    depreciationChart.data.datasets[2].data = data.yearly.depreciations;
+                    depreciationChart.update();
+                }
+            }
+        }
     </script>
 </div>

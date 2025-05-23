@@ -384,9 +384,9 @@
                                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                         Working
                                                     </span>
-                                                @elseif($asset->status == 'in-use')
+                                                @elseif($asset->status == 'assigned')
                                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                        In Use
+                                                        Assigned
                                                     </span>
                                                 @elseif($asset->status == 'maintenance')
                                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">

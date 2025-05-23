@@ -104,6 +104,7 @@
                                 <select wire:model="asset.status" id="asset_status" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                     <option value="">Select Status</option>
                                     <option value="available">Available</option>
+                                    <option value="Working">Working</option>
                                     <option value="in-use">In Use</option>
                                     <option value="maintenance">Under Repair</option>
                                     <option value="disposed">Disposed</option>

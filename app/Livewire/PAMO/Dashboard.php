@@ -22,25 +22,34 @@ class Dashboard extends Component
 
 
     // Dashboard Data
-    public $assetCounts;
-    public $categoryDistribution;
-    public $statusDistribution;
-    public $departmentDistribution;
+    // public $assetCounts;
+    // public $categoryDistribution;
+    // public $statusDistribution;
+    // public $departmentDistribution;
+    public $assetCounts = [];
+    public $categoryDistribution = [];
+    public $statusDistribution = [];
+    public $departmentDistribution = [];
     public $recentMovements;
     public $acquisitionTrend;
     public $transferStats;
     public $maintenanceStats;
     public $valueData;
 
+
     public function mount()
     {
-        // Check for developer role access
-        if (!Auth::user()->hasRole('Developer')) {
-            return redirect()->route('dashboard')
-                ->with('error', 'You do not have permission to access the PAMO system.');
+
+       // Check for developer role access
+         $role = strtolower(auth()->user()->role);
+        if (!in_array($role, ['pamo', 'administrator', 'developer'])) {
+            abort(404);
         }
         $this->setDateRange('last_30_days');
         $this->loadDashboardData();
+
+        // Dispatch after everything is loaded
+        $this->dispatch('dashboardDataUpdated');
     }
 
     public function setDateRange($period)
@@ -80,22 +89,32 @@ class Dashboard extends Component
             'type' => 'success',
             'message' => 'Dashboard data refreshed'
         ]);
+
+        // Explicitly dispatch chart update event
+        $this->dispatch('dashboardDataUpdated');
     }
 
-    private function loadDashboardData()
+    public function loadDashboardData()
     {
-        $this->loadAssetCounts();
-        $this->loadStatusDistribution();
-        $this->loadCategoryDistribution();
-        $this->loadDepartmentDistribution();
-        $this->loadRecentMovements();
-        $this->loadAcquisitionTrend();
-        $this->loadTransferStats();
-        $this->loadMaintenanceStats();
-        $this->loadValueData();
+        try {
+            $this->loadAssetCounts();
+            $this->loadStatusDistribution();
+            $this->loadCategoryDistribution();
+            $this->loadDepartmentDistribution();
+            $this->loadRecentMovements();
+            $this->loadAcquisitionTrend();
+            $this->loadTransferStats();
+            $this->loadMaintenanceStats();
+            $this->loadValueData();
 
-        // Dispatch event for charts to update
-        $this->dispatch('dashboardDataUpdated');
+            // Ensure data is dispatched properly
+            $this->dispatch('dashboardDataUpdated');
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Error loading dashboard data: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function loadAssetCounts()

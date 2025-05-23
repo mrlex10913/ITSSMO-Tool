@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -22,7 +23,26 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->instance(LoginResponse::class, new class implements LoginResponse {
+            public function toResponse($request)
+            {
+                // Get authenticated user
+                $user = auth()->user();
+
+                // Convert role to lowercase for case-insensitive comparison
+                $role = strtolower($user->role);
+
+                // Redirect based on role
+                if (in_array($role, ['administrator', 'developer'])) {
+                    return redirect()->intended(route('dashboard'));
+                } elseif ($role === 'pamo') {
+                    return redirect()->to('/pamo/dashboard');
+                } else {
+                    // For any other role, show 404
+                    abort(404, 'Unauthorized role');
+                }
+            }
+        });
     }
 
     /**

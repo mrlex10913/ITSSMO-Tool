@@ -44,31 +44,34 @@ Route::middleware([
     CheckTemporaryPassword::class,
     // DesktopBorrwersIpFilter::class,
 ])->group(function () {
-    Route::get('/', ItssIntroduction::class)->name('dashboard');
+    Route::middleware(['role:administrator,developer'])->group(function () {
+        Route::get('/', ItssIntroduction::class)->name('dashboard');
 
-    Route::get('import', [UserRecordsFalcoData::class, 'import_data'])->name('falco');
-    Route::post('import-excel', [UserRecordsFalcoData::class, 'import_excel_post'])->name('falco.post');
+        Route::get('import', [UserRecordsFalcoData::class, 'import_data'])->name('falco');
+        Route::post('import-excel', [UserRecordsFalcoData::class, 'import_excel_post'])->name('falco.post');
 
-    // Add the Livewire route for password change
+        // Add the Livewire route for password change
 
-    // Other routes
-    Route::get('/itss-manual', ITSSManual::class)->name('itss.manual');
-    Route::get('/subject', Subject::class)->name('examination.subject');
-    Route::get('/subject/questions/{id}', Questions::class)->name('examination.questions');
-    Route::get('/coordinator', Codegenerator::class)->name('examination.coordinator');
-    Route::get('/consumable-tracker', AssetsConsumableTracker::class)->name('consumable.tracker');
-    Route::get('/borrowers-form', BorrowersForm::class)->name('borrower.form');
-    Route::get('/assets-transfer', AssetsTransfer::class)->name('asset.form');
-    Route::get('/brf-reservation', BrfReservation::class)->name('reservation.form');
-    Route::get('/assets', AssetsLists::class)->name('assets.view');
-    Route::get('/assets-category', AssetsCategory::class)->name('assets.category');
-    Route::get('/assetsConsumable', AssetsConsumable::class)->name('assets.consumable');
-    Route::get('/falco-records', FalcoData::class)->name('falco.records');
-    Route::get('/student-records', StudentRecords::class)->name('student.records');
-    Route::get('/borrowers-log', BorrowersLogs::class)->name('borrowers.logs');
-    Route::get('/borrower-return', BorrowersReturn::class)->name('borrowers.return');
-    Route::get('/control-panel', AdminControll::class)->name('controlPanel.admin');
-    Route::get('/control-panel/userControl', UsersControl::class)->name('controlPanel.user');
+        // Other routes
+        Route::get('/itss-manual', ITSSManual::class)->name('itss.manual');
+        Route::get('/subject', Subject::class)->name('examination.subject');
+        Route::get('/subject/questions/{id}', Questions::class)->name('examination.questions');
+        Route::get('/coordinator', Codegenerator::class)->name('examination.coordinator');
+        Route::get('/consumable-tracker', AssetsConsumableTracker::class)->name('consumable.tracker');
+        Route::get('/borrowers-form', BorrowersForm::class)->name('borrower.form');
+        Route::get('/assets-transfer', AssetsTransfer::class)->name('asset.form');
+        Route::get('/brf-reservation', BrfReservation::class)->name('reservation.form');
+        Route::get('/assets', AssetsLists::class)->name('assets.view');
+        Route::get('/assets-category', AssetsCategory::class)->name('assets.category');
+        Route::get('/assetsConsumable', AssetsConsumable::class)->name('assets.consumable');
+        Route::get('/falco-records', FalcoData::class)->name('falco.records');
+        Route::get('/student-records', StudentRecords::class)->name('student.records');
+        Route::get('/borrowers-log', BorrowersLogs::class)->name('borrowers.logs');
+        Route::get('/borrower-return', BorrowersReturn::class)->name('borrowers.return');
+        Route::get('/control-panel', AdminControll::class)->name('controlPanel.admin');
+        Route::get('/control-panel/userControl', UsersControl::class)->name('controlPanel.user');
+    });
+
 
     //PAMO
     // Route::get('/pamo/dashboard', Dashboard::class)->name('pamo.dashboard');
@@ -85,7 +88,11 @@ Route::middleware(['ip.filter'])->group(function(){
     Route::get('/desktop/borrowers', BorrowersDesktop::class)->name('desktop.borrowers');
 });
 
-Route::middleware(['auth', 'role:Developer'])->prefix('pamo')->group(function(){
+Route::middleware([
+    'auth:sanctum',
+    'verified',
+    'role:pamo,administrator,developer',
+    ])->prefix('pamo')->group(function(){
     Route::get('/dashboard', Dashboard::class)->name('pamo.dashboard');
     Route::get('/inventory', Inventory::class)->name('pamo.inventory');
     Route::get('/barcode', BarcodeGenerator::class)->name('pamo.barcode');

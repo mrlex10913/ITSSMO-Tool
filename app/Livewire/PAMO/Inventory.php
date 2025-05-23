@@ -282,7 +282,7 @@ class Inventory extends Component
                 'asset.model' => 'nullable|string|max:255',
                 'asset.serial_number' => 'nullable|string|max:255',
                 'asset.category_id' => 'required|exists:pamo_categories,id',
-                'asset.status' => 'required|in:available,in-use,maintenance,disposed',
+                'asset.status' => 'required|in:available,Working,in-use,maintenance,disposed',
                 'asset.purchase_date' => 'nullable|date',
                 'asset.purchase_value' => 'nullable|numeric|min:0',
                 'asset.description' => 'nullable|string|max:1000',
