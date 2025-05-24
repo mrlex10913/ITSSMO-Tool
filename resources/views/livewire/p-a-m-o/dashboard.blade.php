@@ -42,72 +42,59 @@
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white rounded-lg shadow p-4">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-primary-100 text-primary-600">
-                        <i class="fas fa-laptop"></i>
+            <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-600 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Total Assets</p>
+                        <p class="text-3xl font-bold text-blue-600">{{ $assetCounts['total'] ?? 0 }}</p>
+                        <p class="text-gray-500 text-sm mt-1">₱{{ number_format($valueData['totalValue'] ?? 0, 2) }} total value</p>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Total Assets</p>
-                        <p class="text-2xl font-semibold text-gray-800">{{ $assetCounts['total'] ?? 0 }}</p>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="flex items-center text-sm">
-                        <span class="text-gray-500">{{ $valueData['totalValue'] ? '₱'.number_format($valueData['totalValue'], 2) : '₱0.00' }} total value</span>
+                    <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-laptop text-blue-600 text-xl"></i>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 text-green-600">
-                        <i class="fas fa-user-check"></i>
+            <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-600 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Assigned Assets</p>
+                        <p class="text-3xl font-bold text-green-600">{{ $assetCounts['assigned'] ?? 0 }}</p>
+                        <p class="text-gray-500 text-sm mt-1">{{ $assetCounts['assigned_percent'] ?? 0 }}% of total</p>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Assigned Assets</p>
-                        <p class="text-2xl font-semibold text-gray-800">{{ $assetCounts['assigned'] ?? 0 }}</p>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="flex items-center text-sm">
-                        <span class="text-gray-500">{{ $assetCounts['assigned_percent'] ?? 0 }}% of total</span>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-check text-green-600 text-xl"></i>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                        <i class="fas fa-plus-circle"></i>
+            <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-yellow-500 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Assigned Assets</p>
+                        <p class="text-3xl font-bold text-yellow-500">{{ $assetCounts['new'] ?? 0 }}</p>
+
+                        <div class="flex items-center text-sm">
+                            @if(isset($assetCounts['new_growth']))
+                            <span class="{{ $assetCounts['new_growth'] >= 0 ? 'text-green-500' : 'text-red-500' }} flex items-center">
+                                <i class="fas fa-arrow-{{ $assetCounts['new_growth'] >= 0 ? 'up' : 'down' }} mr-1"></i> {{ abs($assetCounts['new_growth']) }}%
+                            </span>
+                            <span class="text-gray-500 ml-2">from last month</span>
+                            @endif
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">New Assets</p>
-                        <p class="text-2xl font-semibold text-gray-800">{{ $assetCounts['new'] ?? 0 }}</p>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="flex items-center text-sm">
-                        @if(isset($assetCounts['new_growth']))
-                        <span class="{{ $assetCounts['new_growth'] >= 0 ? 'text-green-500' : 'text-red-500' }} flex items-center">
-                            <i class="fas fa-arrow-{{ $assetCounts['new_growth'] >= 0 ? 'up' : 'down' }} mr-1"></i> {{ abs($assetCounts['new_growth']) }}%
-                        </span>
-                        <span class="text-gray-500 ml-2">from last month</span>
-                        @endif
+                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-plus-circle text-yellow-500 text-xl"></i>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-red-100 text-red-600">
-                        <i class="fas fa-tools"></i>
+            <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">In Maintenance</p>
+                        <p class="text-3xl font-bold text-red-500">{{ $assetCounts['maintenance'] ?? 0 }}</p>
+                        <p class="text-gray-500 text-sm mt-1">{{ $assetCounts['maintenance_percent'] ?? 0 }}% of total assets</p>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">In Maintenance</p>
-                        <p class="text-2xl font-semibold text-gray-800">{{ $assetCounts['maintenance'] ?? 0 }}</p>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="flex items-center text-sm">
-                        <span class="text-gray-500">{{ $assetCounts['maintenance_percent'] ?? 0 }}% of total assets</span>
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-tools text-red-500 text-xl"></i>
                     </div>
                 </div>
             </div>
@@ -479,7 +466,7 @@
                         label: 'New Assets',
                         data: [],
                         borderColor: '#0ea5e9',
-                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        backgroundColor: 'rgba(188, 242, 246, 0.5)',
                         tension: 0.3,
                         fill: true
                     }]
@@ -528,10 +515,10 @@
                     datasets: [{
                         data: [],
                         backgroundColor: [
-                            '#22c55e', // green
-                            '#eab308', // yellow
-                            '#ef4444', // red
-                            '#d1d5db'  // gray
+                            '#006BFF', // Main blue
+                            '#08C2FF', // Light blue
+                            '#FFF100', // Bright yellow
+                            '#BCF2F6'  // Pale blue
                         ],
                         borderWidth: 0
                     }]
@@ -580,7 +567,7 @@
                     datasets: [{
                         label: 'Number of Assets',
                         data: [],
-                        backgroundColor: '#0ea5e9',
+                        backgroundColor: '#006BFF',
                         borderRadius: 4
                     }]
                 },
