@@ -398,12 +398,32 @@ class Inventory extends Component
     }
     public function deleteAsset()
     {
-        PamoAssets::find($this->assetToDelete)->delete();
 
-        session()->flash('message', 'Asset deleted successfully!');
+        try {
+            $asset = PamoAssets::with('movements')->findOrFail($this->assetToDelete);
+
+            // Delete all related movements first
+            $asset->movements()->delete();
+
+            // Now delete the asset
+            $asset->delete();
+
+            session()->flash('message', 'Asset and all related records deleted successfully!');
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error deleting asset: ' . $e->getMessage());
+            Log::error('Asset deletion error: ' . $e->getMessage());
+        }
+
         $this->confirmingAssetDeletion = false;
         $this->assetToDelete = null;
         $this->refreshAssets();
+        // PamoAssets::find($this->assetToDelete)->delete();
+
+        // session()->flash('message', 'Asset deleted successfully!');
+        // $this->confirmingAssetDeletion = false;
+        // $this->assetToDelete = null;
+        // $this->refreshAssets();
     }
 
     public function saveLocation($id = null)
