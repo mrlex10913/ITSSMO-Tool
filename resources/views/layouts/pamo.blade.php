@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script> --}}
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -101,45 +101,46 @@
                 <!-- Navigation Links -->
                 <nav class="flex-1 px-4 py-4 overflow-y-auto bg-blue-600">
                     <ul class="space-y-2">
-                        <li>
-                            <x-nav-link wire:navigate href="{{ route('pamo.dashboard') }}" :active="request()->routeIs('pamo.dashboard')"
-                                    class="flex items-center p-2 rounded hover:bg-blue-500"
-                                    :class="request()->routeIs('pamo.dashboard') ? 'bg-sky-500 text-white' : 'text-white'">
-                                <span class="material-symbols-sharp">dashboard</span>
-                                <span class="ml-3">Overview</span>
-                            </x-nav-link>
+                       <li>
+                            <x-end-user-nav-link
+                                href="{{ route('pamo.dashboard') }}"
+                                :active="request()->routeIs('pamo.dashboard')"
+                                icon="dashboard">
+                                Overview
+                            </x-end-user-nav-link>
                         </li>
                         <li>
-                            <x-nav-link wire:navigate href="{{ route('pamo.inventory') }}" :active="request()->routeIs('pamo.inventory')"
-                                    class="flex items-center p-2 rounded hover:bg-blue-500"
-                                    :class="request()->routeIs('pamo.inventory') ? 'bg-sky-500 text-white' : 'text-white'">
-                                <span class="material-symbols-sharp">inventory_2</span>
-                                <span class="ml-3">Inventory & Supplies</span>
-                            </x-nav-link>
+                            <x-end-user-nav-link
+                                href="{{ route('pamo.inventory') }}"
+                                :active="request()->routeIs('pamo.inventory')"
+                                icon="inventory_2">
+                                Inventory & Supplies
+                            </x-end-user-nav-link>
                         </li>
                         <li>
-                            <x-nav-link wire:navigate href="{{ route('pamo.assetTracker') }}" :active="request()->routeIs('pamo.assetTracker')"
-                                    class="flex items-center p-2 rounded hover:bg-blue-500"
-                                    :class="request()->routeIs('pamo.assetTracker') ? 'bg-sky-500 text-white' : 'text-white'">
-                                <span class="material-symbols-sharp">inventory_2</span>
-                                <span class="ml-3">Asset's Tracker</span>
-                            </x-nav-link>
+                            <x-end-user-nav-link
+                                href="{{ route('pamo.assetTracker') }}"
+                                :active="request()->routeIs('pamo.assetTracker')"
+                                icon="inventory_2">
+                                Asset's Tracker
+                            </x-end-user-nav-link>
                         </li>
                         <li>
-                            <x-nav-link wire:navigate href="{{ route('pamo.barcode') }}" :active="request()->routeIs('pamo.barcode')"
-                                    class="flex items-center p-2 rounded hover:bg-blue-500"
-                                    :class="request()->routeIs('pamo.barcode') ? 'bg-sky-500 text-white' : 'text-white'">
-                                <span class="material-symbols-sharp">qr_code_scanner</span>
-                                <span class="ml-3">Barcode Generator</span>
-                            </x-nav-link>
+                            <x-end-user-nav-link
+                                href="{{ route('pamo.barcode') }}"
+                                :active="request()->routeIs('pamo.barcode')"
+                                icon="qr_code_scanner">
+                                Barcode Generator
+                            </x-end-user-nav-link>
                         </li>
                         @if(strtolower(Auth::user()->role) === 'administrator' || strtolower(Auth::user()->role) === 'developer')
                             <li>
-                                <x-nav-link wire:navigate href="{{ route('dashboard') }}"
-                                        class="flex items-center p-2 rounded text-white hover:bg-blue-500">
-                                    <span class="material-symbols-sharp">arrow_back</span>
-                                    <span class="ml-3">Back to Main System</span>
-                                </x-nav-link>
+                                <x-end-user-nav-link
+                                    href="{{ route('dashboard') }}"
+                                    :active="request()->routeIs('dashboard')"
+                                    icon="arrow_back">
+                                    Back to Main System
+                                </x-end-user-nav-link>
                             </li>
                         @endif
                     </ul>
@@ -168,6 +169,197 @@
 
     <!-- Profile Edit Modal -->
     <div
+        x-show="profileModalOpen"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        @click.away="profileModalOpen = false"
+        @keydown.escape.window="profileModalOpen = false"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <!-- Modal Backdrop -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" @click="profileModalOpen = false"></div>
+
+        <!-- Modal Content -->
+        <div class="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-lg z-10 relative">
+            <!-- Modal Header -->
+            <div class="relative bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-semibold text-white">Edit Profile</h3>
+                        <p class="text-blue-100 text-sm">Update your personal information</p>
+                    </div>
+                    <button @click="profileModalOpen = false"
+                            class="text-white hover:text-yellow-300 transition-colors p-2 rounded-lg hover:bg-white/10">
+                        <span class="material-symbols-sharp text-2xl">close</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6">
+                <form action="{{ route('user-profile-information.update') }}" method="POST"
+                    class="space-y-6" enctype="multipart/form-data"
+                    x-data="{
+                          photoPreview: null,
+                          photoName: null,
+                          isSubmitting: false,
+                          submitForm() {
+                              this.isSubmitting = true;
+                              this.$el.submit();
+                          }
+                      }"
+                    @submit="isSubmitting = true">
+                    @csrf
+                    @method('PUT')
+
+                    <!-- Profile Photo Section -->
+                    <div class="text-center">
+                        <div class="relative inline-block">
+                            <!-- Current/Preview Photo -->
+                            <div class="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 mx-auto mb-4 shadow-lg">
+                                <template x-if="photoPreview">
+                                    <img :src="photoPreview" alt="Photo preview" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!photoPreview">
+                                    @if(Auth::user()->profile_photo_path)
+                                        <img src="{{ Storage::url(Auth::user()->profile_photo_path) }}"
+                                            alt="{{ Auth::user()->name }}"
+                                            class="w-full h-full object-cover">
+                                    @elseif(Auth::user()->profile_photo_url)
+                                        <img src="{{ Auth::user()->profile_photo_url }}"
+                                            alt="{{ Auth::user()->name }}"
+                                            class="w-full h-full object-cover">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center">
+                                            <span class="text-3xl font-bold text-white">{{ substr(Auth::user()->name, 0, 1) }}</span>
+                                        </div>
+                                    @endif
+                                </template>
+                            </div>
+
+                            <!-- Upload Button -->
+                            <div class="relative">
+                                <input type="file"
+                                    name="photo"
+                                    id="photo"
+                                    accept="image/*"
+                                    class="hidden"
+                                    @change="
+                                        photoName = $event.target.files[0]?.name;
+                                        const reader = new FileReader();
+                                        reader.onload = (e) => photoPreview = e.target.result;
+                                        reader.readAsDataURL($event.target.files[0]);
+                                    ">
+                                <label for="photo"
+                                    class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer transition-colors">
+                                    <span class="material-symbols-sharp text-sm mr-2">photo_camera</span>
+                                    Choose Photo
+                                </label>
+                            </div>
+
+                            <!-- Photo Name Display -->
+                            <div x-show="photoName" class="mt-2">
+                                <p class="text-xs text-gray-500" x-text="photoName"></p>
+                            </div>
+
+                            <!-- Remove Photo Button -->
+                            <div class="mt-2" x-show="photoPreview">
+                                <button type="button"
+                                        @click="photoPreview = null; photoName = null; document.getElementById('photo').value = ''"
+                                        class="text-xs text-red-600 hover:text-red-800 transition-colors">
+                                    Remove photo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Fields -->
+                    <div class="space-y-4">
+                        <!-- Name -->
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                                <span class="flex items-center">
+                                    <span class="material-symbols-sharp text-sm mr-2 text-gray-500">person</span>
+                                    Full Name
+                                </span>
+                            </label>
+                            <input type="text"
+                                name="name"
+                                id="name"
+                                value="{{ Auth::user()->name }}"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-colors"
+                                placeholder="Enter your full name">
+                        </div>
+
+                        <!-- Email -->
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                <span class="flex items-center">
+                                    <span class="material-symbols-sharp text-sm mr-2 text-gray-500">email</span>
+                                    Email Address
+                                </span>
+                            </label>
+                            <input type="email"
+                                name="email"
+                                id="email"
+                                value="{{ Auth::user()->email }}"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-colors"
+                                placeholder="Enter your email address">
+                        </div>
+
+                        <!-- Role (Read-only) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <span class="flex items-center">
+                                    <span class="material-symbols-sharp text-sm mr-2 text-gray-500">badge</span>
+                                    Role
+                                </span>
+                            </label>
+                            <div class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600">
+                                {{ Auth::user()->role ?? 'User' }}
+                            </div>
+                        </div>
+                        <div>
+                            <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
+                                <span class="flex items-center">
+                                    <span class="material-symbols-sharp text-sm mr-2 text-gray-500">business</span>
+                                    Department
+                                </span>
+                            </label>
+                            <input type="text"
+                                   name="department"
+                                   id="department"
+                                   value="{{ Auth::user()->department ?? '' }}"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-colors"
+                                   placeholder="Enter your department">
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                        <button @click="profileModalOpen = false"
+                                type="button"
+                                :disabled="isSubmitting"
+                                class="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200">
+                            <span class="flex items-center">
+                                <span class="material-symbols-sharp text-sm mr-2">save</span>
+                                Save Changes
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {{-- <div
         x-show="profileModalOpen"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 scale-95"
@@ -239,7 +431,7 @@
                 </form>
             </div>
         </div>
-    </div>
+    </div> --}}
     </div>
 
     @stack('modals')

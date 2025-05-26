@@ -25,20 +25,28 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             'photo' => ['nullable', 'mimes:jpg,jpeg,png', 'max:1024'],
         ])->validateWithBag('updateProfileInformation');
 
-        if (isset($input['photo'])) {
-            $user->updateProfilePhoto($input['photo']);
-        }
+        try {
+            if (isset($input['photo'])) {
+                $user->updateProfilePhoto($input['photo']);
+                toastr()->success('Profile photo updated successfully!');
+            }
 
-        if ($input['email'] !== $user->email &&
-            $user instanceof MustVerifyEmail) {
-            $this->updateVerifiedUser($user, $input);
-        } else {
-            $user->forceFill([
-                'name' => $input['name'],
-                'email' => $input['email'],
-                'department' => $input['department'],
-                'role' => $input['role']
-            ])->save();
+            if ($input['email'] !== $user->email &&
+                $user instanceof MustVerifyEmail) {
+                $this->updateVerifiedUser($user, $input);
+                toastr()->info('Profile updated! Please verify your new email address.');
+            } else {
+                $user->forceFill([
+                    'name' => $input['name'],
+                    'email' => $input['email'],
+                    'department' => $input['department'] ?? null,
+                ])->save();
+
+                toastr()->success('Profile updated successfully!');
+            }
+        } catch (\Exception $e) {
+            toastr()->error('Failed to update profile. Please try again.');
+            throw $e;
         }
     }
 
@@ -52,8 +60,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
         $user->forceFill([
             'name' => $input['name'],
             'email' => $input['email'],
-            'department' => $input['department'],
-            'role' => $input['role'],
+            'department' => $input['department'] ?? null,
             'email_verified_at' => null,
         ])->save();
 
