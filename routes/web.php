@@ -26,6 +26,7 @@ use App\Livewire\PAMO\AssetTracker;
 use App\Livewire\PAMO\BarcodeGenerator;
 use App\Livewire\PAMO\Dashboard;
 use App\Livewire\PAMO\Inventory;
+use App\Livewire\PAMO\MasterList;
 use App\Livewire\PAMO\Transactions;
 use App\Livewire\UserRecords\FalcoData;
 use App\Livewire\UserRecords\StaffRecords;
@@ -98,6 +99,7 @@ Route::middleware([
     Route::get('/barcode', BarcodeGenerator::class)->name('pamo.barcode');
     Route::get('/transactions', Transactions::class)->name('pamo.transactions');
     Route::get('/assets-tracker', AssetTracker::class)->name('pamo.assetTracker');
+    Route::get('/masterList', MasterList::class)->name('pamo.masterList');
 });
 
 

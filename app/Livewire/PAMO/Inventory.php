@@ -2,6 +2,7 @@
 
 namespace App\Livewire\PAMO;
 
+use App\Models\PAMO\MasterList;
 use App\Models\PAMO\PamoAssetMovement;
 use App\Models\PAMO\PamoAssets;
 use App\Models\PAMO\PamoCategory;
@@ -118,6 +119,8 @@ class Inventory extends Component
 
     public $selectAll = false;
     public $hasSelectedAssets = false;
+    public $masterListUsers = [];
+
 
 
 
@@ -125,11 +128,12 @@ class Inventory extends Component
     {
         $this->loadCategories();
         $this->loadLocations();
-        $this->loadUsers();
+        // $this->loadUsers();
         $this->refreshAssets();
         $this->minorCategories = collect();
         $this->locations = PamoLocations::orderBy('name')->get();
-        $this->users = User::orderBy('name')->get();
+        // $this->users = User::orderBy('name')->get();
+        $this->loadMasterListUsers();
     }
     public function loadLocations()
     {
@@ -137,15 +141,22 @@ class Inventory extends Component
             ->orderBy('name')
             ->get();
     }
-    public function loadUsers()
+    // public function loadUsers()
+    // {
+    //     $this->users = User::orderBy('name')->get();
+    // }
+    public function loadMasterListUsers()
     {
-        $this->users = User::orderBy('name')->get();
+        $this->masterListUsers = MasterList::where('status', 'active')
+            ->orderBy('full_name')
+            ->get();
     }
+
     public function refreshAssets()
     {
-        $this->assets = PamoAssets::with(['category', 'location', 'assignedUser'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $this->assets = PamoAssets::with(['category', 'location', 'assignedEmployee'])
+        ->orderBy('created_at', 'desc')
+        ->get();
 
         $this->unassignedAssets = PamoAssets::whereNull('location_id')
             ->whereNull('assigned_to')
@@ -539,82 +550,83 @@ class Inventory extends Component
     {
         // Validate based on action type
     if ($this->bulkAction === 'assign-location' || $this->bulkAction === 'transfer') {
-        $this->validate([
-            'assignLocation' => 'required|exists:pamo_locations,id',
-        ]);
-    }
-
-    if ($this->bulkAction === 'assign-user' || $this->bulkAction === 'transfer') {
-        $this->validate([
-            'assignToUser' => 'required|exists:users,id',
-        ]);
-    }
-
-    $count = count($this->selectedAssets);
-    $message = '';
-
-    // Process assets based on action type
-    foreach ($this->selectedAssets as $assetId) {
-        $asset = PamoAssets::find($assetId);
-        if (!$asset) continue;
-
-        $movement = new PamoAssetMovement();
-        $movement->asset_id = $asset->id;
-        $movement->assigned_by = auth()->id();
-        $movement->movement_date = now();
-        $movement->notes = $this->movementNotes;
-
-        if ($this->bulkAction === 'assign-location') {
-            // Record from location
-            $movement->from_location_id = $asset->location_id;
-            $movement->to_location_id = $this->assignLocation;
-            $movement->movement_type = 'location_assignment';
-
-            // Update asset
-            $asset->location_id = $this->assignLocation;
-            $asset->save();
-
-            $message = "Successfully assigned {$count} assets to location";
-        }
-        elseif ($this->bulkAction === 'assign-user') {
-            $movement->assigned_to = $this->assignToUser;
-            $movement->movement_type = 'user_assignment';
-
-            // Update asset
-            $asset->assigned_to = $this->assignToUser;
-            $asset->status = 'in-use';
-            $asset->save();
-
-            $message = "Successfully assigned {$count} assets to user";
-        }
-        elseif ($this->bulkAction === 'transfer') {
-            $movement->from_location_id = $asset->location_id;
-            $movement->to_location_id = $this->assignLocation;
-            $movement->assigned_to = $this->assignToUser;
-            $movement->movement_type = 'transfer';
-
-            // Update asset
-            $asset->location_id = $this->assignLocation;
-            $asset->assigned_to = $this->assignToUser;
-            $asset->status = 'in-use';
-            $asset->save();
-
-            $message = "Successfully transferred {$count} assets";
+            $this->validate([
+                'assignLocation' => 'required|exists:pamo_locations,id',
+            ]);
         }
 
-        $movement->save();
-    }
+        if ($this->bulkAction === 'assign-user' || $this->bulkAction === 'transfer') {
+            $this->validate([
+                'assignToUser' => 'required|exists:master_lists,id',
+            ]);
+        }
 
-    // Reset and show message
-    flash()->success($message);
-    $this->selectedAssets = [];
-    $this->bulkAction = '';
-    $this->assignLocation = null;
-    $this->assignToUser = null;
-    $this->movementNotes = '';
+        $count = count($this->selectedAssets);
+        $message = '';
 
-    // Close modal and refresh
-    $this->dispatch('close-modal', 'assign-modal');
+        // Process assets based on action type
+        foreach ($this->selectedAssets as $assetId) {
+                $asset = PamoAssets::find($assetId);
+                if (!$asset) continue;
+
+                $movement = new PamoAssetMovement();
+                $movement->asset_id = $asset->id;
+                $movement->assigned_by = auth()->id();
+                $movement->movement_date = now();
+                $movement->notes = $this->movementNotes;
+
+                if ($this->bulkAction === 'assign-location') {
+                // Record from location
+                $movement->from_location_id = $asset->location_id;
+                $movement->to_location_id = $this->assignLocation;
+                $movement->movement_type = 'location_assignment';
+
+                // Update asset
+                $asset->location_id = $this->assignLocation;
+                $asset->save();
+
+                $message = "Successfully assigned {$count} assets to location";
+            }
+            elseif ($this->bulkAction === 'assign-user') {
+                $movement->assigned_to = $this->assignToUser;
+                $movement->movement_type = 'user_assignment';
+
+                // Update asset - directly store master_list ID
+                $asset->assigned_to = $this->assignToUser; // This is now master_list ID
+                $asset->status = 'in-use';
+                $asset->save();
+
+                $message = "Successfully assigned {$count} assets to employee";
+            }
+            elseif ($this->bulkAction === 'transfer') {
+                $movement->from_location_id = $asset->location_id;
+                $movement->to_location_id = $this->assignLocation;
+                $movement->assigned_to = $this->assignToUser;
+                $movement->movement_type = 'transfer';
+
+                // Update asset
+                $asset->location_id = $this->assignLocation;
+                $asset->assigned_to = $this->assignToUser; // This is now master_list ID
+                $asset->status = 'in-use';
+                $asset->save();
+
+                $message = "Successfully transferred {$count} assets";
+            }
+
+            $movement->save();
+        }
+
+        // Reset and show message
+        flash()->success($message);
+        $this->selectedAssets = [];
+        $this->bulkAction = '';
+        $this->assignLocation = null;
+        $this->assignToUser = null;
+        $this->movementNotes = '';
+
+        // Close modal and refresh
+        $this->dispatch('close-modal', 'assign-modal');
+        $this->refreshAssets();
     }
     public function resetBulkForm()
     {
@@ -1111,12 +1123,14 @@ class Inventory extends Component
         $unassignedAssetsList = $this->unassignedAssets;
         $locationsList = $this->locations;
         $usersList = $this->users;
+        $masterListUsersList = $this->masterListUsers;
 
         return view('livewire.p-a-m-o.inventory', compact(
       'assetsList',
      'unassignedAssetsList',
                 'locationsList',
-                'usersList'
+                'usersList',
+                'masterListUsersList'
         ));
     }
 }

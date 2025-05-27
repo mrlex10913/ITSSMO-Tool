@@ -133,6 +133,14 @@
                                 Barcode Generator
                             </x-end-user-nav-link>
                         </li>
+                        <li>
+                            <x-end-user-nav-link
+                                href="{{ route('pamo.masterList') }}"
+                                :active="request()->routeIs('pamo.masterList')"
+                                icon="groups">
+                                MasterList
+                            </x-end-user-nav-link>
+                        </li>
                         @if(strtolower(Auth::user()->role) === 'administrator' || strtolower(Auth::user()->role) === 'developer')
                             <li>
                                 <x-end-user-nav-link

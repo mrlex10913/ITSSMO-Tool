@@ -34,79 +34,153 @@
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
     >
         <div class="p-6">
-            <h2 class="text-lg font-medium text-gray-900">
-                @if($bulkAction === 'assign-location')
-                    Assign to Location
-                @elseif($bulkAction === 'assign-user')
-                    Assign to User
-                @elseif($bulkAction === 'transfer')
-                    Transfer Assets
-                @endif
-            </h2>
-
-            <p class="mt-2 text-sm text-gray-500">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-medium text-gray-900">
+                    @if($bulkAction === 'assign-location')
+                        Assign Assets to Location
+                    @elseif($bulkAction === 'assign-user')
+                        Assign Assets to Employee
+                    @elseif($bulkAction === 'transfer')
+                        Transfer Assets
+                    @endif
+                </h2>
+                <button @click="open = false" class="text-gray-400 hover:text-gray-600">
+                    <span class="material-symbols-sharp">close</span>
+                </button>
+            </div>
+            <!-- Selected Assets Info -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center">
+                    <span class="material-symbols-sharp text-blue-600 mr-2">info</span>
+                    <p class="text-sm text-blue-800">
+                        <span class="font-semibold">{{ count($selectedAssets) }}</span> assets selected for
+                        @if($bulkAction === 'assign-location')
+                            location assignment
+                        @elseif($bulkAction === 'assign-user')
+                            employee assignment
+                        @elseif($bulkAction === 'transfer')
+                            transfer
+                        @endif
+                    </p>
+                </div>
+            </div>
+            {{-- <p class="mt-2 text-sm text-gray-500">
                 You've selected {{ count($selectedAssets) }} assets
-            </p>
+            </p> --}}
 
-            <form wire:submit.prevent="assignAssets" class="mt-6">
-                @if($bulkAction === 'assign-location' || $bulkAction === 'transfer')
-                    <div class="mb-4">
-                        <label for="assignLocation" class="block text-sm font-medium text-gray-700">Location</label>
-                        <select
-                            id="assignLocation"
-                            wire:model="assignLocation"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        >
-                            <option value="">Select a location</option>
-                            @foreach($locations as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('assignLocation') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+            <form wire:submit.prevent="assignAssets">
+                <div class="space-y-4">
+                    <!-- Location Selection -->
+                    @if($bulkAction === 'assign-location' || $bulkAction === 'transfer')
+                        <div>
+                            <label for="assignLocation" class="block text-sm font-medium text-gray-700 mb-2">
+                                <span class="flex items-center">
+                                    <span class="material-symbols-sharp text-sm mr-2">location_on</span>
+                                    @if($bulkAction === 'transfer')
+                                        Transfer to Location
+                                    @else
+                                        Assign to Location
+                                    @endif
+                                </span>
+                            </label>
+                            <select
+                                id="assignLocation"
+                                wire:model="assignLocation"
+                                class="block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            >
+                                <option value="">Select a location...</option>
+                                @foreach($locationsList as $location)
+                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('assignLocation')
+                                <span class="text-red-500 text-xs mt-1 flex items-center">
+                                    <span class="material-symbols-sharp text-xs mr-1">error</span>
+                                    {{ $message }}
+                                </span>
+                            @enderror
+                        </div>
+                    @endif
+
+                    <!-- Employee Selection - Only Master List Users -->
+                    @if($bulkAction === 'assign-user' || $bulkAction === 'transfer')
+                        <div>
+                            <label for="assignToUser" class="block text-sm font-medium text-gray-700 mb-2">
+                                <span class="flex items-center">
+                                    <span class="material-symbols-sharp text-sm mr-2">badge</span>
+                                    @if($bulkAction === 'transfer')
+                                        Transfer to Employee
+                                    @else
+                                        Assign to Employee
+                                    @endif
+                                </span>
+                            </label>
+                            <select
+                                id="assignToUser"
+                                wire:model="assignToUser"
+                                class="block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            >
+                                <option value="">Select an employee...</option>
+                                @foreach($masterListUsersList as $employee)
+                                    <option value="{{ $employee->id }}">
+                                        {{ $employee->employee_number }} - {{ $employee->full_name }}
+                                        @if($employee->department)
+                                            ({{ $employee->department }})
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('assignToUser')
+                                <span class="text-red-500 text-xs mt-1 flex items-center">
+                                    <span class="material-symbols-sharp text-xs mr-1">error</span>
+                                    {{ $message }}
+                                </span>
+                            @enderror
+                        </div>
+                    @endif
+
+                    <!-- Movement Notes -->
+                    <div>
+                        <label for="movementNotes" class="block text-sm font-medium text-gray-700 mb-2">
+                            <span class="flex items-center">
+                                <span class="material-symbols-sharp text-sm mr-2">note</span>
+                                Notes (Optional)
+                            </span>
+                        </label>
+                        <textarea
+                            id="movementNotes"
+                            wire:model="movementNotes"
+                            rows="3"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            placeholder="Add any notes about this assignment or transfer..."
+                        ></textarea>
                     </div>
-                @endif
-
-                @if($bulkAction === 'assign-user' || $bulkAction === 'transfer')
-                    <div class="mb-4">
-                        <label for="assignToUser" class="block text-sm font-medium text-gray-700">User</label>
-                        <select
-                            id="assignToUser"
-                            wire:model="assignToUser"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        >
-                            <option value="">Select a user</option>
-                            @foreach($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('assignToUser') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                    </div>
-                @endif
-
-                <div class="mb-4">
-                    <label for="movementNotes" class="block text-sm font-medium text-gray-700">Notes</label>
-                    <textarea
-                        id="movementNotes"
-                        wire:model="movementNotes"
-                        rows="3"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        placeholder="Enter any additional notes here..."
-                    ></textarea>
                 </div>
 
-                <div class="mt-6 flex justify-end space-x-3">
+                <div class="flex justify-end space-x-3 mt-6">
                     <button
                         type="button"
                         @click="open = false"
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                     >
-                        Confirm
+                        <span class="flex items-center">
+                            @if($bulkAction === 'assign-location')
+                                <span class="material-symbols-sharp text-sm mr-2">location_on</span>
+                                Assign to Location
+                            @elseif($bulkAction === 'assign-user')
+                                <span class="material-symbols-sharp text-sm mr-2">person_add</span>
+                                Assign to Employee
+                            @elseif($bulkAction === 'transfer')
+                                <span class="material-symbols-sharp text-sm mr-2">transfer_within_a_station</span>
+                                Complete Transfer
+                            @endif
+                        </span>
                     </button>
                 </div>
             </form>

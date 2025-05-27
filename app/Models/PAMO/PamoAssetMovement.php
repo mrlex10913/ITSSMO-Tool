@@ -45,4 +45,8 @@ class PamoAssetMovement extends Model
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
+    public function assignedEmployee()
+    {
+        return $this->belongsTo(MasterList::class, 'assigned_to');
+    }
 }

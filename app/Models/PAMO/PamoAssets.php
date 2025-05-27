@@ -47,7 +47,21 @@ class PamoAssets extends Model
     {
         return $this->hasMany(PamoAssetMovement::class, 'asset_id');
     }
-
+    public function assignedEmployee(){
+        return $this->belongsTo(MasterList::class, 'assigned_to');
+    }
+    public function getAssignedPersonNameAttribute(): ?string
+    {
+        return $this->assignedEmployee?->full_name;
+    }
+    public function getAssignedPersonNumberAttribute(): ?string
+    {
+        return $this->assignedEmployee?->employee_number;
+    }
+    public function getAssignedPersonDepartmentAttribute(): ?string
+    {
+        return $this->assignedEmployee?->department;
+    }
 
     public function isAssigned()
     {

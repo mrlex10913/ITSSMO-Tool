@@ -343,6 +343,9 @@
                                                 Minor Category
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Assigned To
+                                            </th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Status
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -354,7 +357,6 @@
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
-                                        <!-- Static Asset Data -->
                                         @forelse($assetsList as $asset)
                                         <tr>
                                             <td class="px-4 py-4 whitespace-nowrap">
@@ -375,6 +377,23 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $asset->category ? $asset->category->name : 'Uncategorized' }}
                                             </td>
+                                            {{-- New assigned employee column --}}
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                @if($asset->assignedEmployee)
+                                                    <div class="flex items-center">
+                                                        <span class="material-symbols-sharp text-xs mr-1 text-blue-500">badge</span>
+                                                        <div>
+                                                            <div class="font-medium text-gray-900">{{ $asset->assignedEmployee->employee_number }}</div>
+                                                            <div class="text-gray-500">{{ $asset->assignedEmployee->full_name }}</div>
+                                                            @if($asset->assignedEmployee->department)
+                                                                <div class="text-xs text-gray-400">{{ $asset->assignedEmployee->department }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="text-gray-400 italic">Unassigned</span>
+                                                @endif
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 @if($asset->status == 'available')
                                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
@@ -384,9 +403,9 @@
                                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                         Working
                                                     </span>
-                                                @elseif($asset->status == 'assigned')
+                                                @elseif($asset->status == 'in-use')
                                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                        Assigned
+                                                        In Use
                                                     </span>
                                                 @elseif($asset->status == 'maintenance')
                                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
@@ -402,6 +421,7 @@
                                                 <span>&#8369;</span> {{ number_format($asset->purchase_value ?? 0, 2) }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                {{-- Existing action buttons --}}
                                                 <div class="flex space-x-2">
                                                     <button
                                                         wire:click="viewAsset({{ $asset->id }})"
@@ -437,13 +457,13 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                                No assets found. Click "Add Item" to create one.
-                                            </td>
-                                        </tr>
-                                    @endforelse
+                                        @empty
+                                            <tr>
+                                                <td colspan="10" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                    No assets found. Click "Add Item" to create one.
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
