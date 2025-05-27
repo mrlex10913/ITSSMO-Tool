@@ -5,9 +5,11 @@ namespace App\Livewire\PAMO;
 use App\Models\PAMO\PamoAssetMovement;
 use App\Models\PAMO\PamoAssets;
 use App\Models\PAMO\PamoCategory;
+use App\Models\PAMO\MasterList;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -26,15 +28,67 @@ class Dashboard extends Component
     // public $categoryDistribution;
     // public $statusDistribution;
     // public $departmentDistribution;
-    public $assetCounts = [];
-    public $categoryDistribution = [];
-    public $statusDistribution = [];
-    public $departmentDistribution = [];
-    public $recentMovements;
-    public $acquisitionTrend;
-    public $transferStats;
-    public $maintenanceStats;
-    public $valueData;
+    public $assetCounts = [
+        'total' => 0,
+        'assigned' => 0,
+        'assigned_percent' => 0,
+        'new' => 0,
+        'new_growth' => 0,
+        'maintenance' => 0,
+        'maintenance_percent' => 0,
+    ];
+    public $categoryDistribution = [
+        'labels' => [],
+        'data' => [],
+        'counts' => [],
+        'categories' => []
+    ];
+    public $statusDistribution = [
+        'labels' => [],
+        'data' => [],
+        'counts' => [],
+        'statuses' => []
+    ];
+    public $departmentDistribution = [
+        'labels' => [],
+        'data' => [],
+        'departments' => []
+    ];
+    public $recentMovements = [];
+    public $acquisitionTrend = [
+        'labels' => [],
+        'data' => [],
+        'months' => []
+    ];
+    public $transferStats = [
+        'last30Days' => 0,
+        'monthlyAverage' => 0,
+        'percentOfAverage' => 0,
+        'byCategory' => [],
+        'weekly' => [
+            'labels' => [],
+            'data' => []
+        ]
+    ];
+    public $maintenanceStats = [
+        'total' => 0,
+        'monthly' => [
+            'labels' => [],
+            'data' => []
+        ]
+    ];
+    public $valueData = [
+        'totalValue' => 0,
+        'currentValue' => 0,
+        'depreciation' => 0,
+        'depreciationRate' => 0,
+        'yearly' => [
+            'labels' => [],
+            'purchaseValues' => [],
+            'bookValues' => [],
+            'depreciations' => []
+        ]
+    ];
 
 
     public function mount()
@@ -198,11 +252,11 @@ class Dashboard extends Component
 
     private function loadDepartmentDistribution()
     {
-        $departments = PamoAssets::join('users', 'pamo_assets.assigned_to', '=', 'users.id')
-            ->whereNotNull('users.department')
-            ->select('users.department')
+        $departments = PamoAssets::join('master_lists', 'pamo_assets.assigned_to', '=', 'master_lists.id')
+            ->whereNotNull('master_lists.department')
+            ->select('master_lists.department')
             ->selectRaw('COUNT(*) as count')
-            ->groupBy('users.department')
+            ->groupBy('master_lists.department')
             ->orderByDesc('count')
             ->get();
 
@@ -215,7 +269,7 @@ class Dashboard extends Component
 
     private function loadRecentMovements()
     {
-        $this->recentMovements = PamoAssetMovement::with(['asset', 'fromLocation', 'toLocation', 'assignedByUser', 'assignedToUser'])
+        $this->recentMovements = PamoAssetMovement::with(['asset', 'fromLocation', 'toLocation', 'assignedBy', 'assignedEmployee'])
             ->orderByDesc('movement_date')
             ->take(4)
             ->get();

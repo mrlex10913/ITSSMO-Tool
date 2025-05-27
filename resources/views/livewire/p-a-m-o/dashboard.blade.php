@@ -138,17 +138,17 @@
                     <div class="w-full md:w-1/2 mt-4 md:mt-0">
                         <div class="space-y-3">
                             @foreach($statusDistribution['statuses'] ?? [] as $index => $status)
-                            <div class="flex items-center">
-                                <span class="h-3 w-3 rounded-full mr-2
-                                    {{ strtolower($status['name']) == 'active' ? 'bg-green-500' :
-                                      (strtolower($status['name']) == 'in transfer' ? 'bg-yellow-500' :
-                                      (strtolower($status['name']) == 'maintenance' ? 'bg-red-500' :
-                                      'bg-gray-300')) }}">
-                                </span>
-                                <span class="text-sm text-gray-600">
-                                    {{ $status['name'] }} ({{ $status['percentage'] }}%)
-                                </span>
-                            </div>
+                                <div class="flex items-center">
+                                    <span class="h-3 w-3 rounded-full mr-2
+                                        {{ strtolower($status['name'] ?? '') == 'active' ? 'bg-green-500' :
+                                        (strtolower($status['name'] ?? '') == 'in transfer' ? 'bg-yellow-500' :
+                                        (strtolower($status['name'] ?? '') == 'maintenance' ? 'bg-red-500' :
+                                        'bg-gray-300')) }}">
+                                    </span>
+                                    <span class="text-sm text-gray-600">
+                                        {{ $status['name'] ?? 'Unknown' }} ({{ $status['percentage'] ?? 0 }}%)
+                                    </span>
+                                </div>
                             @endforeach
                         </div>
                         <div class="mt-6">
@@ -207,7 +207,7 @@
                                 @if($index < 5)
                                 <div class="flex items-center">
                                     <span class="h-3 w-3 bg-{{ ['primary-500', 'primary-300', 'green-500', 'yellow-500', 'purple-500'][$index % 5] }} rounded-full mr-2"></span>
-                                    <span class="text-sm text-gray-600">{{ $category['name'] }} ({{ $category['percentage'] }}%)</span>
+                                    <span class="text-sm text-gray-600">{{ $category['name'] ?? 'Unknown' }} ({{ $category['percentage'] ?? 0 }}%)</span>
                                 </div>
                                 @endif
                             @endforeach
