@@ -41,6 +41,11 @@
                                     <div class="text-sm font-medium text-gray-900">{{ $selectedAsset->brand }} {{ $selectedAsset->model }}</div>
                                     <div class="text-xs text-gray-500">SN: {{ $selectedAsset->serial_number }}</div>
                                     <div class="text-xs text-gray-500">Tag: {{ $selectedAsset->property_tag_number }}</div>
+                                    @if($selectedAsset->assignedEmployee)
+                                        <div class="text-xs text-blue-600 mt-1">
+                                            Currently assigned to: {{ $selectedAsset->assignedEmployee->employee_number }} - {{ $selectedAsset->assignedEmployee->full_name }}
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -87,15 +92,32 @@
                             @error('toLocationId') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
-                        <!-- Assigned To -->
+                        <!-- Assigned To Employee - Updated to use Master List -->
                         <div class="mb-4">
-                            <label for="assignedTo" class="block text-sm font-medium text-gray-700">Assign To User (Optional)</label>
-                            <select id="assignedTo" wire:model="assignedToUserId" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <label for="assignedTo" class="block text-sm font-medium text-gray-700">
+                                <span class="flex items-center">
+                                    <span class="material-symbols-sharp text-sm mr-2">badge</span>
+                                    Assign To Employee (Optional)
+                                </span>
+                            </label>
+                            <select id="assignedTo" wire:model="assignedToEmployeeId" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 <option value="">None (Store in Location)</option>
-                                @foreach(App\Models\User::all() as $user)
-                                    <option value="{{ $user->id }}">{{ $user->name }} {{ $user->department ? '('.$user->department.')' : '' }}</option>
-                                @endforeach
+                                @if(isset($employees) && $employees->count() > 0)
+                                    @foreach($employees as $employee)
+                                        <option value="{{ $employee->id }}">
+                                            {{ $employee->employee_number }} - {{ $employee->full_name }}
+                                        </option>
+                                    @endforeach
+                                @else
+                                    {{-- Fallback to get employees from master list directly --}}
+                                    @foreach(\App\Models\PAMO\MasterList::where('status', 'active')->orderBy('full_name')->get() as $employee)
+                                        <option value="{{ $employee->id }}">
+                                            {{ $employee->employee_number }} - {{ $employee->full_name }}
+                                        </option>
+                                    @endforeach
+                                @endif
                             </select>
+                            @error('assignedToEmployeeId') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
                         <!-- Movement Date -->
@@ -108,15 +130,38 @@
                         <!-- Notes -->
                         <div class="mb-4">
                             <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
-                            <textarea id="notes" wire:model="movementNotes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"></textarea>
+                            <textarea id="notes" wire:model="movementNotes" rows="3" placeholder="Add any notes about this transfer..." class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"></textarea>
                         </div>
+
+                        <!-- Transfer Summary -->
+                        @if($selectedAsset && $toLocationId)
+                            <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-center">
+                                    <span class="material-symbols-sharp text-blue-600 mr-2">info</span>
+                                    <div class="text-sm text-blue-800">
+                                        <strong>Transfer Summary:</strong>
+                                        <div class="mt-1">
+                                            Moving {{ $selectedAsset->brand }} {{ $selectedAsset->model }}
+                                            from {{ $selectedAsset->location->name ?? 'No Location' }}
+                                            to {{ $locations->where('id', $toLocationId)->first()->name ?? 'Selected Location' }}
+                                            @if($assignedToEmployeeId)
+                                                and assigning to employee
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </form>
                 </div>
             </div>
 
             <div class="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button wire:click="recordTransfer" type="button" class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                    Record Transfer
+                    <span class="flex items-center">
+                        <span class="material-symbols-sharp text-sm mr-2">transfer_within_a_station</span>
+                        Record Transfer
+                    </span>
                 </button>
                 <button wire:click="$set('showTransferModal', false)" type="button" class="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                     Cancel

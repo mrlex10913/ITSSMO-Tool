@@ -115,12 +115,17 @@
                                         <div class="text-sm text-gray-900">{{ $asset->category->name ?? 'N/A' }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($asset->assignedUser)
+                                        @if($asset->assignedEmployee)
                                             <div class="flex items-center">
-                                                <img class="h-8 w-8 rounded-full mr-2" src="{{ $asset->assignedUser->profile_photo_url }}" alt="">
+                                                <div class="flex-shrink-0 h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">badge</span>
+                                                </div>
                                                 <div>
-                                                    <div class="text-sm font-medium text-gray-900">{{ $asset->assignedUser->name }}</div>
-                                                    <div class="text-xs text-gray-500">{{ $asset->assignedUser->department ?? 'No Department' }}</div>
+                                                    <div class="text-sm font-medium text-gray-900">{{ $asset->assignedEmployee->employee_number }}</div>
+                                                    <div class="text-sm text-gray-500">{{ $asset->assignedEmployee->full_name }}</div>
+                                                    @if($asset->assignedEmployee->department)
+                                                        <div class="text-xs text-gray-400">{{ $asset->assignedEmployee->department }}</div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         @else
@@ -254,7 +259,7 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $movement->assignedByUser->name ?? 'N/A' }}</div>
+                                        <div class="text-sm text-gray-900">{{ $movement->assignedBy->name ?? 'N/A' }}</div>
                                     </td>
                                 </tr>
                             @empty

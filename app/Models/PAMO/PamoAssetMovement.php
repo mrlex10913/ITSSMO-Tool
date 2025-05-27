@@ -37,13 +37,14 @@ class PamoAssetMovement extends Model
     {
         return $this->belongsTo(PamoLocations::class, 'to_location_id');
     }
-    public function assignedByUser()
+    public function assignedBy()
     {
         return $this->belongsTo(User::class, 'assigned_by');
     }
-    public function assignedToUser()
+
+    public function assignedByUser()
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(User::class, 'assigned_by');
     }
     public function assignedEmployee()
     {

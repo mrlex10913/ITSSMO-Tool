@@ -124,9 +124,6 @@
                                 @foreach($masterListUsersList as $employee)
                                     <option value="{{ $employee->id }}">
                                         {{ $employee->employee_number }} - {{ $employee->full_name }}
-                                        @if($employee->department)
-                                            ({{ $employee->department }})
-                                        @endif
                                     </option>
                                 @endforeach
                             </select>
