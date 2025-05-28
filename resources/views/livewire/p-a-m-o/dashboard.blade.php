@@ -100,6 +100,104 @@
             </div>
         </div>
 
+        <!-- Asset Movement Activity -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-800">Asset Movement Activity</h3>
+                <a href="{{ route('pamo.assetTracker') }}" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-1 px-2 rounded">
+                    View All
+                </a>
+            </div>
+            <div class="p-4">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Movement Timeline -->
+                    <div class="w-full md:w-2/3">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">Recent Transfers</h4>
+                        <div class="space-y-4">
+                            @forelse($recentMovements as $movement)
+                                <div class="flex">
+                                    <div class="flex flex-col items-center mr-4">
+                                        <div class="h-8 w-8 rounded-full
+                                            {{ $movement->movement_type == 'transfer' ? 'bg-primary-100 text-primary-600' :
+                                              ($movement->movement_type == 'maintenance' ? 'bg-red-100 text-red-600' :
+                                              'bg-green-100 text-green-600') }}
+                                            flex items-center justify-center">
+                                            <i class="fas {{ $movement->movement_type == 'transfer' ? 'fa-exchange-alt' :
+                                                    ($movement->movement_type == 'maintenance' ? 'fa-tools' : 'fa-check-circle') }}">
+                                            </i>
+                                        </div>
+                                        @if(!$loop->last)
+                                        <div class="h-full border-l border-dashed border-gray-300 my-1"></div>
+                                        @endif
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-3 flex-1">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">
+                                                    {{ $movement->asset->brand ?? 'Unknown' }} {{ $movement->asset->model ?? '' }}
+                                                    {{ $movement->movement_type == 'transfer' ? 'transferred' :
+                                                       ($movement->movement_type == 'maintenance' ? 'sent for repair' : 'assigned') }}
+                                                </p>
+                                                <p class="text-xs text-gray-500">
+                                                    From: {{ $movement->fromLocation->name ?? 'Unknown' }} →
+                                                    To: {{ $movement->toLocation->name ?? 'Unknown' }}
+                                                </p>
+                                            </div>
+                                            <span class="text-xs text-gray-500">
+                                                {{ $movement->movement_date ? $movement->movement_date->diffForHumans() : 'Unknown date' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-sm text-gray-500">No recent asset movements found.</p>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    <!-- Movement Stats -->
+                    <div class="w-full md:w-1/3 mt-6 md:mt-0">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">Transfer Statistics</h4>
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <p class="text-sm text-gray-600">Total Transfers (30d)</p>
+                                <p class="text-lg font-semibold text-gray-800">{{ $transferStats['last30Days'] ?? 0 }}</p>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-primary-500 h-2 rounded-full" style="width: {{ min(100, $transferStats['percentOfAverage'] ?? 0) }}%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ $transferStats['percentOfAverage'] ?? 0 }}% of monthly average
+                            </p>
+                        </div>
+
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Most Transferred Asset Types</h4>
+                        <div class="space-y-2">
+                            @foreach($transferStats['byCategory'] ?? [] as $category)
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center">
+                                        <i class="fas {{ $category['name'] == 'Laptop' ? 'fa-laptop' :
+                                               ($category['name'] == 'Desktop' ? 'fa-desktop' :
+                                               ($category['name'] == 'Mobile Phone' ? 'fa-mobile-alt' :
+                                               ($category['name'] == 'Tablet' ? 'fa-tablet-alt' :
+                                               'fa-headphones'))) }}
+                                            text-gray-400 w-5">
+                                        </i>
+                                        <span class="text-sm text-gray-600 ml-2">{{ $category['name'] }}</span>
+                                    </div>
+                                    <span class="text-sm font-medium">{{ $category['percentage'] }}%</span>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="mt-4">
+                            <canvas id="transferTrendChart" height="120"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Charts Row 1 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <!-- Asset Acquisition Trend -->
@@ -253,141 +351,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Asset Movement Activity -->
-        <div class="bg-white rounded-lg shadow mb-6">
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="font-semibold text-gray-800">Asset Movement Activity</h3>
-                <a href="{{ route('pamo.assetTracker') }}" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-1 px-2 rounded">
-                    View All
-                </a>
-            </div>
-            <div class="p-4">
-                <div class="flex flex-col md:flex-row gap-6">
-                    <!-- Movement Timeline -->
-                    <div class="w-full md:w-2/3">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3">Recent Transfers</h4>
-                        <div class="space-y-4">
-                            @forelse($recentMovements as $movement)
-                                <div class="flex">
-                                    <div class="flex flex-col items-center mr-4">
-                                        <div class="h-8 w-8 rounded-full
-                                            {{ $movement->movement_type == 'transfer' ? 'bg-primary-100 text-primary-600' :
-                                              ($movement->movement_type == 'maintenance' ? 'bg-red-100 text-red-600' :
-                                              'bg-green-100 text-green-600') }}
-                                            flex items-center justify-center">
-                                            <i class="fas {{ $movement->movement_type == 'transfer' ? 'fa-exchange-alt' :
-                                                    ($movement->movement_type == 'maintenance' ? 'fa-tools' : 'fa-check-circle') }}">
-                                            </i>
-                                        </div>
-                                        @if(!$loop->last)
-                                        <div class="h-full border-l border-dashed border-gray-300 my-1"></div>
-                                        @endif
-                                    </div>
-                                    <div class="bg-gray-50 rounded-lg p-3 flex-1">
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-900">
-                                                    {{ $movement->asset->brand ?? 'Unknown' }} {{ $movement->asset->model ?? '' }}
-                                                    {{ $movement->movement_type == 'transfer' ? 'transferred' :
-                                                       ($movement->movement_type == 'maintenance' ? 'sent for repair' : 'assigned') }}
-                                                </p>
-                                                <p class="text-xs text-gray-500">
-                                                    From: {{ $movement->fromLocation->name ?? 'Unknown' }} →
-                                                    To: {{ $movement->toLocation->name ?? 'Unknown' }}
-                                                </p>
-                                            </div>
-                                            <span class="text-xs text-gray-500">
-                                                {{ $movement->movement_date ? $movement->movement_date->diffForHumans() : 'Unknown date' }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <p class="text-sm text-gray-500">No recent asset movements found.</p>
-                            @endforelse
-                        </div>
-                    </div>
-
-                    <!-- Movement Stats -->
-                    <div class="w-full md:w-1/3 mt-6 md:mt-0">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3">Transfer Statistics</h4>
-                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                            <div class="flex justify-between items-center mb-2">
-                                <p class="text-sm text-gray-600">Total Transfers (30d)</p>
-                                <p class="text-lg font-semibold text-gray-800">{{ $transferStats['last30Days'] ?? 0 }}</p>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-primary-500 h-2 rounded-full" style="width: {{ min(100, $transferStats['percentOfAverage'] ?? 0) }}%"></div>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1">
-                                {{ $transferStats['percentOfAverage'] ?? 0 }}% of monthly average
-                            </p>
-                        </div>
-
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Most Transferred Asset Types</h4>
-                        <div class="space-y-2">
-                            @foreach($transferStats['byCategory'] ?? [] as $category)
-                                <div class="flex justify-between items-center">
-                                    <div class="flex items-center">
-                                        <i class="fas {{ $category['name'] == 'Laptop' ? 'fa-laptop' :
-                                               ($category['name'] == 'Desktop' ? 'fa-desktop' :
-                                               ($category['name'] == 'Mobile Phone' ? 'fa-mobile-alt' :
-                                               ($category['name'] == 'Tablet' ? 'fa-tablet-alt' :
-                                               'fa-headphones'))) }}
-                                            text-gray-400 w-5">
-                                        </i>
-                                        <span class="text-sm text-gray-600 ml-2">{{ $category['name'] }}</span>
-                                    </div>
-                                    <span class="text-sm font-medium">{{ $category['percentage'] }}%</span>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <div class="mt-4">
-                            <canvas id="transferTrendChart" height="120"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Asset Value and Depreciation -->
-        <div class="bg-white rounded-lg shadow mb-6">
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="font-semibold text-gray-800">Asset Value & Depreciation</h3>
-                <div class="flex space-x-2">
-                    <select class="text-xs border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500">
-                        <option>All Assets</option>
-                        <option>By Department</option>
-                        <option>By Type</option>
-                    </select>
-                </div>
-            </div>
-            <div class="p-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-xs text-gray-500">Total Asset Value</p>
-                        <p class="text-xl font-semibold text-gray-800">₱{{ number_format($valueData['totalValue'] ?? 0, 2) }}</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-xs text-gray-500">Current Book Value</p>
-                        <p class="text-xl font-semibold text-gray-800">₱{{ number_format($valueData['currentValue'] ?? 0, 2) }}</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-xs text-gray-500">Total Depreciation</p>
-                        <p class="text-xl font-semibold text-gray-800">₱{{ number_format($valueData['depreciation'] ?? 0, 2) }}</p>
-                        <div class="flex items-center text-xs mt-1">
-                            <span class="text-gray-500">{{ $valueData['depreciationRate'] ?? 0 }}% of total value</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <canvas id="depreciationChart" height="200"></canvas>
-                </div>
-            </div>
-        </div>
     </main>
 
     <script>
@@ -403,7 +366,7 @@
         });
 
         let acquisitionChart, statusChart, departmentChart, typeChart,
-        maintenanceChart, transferTrendChart, depreciationChart;
+        maintenanceChart, transferTrendChart;
 
         function initEmptyCharts() {
             console.log('Creating empty chart containers');
@@ -413,7 +376,6 @@
             createTypeChart();
             createMaintenanceChart();
             createTransferTrendChart();
-            createDepreciationChart();
         }
 
         function updateAllCharts() {
@@ -426,7 +388,6 @@
                 updateTypeChart();
                 updateMaintenanceChart();
                 updateTransferTrendChart();
-                updateDepreciationChart();
             }, 300);
         }
 
@@ -438,7 +399,6 @@
             createTypeChart();
             createMaintenanceChart();
             createTransferTrendChart();
-            createDepreciationChart();
 
             // Immediately update with data
             setTimeout(() => {
@@ -453,7 +413,6 @@
             updateTypeChart();
             updateMaintenanceChart();
             updateTransferTrendChart();
-            updateDepreciationChart();
         }
 
         function createAcquisitionChart() {
@@ -744,93 +703,6 @@
                     transferTrendChart.data.labels = data.weekly.labels;
                     transferTrendChart.data.datasets[0].data = data.weekly.data;
                     transferTrendChart.update();
-                }
-            }
-        }
-
-        function createDepreciationChart() {
-            const ctx = document.getElementById('depreciationChart').getContext('2d');
-            depreciationChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [
-                        {
-                            label: 'Asset Value',
-                            data: [],
-                            borderColor: '#0ea5e9',
-                            backgroundColor: 'transparent',
-                            tension: 0.3,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Book Value',
-                            data: [],
-                            borderColor: '#22c55e',
-                            backgroundColor: 'transparent',
-                            tension: 0.3,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Depreciation',
-                            data: [],
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.3,
-                            fill: true,
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Value (₱)'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Depreciation (₱)'
-                            },
-                            grid: {
-                                drawOnChartArea: false,
-                            },
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateDepreciationChart() {
-            if (depreciationChart) {
-                const data = @this.valueData;
-
-                if (data && data.yearly && data.yearly.labels) {
-                    depreciationChart.data.labels = data.yearly.labels;
-                    depreciationChart.data.datasets[0].data = data.yearly.purchaseValues;
-                    depreciationChart.data.datasets[1].data = data.yearly.bookValues;
-                    depreciationChart.data.datasets[2].data = data.yearly.depreciations;
-                    depreciationChart.update();
                 }
             }
         }

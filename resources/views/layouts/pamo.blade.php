@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    {{-- <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script> --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -90,8 +90,8 @@
 
                             <button @click="profileModalOpen = true" class="w-full mt-3 bg-yellow-300 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-400 transition-colors">
                                 <span class="flex items-center justify-center">
-                                    <span class="material-symbols-sharp text-xs mr-1">edit</span>
-                                    Edit Profile
+                                    <span class="material-symbols-sharp text-xs mr-1">person</span>
+                                    My Profile & Assets
                                 </span>
                             </button>
                         </div>
@@ -191,14 +191,14 @@
         <!-- Modal Backdrop -->
         <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" @click="profileModalOpen = false"></div>
 
-        <!-- Modal Content -->
-        <div class="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-lg z-10 relative">
+        <!-- Modal Content - Made Wider for Two Columns -->
+        <div class="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-6xl z-10 relative max-h-[90vh] overflow-y-auto">
             <!-- Modal Header -->
             <div class="relative bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-xl font-semibold text-white">Edit Profile</h3>
-                        <p class="text-blue-100 text-sm">Update your personal information</p>
+                        <h3 class="text-xl font-semibold text-white">My Profile & Assets</h3>
+                        <p class="text-blue-100 text-sm">View your information and accountable assets</p>
                     </div>
                     <button @click="profileModalOpen = false"
                             class="text-white hover:text-yellow-300 transition-colors p-2 rounded-lg hover:bg-white/10">
@@ -207,163 +207,354 @@
                 </div>
             </div>
 
-            <!-- Modal Body -->
-            <div class="p-6">
-                <form action="{{ route('user-profile-information.update') }}" method="POST"
-                    class="space-y-6" enctype="multipart/form-data"
-                    x-data="{
-                          photoPreview: null,
-                          photoName: null,
-                          isSubmitting: false,
-                          submitForm() {
-                              this.isSubmitting = true;
-                              this.$el.submit();
-                          }
-                      }"
-                    @submit="isSubmitting = true">
-                    @csrf
-                    @method('PUT')
+            <!-- Modal Body - Two Grid Layout -->
+            <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                    <!-- Profile Photo Section -->
-                    <div class="text-center">
-                        <div class="relative inline-block">
-                            <!-- Current/Preview Photo -->
-                            <div class="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 mx-auto mb-4 shadow-lg">
-                                <template x-if="photoPreview">
-                                    <img :src="photoPreview" alt="Photo preview" class="w-full h-full object-cover">
-                                </template>
-                                <template x-if="!photoPreview">
-                                    @if(Auth::user()->profile_photo_path)
-                                        <img src="{{ Storage::url(Auth::user()->profile_photo_path) }}"
-                                            alt="{{ Auth::user()->name }}"
-                                            class="w-full h-full object-cover">
-                                    @elseif(Auth::user()->profile_photo_url)
-                                        <img src="{{ Auth::user()->profile_photo_url }}"
-                                            alt="{{ Auth::user()->name }}"
-                                            class="w-full h-full object-cover">
-                                    @else
-                                        <div class="w-full h-full flex items-center justify-center">
-                                            <span class="text-3xl font-bold text-white">{{ substr(Auth::user()->name, 0, 1) }}</span>
-                                        </div>
-                                    @endif
-                                </template>
+                <!-- LEFT GRID: User Information -->
+                <div class="space-y-6">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <span class="material-symbols-sharp text-blue-600 mr-2">person</span>
+                            Personal Information
+                        </h4>
+
+                        <form action="{{ route('user-profile-information.update') }}" method="POST"
+                            class="space-y-4" enctype="multipart/form-data"
+                            x-data="{
+                                photoPreview: null,
+                                photoName: null,
+                                isSubmitting: false
+                            }"
+                            @submit="isSubmitting = true">
+                            @csrf
+                            @method('PUT')
+
+                            <!-- Profile Photo Section -->
+                            <div class="text-center">
+                                <div class="relative inline-block">
+                                    <!-- Current/Preview Photo -->
+                                    <div class="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 mx-auto mb-4 shadow-lg">
+                                        <template x-if="photoPreview">
+                                            <img :src="photoPreview" alt="Photo preview" class="w-full h-full object-cover">
+                                        </template>
+                                        <template x-if="!photoPreview">
+                                            @if(Auth::user()->profile_photo_path)
+                                                <img src="{{ Storage::url(Auth::user()->profile_photo_path) }}"
+                                                    alt="{{ Auth::user()->name }}"
+                                                    class="w-full h-full object-cover">
+                                            @elseif(Auth::user()->profile_photo_url)
+                                                <img src="{{ Auth::user()->profile_photo_url }}"
+                                                    alt="{{ Auth::user()->name }}"
+                                                    class="w-full h-full object-cover">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center">
+                                                    <span class="text-3xl font-bold text-white">{{ substr(Auth::user()->name, 0, 1) }}</span>
+                                                </div>
+                                            @endif
+                                        </template>
+                                    </div>
+
+                                    <!-- Upload Button -->
+                                    <div class="relative">
+                                        <input type="file"
+                                            name="photo"
+                                            id="photo"
+                                            accept="image/*"
+                                            class="hidden"
+                                            @change="
+                                                photoName = $event.target.files[0]?.name;
+                                                const reader = new FileReader();
+                                                reader.onload = (e) => photoPreview = e.target.result;
+                                                reader.readAsDataURL($event.target.files[0]);
+                                            ">
+                                        <label for="photo"
+                                            class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                                            <span class="material-symbols-sharp text-sm mr-2">photo_camera</span>
+                                            Change Photo
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Upload Button -->
-                            <div class="relative">
-                                <input type="file"
-                                    name="photo"
-                                    id="photo"
-                                    accept="image/*"
-                                    class="hidden"
-                                    @change="
-                                        photoName = $event.target.files[0]?.name;
-                                        const reader = new FileReader();
-                                        reader.onload = (e) => photoPreview = e.target.result;
-                                        reader.readAsDataURL($event.target.files[0]);
-                                    ">
-                                <label for="photo"
-                                    class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer transition-colors">
-                                    <span class="material-symbols-sharp text-sm mr-2">photo_camera</span>
-                                    Choose Photo
-                                </label>
+                            <!-- Form Fields -->
+                            <div class="space-y-4">
+                                <!-- Name -->
+                                <div>
+                                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                                        <span class="flex items-center">
+                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">badge</span>
+                                            Full Name
+                                        </span>
+                                    </label>
+                                    <input type="text"
+                                        name="name"
+                                        id="name"
+                                        value="{{ Auth::user()->name }}"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                        placeholder="Enter your full name">
+                                </div>
+
+                                <!-- Email -->
+                                <div>
+                                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                        <span class="flex items-center">
+                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">email</span>
+                                            Email Address
+                                        </span>
+                                    </label>
+                                    <input type="email"
+                                        name="email"
+                                        id="email"
+                                        value="{{ Auth::user()->email }}"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                        placeholder="Enter your email address">
+                                </div>
+
+                                <!-- Role (Read-only) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        <span class="flex items-center">
+                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">work</span>
+                                            Role
+                                        </span>
+                                    </label>
+                                    <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
+                                        {{ Auth::user()->role ?? 'User' }}
+                                    </div>
+                                </div>
+
+                                <!-- Department -->
+                                <div>
+                                    <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
+                                        <span class="flex items-center">
+                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">business</span>
+                                            Department
+                                        </span>
+                                    </label>
+                                    <input type="text"
+                                        name="department"
+                                        id="department"
+                                        value="{{ Auth::user()->department ?? '' }}"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                        placeholder="Enter your department">
+                                </div>
+
+                                <!-- ID Number (Read-only) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        <span class="flex items-center">
+                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">numbers</span>
+                                            ID Number
+                                        </span>
+                                    </label>
+                                    <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
+                                        {{ Auth::user()->id_number ?? 'Not Set' }}
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Photo Name Display -->
-                            <div x-show="photoName" class="mt-2">
-                                <p class="text-xs text-gray-500" x-text="photoName"></p>
-                            </div>
-
-                            <!-- Remove Photo Button -->
-                            <div class="mt-2" x-show="photoPreview">
-                                <button type="button"
-                                        @click="photoPreview = null; photoName = null; document.getElementById('photo').value = ''"
-                                        class="text-xs text-red-600 hover:text-red-800 transition-colors">
-                                    Remove photo
+                            <!-- Save Button -->
+                            <div class="pt-4">
+                                <button type="submit"
+                                        :disabled="isSubmitting"
+                                        class="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200">
+                                    <span class="flex items-center justify-center">
+                                        <span class="material-symbols-sharp text-sm mr-2">save</span>
+                                        <span x-show="!isSubmitting">Update Profile</span>
+                                        <span x-show="isSubmitting">Updating...</span>
+                                    </span>
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
+                </div>
 
-                    <!-- Form Fields -->
-                    <div class="space-y-4">
-                        <!-- Name -->
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                                <span class="flex items-center">
-                                    <span class="material-symbols-sharp text-sm mr-2 text-gray-500">person</span>
-                                    Full Name
-                                </span>
-                            </label>
-                            <input type="text"
-                                name="name"
-                                id="name"
-                                value="{{ Auth::user()->name }}"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-colors"
-                                placeholder="Enter your full name">
-                        </div>
+                <!-- RIGHT GRID: Accountable Assets -->
+                <div class="space-y-6">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <span class="material-symbols-sharp text-blue-600 mr-2">inventory_2</span>
+                            My Accountable Assets
+                        </h4>
 
-                        <!-- Email -->
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                                <span class="flex items-center">
-                                    <span class="material-symbols-sharp text-sm mr-2 text-gray-500">email</span>
-                                    Email Address
-                                </span>
-                            </label>
-                            <input type="email"
-                                name="email"
-                                id="email"
-                                value="{{ Auth::user()->email }}"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-colors"
-                                placeholder="Enter your email address">
-                        </div>
+                        @php
+                            // Get user's ID number and find matching assets
+                            $userIdNumber = Auth::user()->id_number; // Changed from idnumber to id_number
+                            $masterListUser = null;
+                            $accountableAssets = collect();
 
-                        <!-- Role (Read-only) -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <span class="flex items-center">
-                                    <span class="material-symbols-sharp text-sm mr-2 text-gray-500">badge</span>
-                                    Role
-                                </span>
-                            </label>
-                            <div class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600">
-                                {{ Auth::user()->role ?? 'User' }}
+                            if ($userIdNumber) {
+                                // Match user's id_number with master list's employee_number
+                                $masterListUser = \App\Models\PAMO\MasterList::where('employee_number', $userIdNumber)->first();
+                                if ($masterListUser) {
+                                    $accountableAssets = \App\Models\PAMO\PamoAssets::with(['category', 'location'])
+                                        ->where('assigned_to', $masterListUser->id)
+                                        ->get();
+                                }
+                            }
+                        @endphp
+
+                        @if($masterListUser && $accountableAssets->count() > 0)
+                            <!-- Employee Info Display -->
+                            <div class="bg-blue-50 rounded-lg p-3 mb-4 border border-blue-200">
+                                <div class="flex items-center">
+                                    <span class="material-symbols-sharp text-blue-600 mr-2">person</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-blue-900">{{ $masterListUser->full_name }}</p>
+                                        <p class="text-xs text-blue-700">Employee #{{ $masterListUser->employee_number }}</p>
+                                        @if($masterListUser->department)
+                                            <p class="text-xs text-blue-600">{{ $masterListUser->department }}</p>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
-                                <span class="flex items-center">
-                                    <span class="material-symbols-sharp text-sm mr-2 text-gray-500">business</span>
-                                    Department
-                                </span>
-                            </label>
-                            <input type="text"
-                                   name="department"
-                                   id="department"
-                                   value="{{ Auth::user()->department ?? '' }}"
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-colors"
-                                   placeholder="Enter your department">
-                        </div>
-                    </div>
 
-                    <!-- Action Buttons -->
-                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                        <button @click="profileModalOpen = false"
-                                type="button"
-                                :disabled="isSubmitting"
-                                class="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                class="px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200">
-                            <span class="flex items-center">
-                                <span class="material-symbols-sharp text-sm mr-2">save</span>
-                                Save Changes
-                            </span>
-                        </button>
+                            <!-- Assets List -->
+                            <div class="space-y-3 max-h-96 overflow-y-auto">
+                                @foreach($accountableAssets as $asset)
+                                    <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+                                        <div class="flex items-start space-x-3">
+                                            <!-- Asset Icon -->
+                                            <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <span class="material-symbols-sharp text-blue-600 text-sm">
+                                                    @if(str_contains(strtolower($asset->category->name ?? ''), 'laptop'))
+                                                        laptop
+                                                    @elseif(str_contains(strtolower($asset->category->name ?? ''), 'desktop'))
+                                                        computer
+                                                    @elseif(str_contains(strtolower($asset->category->name ?? ''), 'phone'))
+                                                        smartphone
+                                                    @elseif(str_contains(strtolower($asset->category->name ?? ''), 'tablet'))
+                                                        tablet
+                                                    @else
+                                                        devices
+                                                    @endif
+                                                </span>
+                                            </div>
+
+                                            <!-- Asset Details -->
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-start justify-between">
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900 truncate">
+                                                            {{ $asset->brand }} {{ $asset->model }}
+                                                        </p>
+                                                        <p class="text-xs text-gray-500">
+                                                            SN: {{ $asset->serial_number }}
+                                                        </p>
+                                                        <p class="text-xs text-gray-500">
+                                                            Tag: {{ $asset->property_tag_number }}
+                                                        </p>
+                                                        @if($asset->category)
+                                                            <p class="text-xs text-blue-600 mt-1">
+                                                                {{ $asset->category->name }}
+                                                            </p>
+                                                        @endif
+                                                    </div>
+
+                                                    <!-- Status Badge -->
+                                                    <div class="flex-shrink-0">
+                                                        @if($asset->status == 'in-use' || $asset->status == 'active')
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1"></span>
+                                                                {{ ucfirst($asset->status) }}
+                                                            </span>
+                                                        @elseif($asset->status == 'maintenance')
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                                <span class="w-1.5 h-1.5 bg-red-400 rounded-full mr-1"></span>
+                                                                Maintenance
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
+                                                                {{ ucfirst($asset->status) }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                <!-- Location -->
+                                                @if($asset->location)
+                                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                                        <span class="material-symbols-sharp text-xs mr-1">location_on</span>
+                                                        {{ $asset->location->name }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <!-- Assets Summary -->
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <div class="grid grid-cols-2 gap-4 text-center">
+                                    <div class="bg-white rounded-lg p-3 border">
+                                        <div class="text-lg font-semibold text-blue-600">{{ $accountableAssets->count() }}</div>
+                                        <div class="text-xs text-gray-500">Total Assets</div>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-3 border">
+                                        <div class="text-lg font-semibold text-green-600">
+                                            {{ $accountableAssets->whereIn('status', ['in-use', 'active'])->count() }}
+                                        </div>
+                                        <div class="text-xs text-gray-500">Active</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        @elseif($userIdNumber && !$masterListUser)
+                            <!-- User not found in master list -->
+                            <div class="text-center py-8">
+                                <span class="material-symbols-sharp text-4xl text-gray-300 mb-3 block">person_search</span>
+                                <p class="text-sm text-gray-500 mb-2">ID Number not found in Master List</p>
+                                <p class="text-xs text-gray-400">
+                                    Your ID number ({{ $userIdNumber }}) is not registered in the master list.
+                                    Please contact your administrator.
+                                </p>
+                            </div>
+
+                        @elseif(!$userIdNumber)
+                            <!-- No ID number set -->
+                            <div class="text-center py-8">
+                                <span class="material-symbols-sharp text-4xl text-gray-300 mb-3 block">badge</span>
+                                <p class="text-sm text-gray-500 mb-2">No ID Number Set</p>
+                                <p class="text-xs text-gray-400">
+                                    Please contact your administrator to set up your ID number.
+                                </p>
+                            </div>
+
+                        @else
+                            <!-- No assets assigned -->
+                            <div class="text-center py-8">
+                                <span class="material-symbols-sharp text-4xl text-gray-300 mb-3 block">inventory_2</span>
+                                <p class="text-sm text-gray-500 mb-2">No Assets Assigned</p>
+                                <p class="text-xs text-gray-400">
+                                    You currently have no accountable assets assigned to you.
+                                </p>
+                            </div>
+                        @endif
+
+                        <!-- Contact Admin Button -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <button type="button" class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                                <span class="flex items-center justify-center">
+                                    <span class="material-symbols-sharp text-sm mr-2">support_agent</span>
+                                    Report Asset Issue
+                                </span>
+                            </button>
+                        </div>
                     </div>
-                </form>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div class="flex justify-end">
+                    <button @click="profileModalOpen = false"
+                            type="button"
+                            class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
     </div>
