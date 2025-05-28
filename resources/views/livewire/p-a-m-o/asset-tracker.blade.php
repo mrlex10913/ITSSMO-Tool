@@ -102,7 +102,16 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
-                                                <i class="fas fa-laptop"></i>
+                                                @if($asset->category)
+                                                    <i class="fas {{
+                                                        str_contains(strtolower($asset->category->name), 'laptop') ? 'fa-laptop' :
+                                                        (str_contains(strtolower($asset->category->name), 'desktop') ? 'fa-desktop' :
+                                                        (str_contains(strtolower($asset->category->name), 'phone') ? 'fa-mobile-alt' :
+                                                        (str_contains(strtolower($asset->category->name), 'tablet') ? 'fa-tablet-alt' :
+                                                        'fa-laptop'))) }}"></i>
+                                                @else
+                                                    <i class="fas fa-laptop"></i>
+                                                @endif
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900">{{ $asset->brand }} {{ $asset->model }}</div>
@@ -129,47 +138,104 @@
                                                 </div>
                                             </div>
                                         @else
-                                            <div class="text-sm text-gray-500">Unassigned</div>
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">person_off</span>
+                                                </div>
+                                                <div class="text-sm text-gray-500">Unassigned</div>
+                                            </div>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $asset->location->name ?? 'N/A' }}</div>
+                                        <div class="flex items-center">
+                                            @if($asset->location)
+                                                <div class="flex-shrink-0 h-6 w-6 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">location_on</span>
+                                                </div>
+                                                <div class="text-sm text-gray-900">{{ $asset->location->name }}</div>
+                                            @else
+                                                <div class="flex-shrink-0 h-6 w-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">location_off</span>
+                                                </div>
+                                                <div class="text-sm text-gray-500">No Location</div>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($asset->status == 'active' || $asset->status == 'assigned')
+                                        @if($asset->status == 'active' || $asset->status == 'assigned' || $asset->status == 'in-use')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                {{ ucfirst($asset->status) }}
+                                                <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1 mt-0.5"></span>
+                                                {{ ucfirst(str_replace('-', ' ', $asset->status)) }}
                                             </span>
                                         @elseif($asset->status == 'maintenance')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                {{ ucfirst($asset->status) }}
+                                                <span class="w-1.5 h-1.5 bg-red-400 rounded-full mr-1 mt-0.5"></span>
+                                                Maintenance
                                             </span>
-                                        @elseif($asset->status == 'in_transfer')
+                                        @elseif($asset->status == 'in_transfer' || $asset->status == 'in-transfer')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                <span class="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-1 mt-0.5"></span>
                                                 In Transfer
                                             </span>
-                                        @else
+                                        @elseif($asset->status == 'disposed' || $asset->status == 'retired')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                {{ ucfirst($asset->status) }}
+                                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1 mt-0.5"></span>
+                                                {{ ucfirst(str_replace('-', ' ', $asset->status)) }}
+                                            </span>
+                                        @else
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                <span class="w-1.5 h-1.5 bg-blue-400 rounded-full mr-1 mt-0.5"></span>
+                                                {{ ucfirst(str_replace('-', ' ', $asset->status)) }}
                                             </span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button wire:click="viewAsset({{ $asset->id }})" class="text-blue-600 hover:text-blue-900 mr-3">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button wire:click="openTransferModal({{ $asset->id }})" class="text-green-600 hover:text-green-900 mr-3">
-                                            <i class="fas fa-exchange-alt"></i>
-                                        </button>
-                                        <button class="text-gray-600 hover:text-gray-900">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
+                                        <div class="flex justify-end space-x-2">
+                                            <button wire:click="viewAsset({{ $asset->id }})"
+                                                    class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button wire:click="openTransferModal({{ $asset->id }})"
+                                                    class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                    title="Transfer Asset">
+                                                <i class="fas fa-exchange-alt"></i>
+                                            </button>
+                                            <div class="relative inline-block text-left" x-data="{ open: false }">
+                                                <button @click="open = !open"
+                                                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                                        title="More Options">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <div x-show="open" @click.away="open = false"
+                                                     class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                                    <div class="py-1">
+                                                        <button wire:click="generateQR({{ $asset->id }})"
+                                                                class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                                            <i class="fas fa-qrcode mr-2"></i> Generate QR Code
+                                                        </button>
+                                                        <button wire:click="printLabel({{ $asset->id }})"
+                                                                class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                                            <i class="fas fa-print mr-2"></i> Print Label
+                                                        </button>
+                                                        <button wire:click="viewHistory({{ $asset->id }})"
+                                                                class="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                                            <i class="fas fa-history mr-2"></i> View History
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                        No assets found matching your filters.
+                                        <div class="flex flex-col items-center py-8">
+                                            <i class="fas fa-search text-4xl text-gray-300 mb-3"></i>
+                                            <p class="text-lg font-medium">No assets found</p>
+                                            <p class="text-sm">Try adjusting your search criteria or filters</p>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforelse
@@ -206,6 +272,9 @@
                                     To
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Assigned To
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Date
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -222,50 +291,141 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
-                                                <i class="fas fa-laptop"></i>
+                                                @if($movement->asset && $movement->asset->category)
+                                                    <i class="fas {{
+                                                        str_contains(strtolower($movement->asset->category->name), 'laptop') ? 'fa-laptop' :
+                                                        (str_contains(strtolower($movement->asset->category->name), 'desktop') ? 'fa-desktop' :
+                                                        (str_contains(strtolower($movement->asset->category->name), 'phone') ? 'fa-mobile-alt' :
+                                                        (str_contains(strtolower($movement->asset->category->name), 'tablet') ? 'fa-tablet-alt' :
+                                                        'fa-laptop'))) }}"></i>
+                                                @else
+                                                    <i class="fas fa-laptop"></i>
+                                                @endif
                                             </div>
                                             <div class="ml-3">
                                                 <div class="text-sm font-medium text-gray-900">
                                                     {{ $movement->asset->brand ?? 'Unknown' }} {{ $movement->asset->model ?? '' }}
                                                 </div>
                                                 <div class="text-xs text-gray-500">
-                                                    {{ $movement->asset->property_tag_number ?? 'No Tag' }}
+                                                    Tag: {{ $movement->asset->property_tag_number ?? 'No Tag' }}
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    SN: {{ $movement->asset->serial_number ?? 'No SN' }}
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $movement->fromLocation->name ?? 'N/A' }}</div>
+                                        <div class="flex items-center">
+                                            @if($movement->fromLocation)
+                                                <div class="flex-shrink-0 h-6 w-6 bg-red-100 rounded-full flex items-center justify-center text-red-600 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">location_on</span>
+                                                </div>
+                                                <div class="text-sm text-gray-900">{{ $movement->fromLocation->name }}</div>
+                                            @else
+                                                <div class="flex-shrink-0 h-6 w-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">location_off</span>
+                                                </div>
+                                                <div class="text-sm text-gray-500">Unknown</div>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $movement->toLocation->name ?? 'N/A' }}</div>
+                                        <div class="flex items-center">
+                                            @if($movement->toLocation)
+                                                <div class="flex-shrink-0 h-6 w-6 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">location_on</span>
+                                                </div>
+                                                <div class="text-sm text-gray-900">{{ $movement->toLocation->name }}</div>
+                                            @else
+                                                <div class="flex-shrink-0 h-6 w-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">location_off</span>
+                                                </div>
+                                                <div class="text-sm text-gray-500">Unknown</div>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if($movement->assignedEmployee)
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">badge</span>
+                                                </div>
+                                                <div>
+                                                    <div class="text-sm font-medium text-gray-900">{{ $movement->assignedEmployee->employee_number }}</div>
+                                                    <div class="text-xs text-gray-500">{{ $movement->assignedEmployee->full_name }}</div>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-6 w-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">person_off</span>
+                                                </div>
+                                                <div class="text-sm text-gray-500">Unassigned</div>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $movement->movement_date->format('M j, Y') }}
+                                        <div class="flex items-center">
+                                            <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>
+                                            {{ $movement->movement_date ? $movement->movement_date->format('M j, Y') : 'Unknown' }}
+                                        </div>
+                                        <div class="text-xs text-gray-400 mt-1">
+                                            {{ $movement->movement_date ? $movement->movement_date->diffForHumans() : '' }}
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($movement->movement_type == 'transfer')
+                                        @if(($movement->movement_type ?? 'transfer') == 'transfer')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                <i class="fas fa-exchange-alt mr-1"></i>
                                                 Transfer
                                             </span>
-                                        @elseif($movement->movement_type == 'maintenance')
+                                        @elseif(($movement->movement_type ?? 'transfer') == 'maintenance')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                <i class="fas fa-tools mr-1"></i>
                                                 Maintenance
                                             </span>
-                                        @else
+                                        @elseif(($movement->movement_type ?? 'transfer') == 'assignment')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                {{ ucfirst($movement->movement_type) }}
+                                                <i class="fas fa-user-plus mr-1"></i>
+                                                Assignment
+                                            </span>
+                                        @else
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                <i class="fas fa-question mr-1"></i>
+                                                {{ ucfirst($movement->movement_type ?? 'Unknown') }}
                                             </span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $movement->assignedBy->name ?? 'N/A' }}</div>
+                                        @if($movement->assignedBy)
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-6 w-6 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">person</span>
+                                                </div>
+                                                <div>
+                                                    <div class="text-sm text-gray-900">{{ $movement->assignedBy->name }}</div>
+                                                    <div class="text-xs text-gray-500">{{ $movement->assignedBy->role ?? 'User' }}</div>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-6 w-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mr-2">
+                                                    <span class="material-symbols-sharp text-xs">person_off</span>
+                                                </div>
+                                                <div class="text-sm text-gray-500">Unknown</div>
+                                            </div>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                        No recent movements found.
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                        <div class="flex flex-col items-center py-8">
+                                            <i class="fas fa-exchange-alt text-4xl text-gray-300 mb-3"></i>
+                                            <p class="text-lg font-medium">No recent movements found</p>
+                                            <p class="text-sm">Asset transfers and assignments will appear here</p>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforelse

@@ -10,6 +10,7 @@ use App\Models\PAMO\PamoCategory;
 use App\Models\PAMO\PamoLocations;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -77,7 +78,13 @@ class AssetTracker extends Component
 
     public function render()
     {
+        // Load assets with all necessary relationships
         $assets = PamoAssets::query()
+            ->with([
+                'category',           // Load category relationship
+                'location',           // Load location relationship
+                'assignedEmployee'    // Load assigned employee from MasterList
+            ])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('brand', 'like', '%' . $this->search . '%')
@@ -88,26 +95,71 @@ class AssetTracker extends Component
                 });
             })
             ->when($this->categoryId, fn($query) => $query->where('category_id', $this->categoryId))
-            ->when($this->department, fn($query) => $query->whereHas('assignedEmployee', fn($q) => $q->where('department', $this->department))) // Changed from assignedUser
+            ->when($this->department, function($query) {
+                $query->whereHas('assignedEmployee', function($q) {
+                    $q->where('department', $this->department);
+                });
+            })
             ->when($this->locationId, fn($query) => $query->where('location_id', $this->locationId))
             ->when($this->status, fn($query) => $query->where('status', $this->status))
-            ->with(['assignedEmployee', 'location', 'category']) // Changed from assignedUser
+            ->orderBy('property_tag_number')
             ->paginate(10);
 
-         $recentMovements = PamoAssetMovement::with(['asset', 'fromLocation', 'toLocation', 'assignedBy', 'assignedEmployee']) // Updated relationships
-            ->latest('movement_date')
-            ->take(5)
+        // Load recent movements with all relationships
+        $recentMovements = PamoAssetMovement::query()
+            ->with([
+                'asset.category',     // Load asset with category
+                'fromLocation',       // Load from location
+                'toLocation',         // Load to location
+                'assignedBy',         // Load user who performed the action
+                'assignedEmployee'    // Load assigned employee from MasterList
+            ])
+            ->orderByDesc('movement_date')
+            ->orderByDesc('created_at')
+            ->take(10)
             ->get();
+
+        // Load filter data
+        $locations = PamoLocations::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $categories = PamoCategory::query()
+            ->orderBy('name')
+            ->get();
+
+        $employees = MasterList::query()
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get();
+
+        // Get unique departments from master list
+        $departments = MasterList::query()
+            ->select('department')
+            ->distinct()
+            ->whereNotNull('department')
+            ->where('department', '!=', '')
+            ->orderBy('department')
+            ->pluck('department');
+
+        // Get unique statuses from assets
+        $statuses = PamoAssets::query()
+            ->select('status')
+            ->distinct()
+            ->whereNotNull('status')
+            ->where('status', '!=', '')
+            ->orderBy('status')
+            ->pluck('status');
 
         return view('livewire.p-a-m-o.asset-tracker', [
             'assets' => $assets,
             'recentMovements' => $recentMovements,
-            'locations' => PamoLocations::where('is_active', true)->get(),
-            'categories' => PamoCategory::all(),
-            'employees' => MasterList::where('status', 'active')->orderBy('full_name')->get(), // Changed from users
-            'departments' => MasterList::select('department')->distinct()->whereNotNull('department')->pluck('department'), // Changed from User
-            'statuses' => PamoAssets::select('status')->distinct()->pluck('status'),
-
+            'locations' => $locations,
+            'categories' => $categories,
+            'employees' => $employees,
+            'departments' => $departments,
+            'statuses' => $statuses,
         ]);
     }
 
@@ -119,16 +171,25 @@ class AssetTracker extends Component
         $this->department = '';
         $this->locationId = '';
         $this->status = '';
+        $this->resetPage(); // Reset pagination when filters are cleared
     }
 
     // Record Transfer
     public function openTransferModal($assetId = null)
     {
         if ($assetId) {
-            $this->selectedAsset = PamoAssets::with(['assignedEmployee', 'location'])->findOrFail($assetId); // Changed from assignedUser
+            $this->selectedAsset = PamoAssets::query()
+                ->with(['assignedEmployee', 'location', 'category'])
+                ->findOrFail($assetId);
+
             $this->fromLocationId = $this->selectedAsset->location_id;
-            $this->assignedToEmployeeId = $this->selectedAsset->assigned_to; // Changed property name
+            $this->assignedToEmployeeId = $this->selectedAsset->assigned_to;
+        } else {
+            // Clear form when opening without specific asset
+            $this->reset(['selectedAsset', 'fromLocationId', 'toLocationId', 'assignedToEmployeeId', 'movementNotes']);
         }
+
+        $this->movementDate = now()->format('Y-m-d');
         $this->showTransferModal = true;
     }
 
@@ -136,32 +197,49 @@ class AssetTracker extends Component
     {
         $this->validate([
             'selectedAsset' => 'required',
-            'toLocationId' => 'required',
-            'movementDate' => 'required|date',
+            'toLocationId' => 'required|exists:pamo_locations,id',
+            'movementDate' => 'required|date|before_or_equal:today',
+            'assignedToEmployeeId' => 'nullable|exists:master_lists,id',
+            'movementNotes' => 'nullable|string|max:500'
         ]);
 
-        // Create movement record
-        PamoAssetMovement::create([
-            'asset_id' => $this->selectedAsset->id,
-            'from_location_id' => $this->fromLocationId,
-            'to_location_id' => $this->toLocationId,
-            'assigned_by' => auth()->id(),
-            'assigned_to' => $this->assignedToEmployeeId, // This now references master_lists
-            'movement_date' => $this->movementDate,
-            'notes' => $this->movementNotes,
-            'movement_type' => 'transfer',
-        ]);
+        try {
+            DB::transaction(function() {
+                // Create movement record
+                PamoAssetMovement::create([
+                    'asset_id' => $this->selectedAsset->id,
+                    'from_location_id' => $this->fromLocationId,
+                    'to_location_id' => $this->toLocationId,
+                    'assigned_by' => auth()->id(),
+                    'assigned_to' => $this->assignedToEmployeeId,
+                    'movement_date' => $this->movementDate,
+                    'notes' => $this->movementNotes,
+                    'movement_type' => 'transfer',
+                ]);
 
-        // Update asset location
-        $this->selectedAsset->update([
-            'location_id' => $this->toLocationId,
-            'assigned_to' => $this->assignedToEmployeeId, // This now references master_lists
-            'status' => $this->assignedToEmployeeId ? 'assigned' : 'available',
-        ]);
+                // Update asset
+                $this->selectedAsset->update([
+                    'location_id' => $this->toLocationId,
+                    'assigned_to' => $this->assignedToEmployeeId,
+                    'status' => $this->assignedToEmployeeId ? 'assigned' : 'available',
+                    'updated_at' => now()
+                ]);
+            });
 
-        $this->showTransferModal = false;
-        $this->reset(['selectedAsset', 'fromLocationId', 'toLocationId', 'assignedToEmployeeId', 'movementNotes']); // Updated property name
-        $this->dispatch('notify', ['message' => 'Asset transfer recorded successfully']);
+            $this->showTransferModal = false;
+            $this->reset(['selectedAsset', 'fromLocationId', 'toLocationId', 'assignedToEmployeeId', 'movementNotes']);
+
+            $this->dispatch('notify', [
+                'message' => 'Asset transfer recorded successfully!',
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'message' => 'Error recording transfer: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
     }
 
     // Scan Asset
@@ -172,9 +250,13 @@ class AssetTracker extends Component
 
     public function processScan($barcode)
     {
-        $asset = PamoAssets::where('barcode', $barcode)
-            ->orWhere('serial_number', $barcode)
-            ->orWhere('property_tag_number', $barcode)
+        $asset = PamoAssets::query()
+            ->with(['category', 'location', 'assignedEmployee'])
+            ->where(function($query) use ($barcode) {
+                $query->where('barcode', $barcode)
+                      ->orWhere('serial_number', $barcode)
+                      ->orWhere('property_tag_number', $barcode);
+            })
             ->first();
 
         if ($asset) {
@@ -182,7 +264,7 @@ class AssetTracker extends Component
             $this->showScanModal = false;
             $this->viewAsset($asset->id);
         } else {
-            $this->dispatchBrowserEvent('notify', [
+            $this->dispatch('notify', [
                 'message' => 'Asset not found with the scanned code: ' . $barcode,
                 'type' => 'error'
             ]);
@@ -268,16 +350,95 @@ class AssetTracker extends Component
     // View Asset Details
     public function viewAsset($assetId)
     {
-        $this->selectedAsset = PamoAssets::with([
-            'assignedEmployee', // Changed from assignedUser
-            'location',
-            'category',
-            'movements' => function($query) {
-                $query->latest('movement_date')->take(5);
-            }
-        ])->findOrFail($assetId);
+        $this->selectedAsset = PamoAssets::query()
+            ->with([
+                'assignedEmployee',
+                'location',
+                'category',
+                'movements' => function($query) {
+                    $query->with(['fromLocation', 'toLocation', 'assignedBy', 'assignedEmployee'])
+                          ->orderByDesc('movement_date')
+                          ->orderByDesc('created_at')
+                          ->take(10);
+                }
+            ])
+            ->findOrFail($assetId);
 
         $this->showAssetDetailModal = true;
+    }
+
+    public function generateQR($assetId)
+    {
+        $asset = PamoAssets::findOrFail($assetId);
+
+        // You can implement QR code generation logic here
+        $this->dispatch('notify', [
+            'message' => 'QR Code generated for ' . $asset->property_tag_number,
+            'type' => 'success'
+        ]);
+    }
+    public function printLabel($assetId)
+    {
+        $asset = PamoAssets::findOrFail($assetId);
+
+        // You can implement label printing logic here
+        $this->dispatch('notify', [
+            'message' => 'Label print requested for ' . $asset->property_tag_number,
+            'type' => 'success'
+        ]);
+    }
+    public function viewHistory($assetId)
+    {
+        $this->viewAsset($assetId); // Reuse the view asset modal
+    }
+
+    // Close modals
+    public function closeTransferModal()
+    {
+        $this->showTransferModal = false;
+        $this->reset(['selectedAsset', 'fromLocationId', 'toLocationId', 'assignedToEmployeeId', 'movementNotes']);
+    }
+
+    public function closeScanModal()
+    {
+        $this->showScanModal = false;
+    }
+
+    public function closeExportModal()
+    {
+        $this->showExportModal = false;
+    }
+
+    public function closeAssetDetailModal()
+    {
+        $this->showAssetDetailModal = false;
+        $this->selectedAsset = null;
+    }
+
+    // Updaters for real-time search
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCategoryId()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedDepartment()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedLocationId()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatus()
+    {
+        $this->resetPage();
     }
 
 

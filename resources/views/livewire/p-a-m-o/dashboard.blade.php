@@ -118,12 +118,12 @@
                                 <div class="flex">
                                     <div class="flex flex-col items-center mr-4">
                                         <div class="h-8 w-8 rounded-full
-                                            {{ $movement->movement_type == 'transfer' ? 'bg-primary-100 text-primary-600' :
-                                              ($movement->movement_type == 'maintenance' ? 'bg-red-100 text-red-600' :
-                                              'bg-green-100 text-green-600') }}
+                                            {{ ($movement->movement_type ?? 'transfer') == 'transfer' ? 'bg-blue-100 text-blue-600' :
+                                            (($movement->movement_type ?? 'transfer') == 'maintenance' ? 'bg-red-100 text-red-600' :
+                                            'bg-green-100 text-green-600') }}
                                             flex items-center justify-center">
-                                            <i class="fas {{ $movement->movement_type == 'transfer' ? 'fa-exchange-alt' :
-                                                    ($movement->movement_type == 'maintenance' ? 'fa-tools' : 'fa-check-circle') }}">
+                                            <i class="fas {{ ($movement->movement_type ?? 'transfer') == 'transfer' ? 'fa-exchange-alt' :
+                                                    (($movement->movement_type ?? 'transfer') == 'maintenance' ? 'fa-tools' : 'fa-check-circle') }}">
                                             </i>
                                         </div>
                                         @if(!$loop->last)
@@ -135,22 +135,70 @@
                                             <div>
                                                 <p class="text-sm font-medium text-gray-900">
                                                     {{ $movement->asset->brand ?? 'Unknown' }} {{ $movement->asset->model ?? '' }}
-                                                    {{ $movement->movement_type == 'transfer' ? 'transferred' :
-                                                       ($movement->movement_type == 'maintenance' ? 'sent for repair' : 'assigned') }}
+                                                    {{ ($movement->movement_type ?? 'transfer') == 'transfer' ? 'transferred' :
+                                                    (($movement->movement_type ?? 'transfer') == 'maintenance' ? 'sent for repair' : 'assigned') }}
                                                 </p>
                                                 <p class="text-xs text-gray-500">
                                                     From: {{ $movement->fromLocation->name ?? 'Unknown' }} →
                                                     To: {{ $movement->toLocation->name ?? 'Unknown' }}
                                                 </p>
+
+                                                <!-- Show assigned employee if exists -->
+                                                @if($movement->assignedEmployee)
+                                                    <p class="text-xs text-blue-600 mt-1">
+                                                        <i class="fas fa-user mr-1"></i>
+                                                        Assigned to: {{ $movement->assignedEmployee->employee_number }} - {{ $movement->assignedEmployee->full_name }}
+                                                        @if($movement->assignedEmployee->department)
+                                                            ({{ $movement->assignedEmployee->department }})
+                                                        @endif
+                                                    </p>
+                                                @endif
+
+                                                <!-- Show who performed the action -->
+                                                @if($movement->assignedBy)
+                                                    <p class="text-xs text-gray-400 mt-1">
+                                                        <i class="fas fa-user-cog mr-1"></i>
+                                                        By: {{ $movement->assignedBy->name }}
+                                                    </p>
+                                                @endif
+
+                                                <!-- Show notes if exists -->
+                                                @if($movement->notes)
+                                                    <p class="text-xs text-gray-500 mt-1 italic">
+                                                        "{{ Str::limit($movement->notes, 50) }}"
+                                                    </p>
+                                                @endif
                                             </div>
-                                            <span class="text-xs text-gray-500">
-                                                {{ $movement->movement_date ? $movement->movement_date->diffForHumans() : 'Unknown date' }}
-                                            </span>
+                                            <div class="text-right">
+                                                <span class="text-xs text-gray-500">
+                                                    {{ $movement->movement_date ? $movement->movement_date->diffForHumans() : 'Unknown date' }}
+                                                </span>
+                                                <!-- Movement type badge -->
+                                                <div class="mt-1">
+                                                    @if(($movement->movement_type ?? 'transfer') == 'transfer')
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                            Transfer
+                                                        </span>
+                                                    @elseif(($movement->movement_type ?? 'transfer') == 'maintenance')
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            Maintenance
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            Assignment
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             @empty
-                                <p class="text-sm text-gray-500">No recent asset movements found.</p>
+                                <div class="text-center py-8">
+                                    <i class="fas fa-exchange-alt text-4xl text-gray-300 mb-3"></i>
+                                    <p class="text-sm text-gray-500 mb-2">No recent asset movements found</p>
+                                    <p class="text-xs text-gray-400">Asset transfers and assignments will appear here</p>
+                                </div>
                             @endforelse
                         </div>
                     </div>
@@ -164,30 +212,102 @@
                                 <p class="text-lg font-semibold text-gray-800">{{ $transferStats['last30Days'] ?? 0 }}</p>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-primary-500 h-2 rounded-full" style="width: {{ min(100, $transferStats['percentOfAverage'] ?? 0) }}%"></div>
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: {{ min(100, $transferStats['percentOfAverage'] ?? 0) }}%"></div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">
                                 {{ $transferStats['percentOfAverage'] ?? 0 }}% of monthly average
                             </p>
                         </div>
 
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Most Transferred Asset Types</h4>
-                        <div class="space-y-2">
-                            @foreach($transferStats['byCategory'] ?? [] as $category)
+                        <!-- Recent Movement Types -->
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Movement Types</h4>
+                        <div class="space-y-2 mb-4">
+                            @php
+                                $movementTypes = $recentMovements->groupBy('movement_type')->map(function($movements, $type) {
+                                    return [
+                                        'type' => $type ?: 'transfer',
+                                        'count' => $movements->count(),
+                                        'percentage' => $movements->count()
+                                    ];
+                                });
+                                $totalMovements = $recentMovements->count();
+                                if ($totalMovements > 0) {
+                                    $movementTypes = $movementTypes->map(function($item) use ($totalMovements) {
+                                        $item['percentage'] = round(($item['count'] / $totalMovements) * 100, 1);
+                                        return $item;
+                                    });
+                                }
+                            @endphp
+
+                            @forelse($movementTypes as $type)
                                 <div class="flex justify-between items-center">
                                     <div class="flex items-center">
-                                        <i class="fas {{ $category['name'] == 'Laptop' ? 'fa-laptop' :
-                                               ($category['name'] == 'Desktop' ? 'fa-desktop' :
-                                               ($category['name'] == 'Mobile Phone' ? 'fa-mobile-alt' :
-                                               ($category['name'] == 'Tablet' ? 'fa-tablet-alt' :
-                                               'fa-headphones'))) }}
+                                        <i class="fas {{ $type['type'] == 'transfer' ? 'fa-exchange-alt' :
+                                            ($type['type'] == 'maintenance' ? 'fa-tools' : 'fa-user-plus') }}
                                             text-gray-400 w-5">
                                         </i>
-                                        <span class="text-sm text-gray-600 ml-2">{{ $category['name'] }}</span>
+                                        <span class="text-sm text-gray-600 ml-2">{{ ucfirst($type['type']) }}</span>
                                     </div>
-                                    <span class="text-sm font-medium">{{ $category['percentage'] }}%</span>
+                                    <span class="text-sm font-medium">{{ $type['percentage'] }}%</span>
                                 </div>
-                            @endforeach
+                            @empty
+                                <p class="text-xs text-gray-400">No movement data available</p>
+                            @endforelse
+                        </div>
+
+                        <!-- Most Transferred Asset Types -->
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Most Transferred Asset Types</h4>
+                        <div class="space-y-2">
+                            @forelse($transferStats['byCategory'] ?? [] as $category)
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center">
+                                        <i class="fas {{
+                                            str_contains(strtolower($category['name'] ?? ''), 'laptop') ? 'fa-laptop' :
+                                            (str_contains(strtolower($category['name'] ?? ''), 'desktop') ? 'fa-desktop' :
+                                            (str_contains(strtolower($category['name'] ?? ''), 'phone') ? 'fa-mobile-alt' :
+                                            (str_contains(strtolower($category['name'] ?? ''), 'tablet') ? 'fa-tablet-alt' :
+                                            'fa-laptop'))) }}
+                                            text-gray-400 w-5">
+                                        </i>
+                                        <span class="text-sm text-gray-600 ml-2">{{ $category['name'] ?? 'Unknown' }}</span>
+                                    </div>
+                                    <span class="text-sm font-medium">{{ $category['percentage'] ?? 0 }}%</span>
+                                </div>
+                            @empty
+                                @php
+                                    // Fallback: Get category distribution from recent movements
+                                    $categoryData = $recentMovements->filter(function($movement) {
+                                        return $movement->asset && $movement->asset->category;
+                                    })->groupBy('asset.category.name')->map(function($movements, $categoryName) use ($recentMovements) {
+                                        $count = $movements->count();
+                                        $total = $recentMovements->count();
+                                        return [
+                                            'name' => $categoryName,
+                                            'count' => $count,
+                                            'percentage' => $total > 0 ? round(($count / $total) * 100, 1) : 0
+                                        ];
+                                    })->sortByDesc('count')->take(3);
+                                @endphp
+
+                                @forelse($categoryData as $category)
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center">
+                                            <i class="fas {{
+                                                str_contains(strtolower($category['name']), 'laptop') ? 'fa-laptop' :
+                                                (str_contains(strtolower($category['name']), 'desktop') ? 'fa-desktop' :
+                                                (str_contains(strtolower($category['name']), 'phone') ? 'fa-mobile-alt' :
+                                                (str_contains(strtolower($category['name']), 'tablet') ? 'fa-tablet-alt' :
+                                                'fa-laptop'))) }}
+                                                text-gray-400 w-5">
+                                            </i>
+                                            <span class="text-sm text-gray-600 ml-2">{{ $category['name'] }}</span>
+                                        </div>
+                                        <span class="text-sm font-medium">{{ $category['percentage'] }}%</span>
+                                    </div>
+                                @empty
+                                    <p class="text-xs text-gray-400">No category data available</p>
+                                @endforelse
+                            @endforelse
                         </div>
 
                         <div class="mt-4">

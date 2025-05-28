@@ -269,10 +269,16 @@ class Dashboard extends Component
 
     private function loadRecentMovements()
     {
-        $this->recentMovements = PamoAssetMovement::with(['asset', 'fromLocation', 'toLocation', 'assignedBy', 'assignedEmployee'])
-            ->orderByDesc('movement_date')
-            ->take(4)
-            ->get();
+        $this->recentMovements = PamoAssetMovement::with([
+            'asset.category',           // Load asset with category
+            'fromLocation',             // Load from location
+            'toLocation',               // Load to location
+            'assignedBy',               // Load user who performed action
+            'assignedEmployee'          // Load assigned employee from master list
+        ])
+        ->orderByDesc('movement_date')
+        ->take(5)
+        ->get();
     }
 
     private function loadAcquisitionTrend()
