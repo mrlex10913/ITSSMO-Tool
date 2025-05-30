@@ -47,7 +47,17 @@
                             <span class="text-xs bg-blue-500 text-white px-1 rounded">Dev</span>
                        @endif
                     </div>
-                </x-nav-link>
+            </x-nav-link>
+            <x-nav-link wire:navigate href="{{ route('bfo.dashboard') }}" :active="request()->routeIs('pamo.*')"
+                    class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                    <div class="flex gap-3 items-center">
+                        <span class="material-symbols-sharp"> inventory </span>
+                        <h3>BFO</h3>
+                       @if(auth()->user()->isDeveloper())
+                            <span class="text-xs bg-blue-500 text-white px-1 rounded">Dev</span>
+                       @endif
+                    </div>
+            </x-nav-link>
         </li>
         <h1 class="text-xs text-gray-500">Transaction's</h1>
         <li class="mb-2">

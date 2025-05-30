@@ -14,7 +14,7 @@ use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 
-#[Layout('layouts.pamo')]
+#[Layout('layouts.enduser')]
 class MasterList extends Component
 {
     use WithPagination, WithFileUploads;

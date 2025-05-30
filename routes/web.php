@@ -9,6 +9,8 @@ use App\Livewire\Assets\AssetsConsumable;
 use App\Livewire\Assets\AssetsConsumableTracker;
 use App\Livewire\Assets\AssetsLists;
 use App\Livewire\Assets\AssetsTransfer;
+use App\Livewire\BFO\BFODashboard;
+use App\Livewire\BFO\Cheque;
 use App\Livewire\Borrowers\BorrowersForm;
 use App\Livewire\Borrowers\BorrowersLogs;
 use App\Livewire\Borrowers\BorrowersReturn;
@@ -100,6 +102,15 @@ Route::middleware([
     Route::get('/transactions', Transactions::class)->name('pamo.transactions');
     Route::get('/assets-tracker', AssetTracker::class)->name('pamo.assetTracker');
     Route::get('/masterList', MasterList::class)->name('pamo.masterList');
+});
+
+Route::middleware([
+    'auth:sanctum',
+    'verified',
+    'role:bfo,administrator,developer',
+])->prefix('bfo')->group(function(){
+    Route::get('/dashboard', BFODashboard::class)->name('bfo.dashboard');
+    Route::get('/cheque', Cheque::class)->name('bfo.cheque');
 });
 
 

@@ -14,7 +14,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 
-#[Layout('layouts.pamo')]
+#[Layout('layouts.enduser')]
 class Dashboard extends Component
 {
     // Date Range Filter

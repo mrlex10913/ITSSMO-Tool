@@ -16,7 +16,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 
-#[Layout('layouts.pamo')]
+#[Layout('layouts.enduser')]
 class AssetTracker extends Component
 {
     use WithPagination;

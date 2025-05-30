@@ -6,7 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'ITSSMO Tool') }} - PAMO</title>
+    @php
+        $userRole = strtolower(Auth::user()->role ?? 'user');
+        $roleTitle = strtoupper($userRole);
+    @endphp
+
+    <title>{{ config('app.name', 'ITSSMO Tool') }} - {{ $roleTitle }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -59,8 +64,16 @@
                 class="fixed lg:sticky top-0 left-0 z-30 bg-blue-600 w-64 h-screen border-r border-blue-500 flex flex-col transform transition-transform duration-200 ease-in-out lg:translate-x-0">
                 <!-- Logo -->
                 <div class="p-4 flex items-center justify-between border-b border-blue-500">
-                    <a href="{{ route('dashboard') }}" class="flex items-center">
-                        <span class="text-xl font-semibold text-white"><i class="fas fa-laptop mr-2 text-yellow-300"></i> PAMO</span>
+                    <a href="#" class="flex items-center">
+                        <span class="text-xl font-semibold text-white">
+                            @if($userRole === 'pamo')
+                                <i class="fas fa-laptop mr-2 text-yellow-300"></i> PAMO
+                            @elseif($userRole === 'bfo')
+                                <i class="fas fa-calculator mr-2 text-yellow-300"></i> BFO
+                            @else
+                                <i class="fas fa-user mr-2 text-yellow-300"></i> {{ strtoupper($userRole) }}
+                            @endif
+                        </span>
                     </a>
                     <button @click="sidebarOpen = false" class="lg:hidden text-white focus:outline-none">
                         <span class="material-symbols-sharp text-2xl">close</span>
@@ -99,50 +112,98 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <nav class="flex-1 px-4 py-4 overflow-y-auto bg-blue-600">
+                <nav class="flex-1 px-4 py-4 overflow-y-auto bg-blue-600"
+                    x-data="{
+                        selectedDepartment: '{{ strtolower(Auth::user()->role ?? 'user') }}',
+                        userRole: '{{ strtolower(Auth::user()->role ?? 'user') }}',
+
+                        init() {
+                            // Only for admin/developer users, check localStorage
+                            if (['administrator', 'developer'].includes(this.userRole)) {
+                                const savedDept = localStorage.getItem('selectedDepartment');
+                                if (savedDept && ['pamo', 'bfo'].includes(savedDept)) {
+                                    this.selectedDepartment = savedDept;
+                                }
+                            }
+
+                            // Auto-detect current department from route
+                            const currentPath = window.location.pathname;
+                            if (currentPath.includes('/pamo/')) {
+                                this.selectedDepartment = 'pamo';
+                            } else if (currentPath.includes('/bfo/')) {
+                                this.selectedDepartment = 'bfo';
+                            }
+
+                            // Save to localStorage when changed
+                            this.$watch('selectedDepartment', value => {
+                                if (['administrator', 'developer'].includes(this.userRole)) {
+                                    localStorage.setItem('selectedDepartment', value);
+                                }
+                            });
+                        },
+
+                        selectDepartment(dept) {
+                            this.selectedDepartment = dept;
+                        }
+                    }">
                     <ul class="space-y-2">
-                       <li>
-                            <x-end-user-nav-link
-                                href="{{ route('pamo.dashboard') }}"
-                                :active="request()->routeIs('pamo.dashboard')"
-                                icon="dashboard">
-                                Overview
-                            </x-end-user-nav-link>
-                        </li>
-                        <li>
-                            <x-end-user-nav-link
-                                href="{{ route('pamo.inventory') }}"
-                                :active="request()->routeIs('pamo.inventory')"
-                                icon="inventory_2">
-                                Inventory & Supplies
-                            </x-end-user-nav-link>
-                        </li>
-                        <li>
-                            <x-end-user-nav-link
-                                href="{{ route('pamo.assetTracker') }}"
-                                :active="request()->routeIs('pamo.assetTracker')"
-                                icon="inventory_2">
-                                Asset's Tracker
-                            </x-end-user-nav-link>
-                        </li>
-                        <li>
-                            <x-end-user-nav-link
-                                href="{{ route('pamo.barcode') }}"
-                                :active="request()->routeIs('pamo.barcode')"
-                                icon="qr_code_scanner">
-                                Barcode Generator
-                            </x-end-user-nav-link>
-                        </li>
-                        <li>
-                            <x-end-user-nav-link
-                                href="{{ route('pamo.masterList') }}"
-                                :active="request()->routeIs('pamo.masterList')"
-                                icon="groups">
-                                MasterList
-                            </x-end-user-nav-link>
-                        </li>
-                        @if(strtolower(Auth::user()->role) === 'administrator' || strtolower(Auth::user()->role) === 'developer')
+                        @php
+                            $userRole = strtolower(Auth::user()->role ?? 'user');
+                        @endphp
+
+                        {{-- Department Selector (only show if user can access multiple departments) --}}
+                        @if(in_array($userRole, ['administrator', 'developer']))
+                            <li class="mb-4">
+                                <div class="text-xs text-blue-200 mb-2">Select Department:</div>
+                                <div class="flex space-x-1">
+                                    <button @click="selectDepartment('pamo')"
+                                            :class="selectedDepartment === 'pamo' ? 'bg-yellow-300 text-blue-700' : 'bg-blue-500 text-white hover:bg-blue-400'"
+                                            class="flex-1 px-3 py-2 text-xs font-medium rounded transition-colors">
+                                        <i class="fas fa-laptop mr-1"></i> PAMO
+                                    </button>
+                                    <button @click="selectDepartment('bfo')"
+                                            :class="selectedDepartment === 'bfo' ? 'bg-yellow-300 text-blue-700' : 'bg-blue-500 text-white hover:bg-blue-400'"
+                                            class="flex-1 px-3 py-2 text-xs font-medium rounded transition-colors">
+                                        <i class="fas fa-calculator mr-1"></i> BFO
+                                    </button>
+                                </div>
+                                <hr class="border-blue-500 my-3">
+                            </li>
+                        @endif
+
+                        {{-- PAMO Menu --}}
+                        <div x-show="selectedDepartment === 'pamo'" x-transition>
+                            @include('layouts.partials.pamo-menu')
+                        </div>
+
+                        {{-- BFO Menu --}}
+                        <div x-show="selectedDepartment === 'bfo'" x-transition>
+                            @include('layouts.partials.bfo-menu')
+                        </div>
+
+                        {{-- Default Menu for other roles --}}
+                        @if(!in_array($userRole, ['pamo', 'bfo', 'administrator', 'developer']))
                             <li>
+                                <x-end-user-nav-link
+                                    href="{{ route('dashboard') }}"
+                                    :active="request()->routeIs('dashboard')"
+                                    icon="dashboard">
+                                    Dashboard
+                                </x-end-user-nav-link>
+                            </li>
+                            <li>
+                                <x-end-user-nav-link
+                                    href="{{ route('password.change') }}"
+                                    :active="request()->routeIs('password.change')"
+                                    icon="lock">
+                                    Change Password
+                                </x-end-user-nav-link>
+                            </li>
+                        @endif
+
+                        {{-- Back to Main System Link --}}
+                        @if(in_array($userRole, ['administrator', 'developer']))
+                            <li class="pt-2 border-t border-blue-500 mt-2">
                                 <x-end-user-nav-link
                                     href="{{ route('dashboard') }}"
                                     :active="request()->routeIs('dashboard')"

@@ -15,7 +15,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
-#[Layout('layouts.pamo')]
+#[Layout('layouts.enduser')]
 class Inventory extends Component
 {
     use WithPagination;

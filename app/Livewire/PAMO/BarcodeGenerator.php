@@ -13,7 +13,7 @@ use Livewire\WithPagination;
 use Picqer\Barcode\BarcodeGeneratorHTML;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 
-#[Layout('layouts.pamo')]
+#[Layout('layouts.enduser')]
 class BarcodeGenerator extends Component
 {
     use WithPagination;
