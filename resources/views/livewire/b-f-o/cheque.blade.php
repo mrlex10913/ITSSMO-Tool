@@ -139,7 +139,8 @@
                 }
 
                 if (amountWordsDisplay) {
-                    amountWordsDisplay.textContent = this.numberToWords(this.amount) + ' PESOS';
+                    // Now includes cents automatically
+                    amountWordsDisplay.textContent = this.numberToWords(this.amount);
                 }
             }
 
@@ -161,44 +162,69 @@
             const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
             const thousands = ['', 'THOUSAND', 'MILLION', 'BILLION'];
 
-            if (num == 0) return 'ZERO';
+            if (num == 0) return 'ZERO PESOS ONLY';
 
             let words = '';
             let parts = num.toString().split('.');
             let wholePart = parseInt(parts[0]);
+            let centsPart = parts[1] ? parseInt(parts[1].padEnd(2, '0').substring(0, 2)) : 0;
 
-            if (wholePart === 0) return 'ZERO';
+            // Convert whole number part
+            if (wholePart === 0) {
+                words = 'ZERO';
+            } else {
+                let thousandIndex = 0;
+                while (wholePart > 0) {
+                    let chunk = wholePart % 1000;
+                    if (chunk !== 0) {
+                        let chunkWords = '';
 
-            let thousandIndex = 0;
-            while (wholePart > 0) {
-                let chunk = wholePart % 1000;
-                if (chunk !== 0) {
-                    let chunkWords = '';
-
-                    let hundreds = Math.floor(chunk / 100);
-                    if (hundreds > 0) {
-                        chunkWords += ones[hundreds] + ' HUNDRED ';
-                    }
-
-                    let remainder = chunk % 100;
-                    if (remainder >= 20) {
-                        chunkWords += tens[Math.floor(remainder / 10)] + ' ';
-                        if (remainder % 10 > 0) {
-                            chunkWords += ones[remainder % 10] + ' ';
+                        let hundreds = Math.floor(chunk / 100);
+                        if (hundreds > 0) {
+                            chunkWords += ones[hundreds] + ' HUNDRED ';
                         }
-                    } else if (remainder > 0) {
-                        chunkWords += ones[remainder] + ' ';
+
+                        let remainder = chunk % 100;
+                        if (remainder >= 20) {
+                            chunkWords += tens[Math.floor(remainder / 10)] + ' ';
+                            if (remainder % 10 > 0) {
+                                chunkWords += ones[remainder % 10] + ' ';
+                            }
+                        } else if (remainder > 0) {
+                            chunkWords += ones[remainder] + ' ';
+                        }
+
+                        if (thousands[thousandIndex]) {
+                            chunkWords += thousands[thousandIndex] + ' ';
+                        }
+
+                        words = chunkWords + words;
                     }
 
-                    if (thousands[thousandIndex]) {
-                        chunkWords += thousands[thousandIndex] + ' ';
-                    }
-
-                    words = chunkWords + words;
+                    wholePart = Math.floor(wholePart / 1000);
+                    thousandIndex++;
                 }
+            }
 
-                wholePart = Math.floor(wholePart / 1000);
-                thousandIndex++;
+            // Add PESOS
+            words += 'PESOS';
+
+            // Add cents if present
+            if (centsPart > 0) {
+                if (centsPart < 20) {
+                    words += ' AND ' + ones[centsPart] + ' CENTAVOS';
+                } else {
+                    let centsText = '';
+                    if (centsPart >= 20) {
+                        centsText += tens[Math.floor(centsPart / 10)];
+                        if (centsPart % 10 > 0) {
+                            centsText += ' ' + ones[centsPart % 10];
+                        }
+                    }
+                    words += ' AND ' + centsText + ' CENTAVOS';
+                }
+            } else {
+                words += ' ONLY';
             }
 
             return words.trim();
@@ -375,9 +401,9 @@
 
                 <!-- Amount in Words -->
                 <div class="draggable-field absolute" id="amountWordsField" style="top: 160px; left: 20px; width: 500px;"
-                     @mousedown="startDrag($event)" @click="selectField($event)">
+                    @mousedown="startDrag($event)" @click="selectField($event)">
                     <div class="field-content border-b border-dotted border-gray-400" x-ref="amountWordsDisplay" style="min-height: 25px;">
-                       PESOS ____________________________________________________________
+                        ____________________________________________________________
                     </div>
                 </div>
 

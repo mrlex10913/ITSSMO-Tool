@@ -83,6 +83,10 @@ class User extends Authenticatable
         // Check if user's role is in the provided roles
         return in_array($userRole, $roles);
     }
+    public function role()
+    {
+        return $this->belongsTo(Roles::class);
+    }
      /**
      * Check if the user is a developer
      *
