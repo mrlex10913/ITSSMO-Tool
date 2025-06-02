@@ -6,6 +6,7 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Models\Roles;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -26,20 +27,56 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->instance(LoginResponse::class, new class implements LoginResponse {
             public function toResponse($request)
             {
-                // Get authenticated user
+                // Get authenticated user with role relationship
                 $user = auth()->user();
 
-                // Convert role to lowercase for case-insensitive comparison
-                $role = strtolower($user->role);
+                // Get role directly from database
+                if (!$user->role_id) {
+                    abort(403, 'No role assigned to user');
+                }
 
-                // Redirect based on role
-                if (in_array($role, ['administrator', 'developer'])) {
-                    return redirect()->intended(route('dashboard'));
-                } elseif ($role === 'pamo') {
-                    return redirect()->to('/pamo/dashboard');
-                } else {
-                    // For any other role, show 404
-                    abort(404, 'Unauthorized role');
+                $roleRecord = Roles::find($user->role_id);
+
+                if (!$roleRecord) {
+                    abort(403, 'Invalid role assigned to user');
+                }
+
+                // Get role slug for comparison
+                $roleSlug = strtolower($roleRecord->slug);
+
+                // Redirect based on role slug
+                switch ($roleSlug) {
+                    case 'administrator':
+                    case 'developer':
+                        try {
+                            return redirect()->route('dashboard');
+                        } catch (\Exception $e) {
+                            return redirect('/');
+                        }
+
+                    case 'pamo':
+                        try {
+                            return redirect()->route('pamo.dashboard');
+                        } catch (\Exception $e) {
+                            return redirect('/pamo/dashboard');
+                        }
+
+                    case 'bfo':
+                        try {
+                            return redirect()->route('bfo.dashboard');
+                        } catch (\Exception $e) {
+                            return redirect('/bfo/dashboard');
+                        }
+
+                    case 'user':
+                        try {
+                            return redirect()->route('dashboard');
+                        } catch (\Exception $e) {
+                            return redirect('/');
+                        }
+
+                    default:
+                        abort(403, 'Unauthorized role: ' . $roleRecord->name);
                 }
             }
         });

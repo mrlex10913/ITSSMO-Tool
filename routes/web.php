@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PasswordChangeController;
+use App\Http\Controllers\TemporaryPasswordController;
 use App\Http\Controllers\UserRecords\FalcoData as UserRecordsFalcoData;
 use App\Http\Middleware\CheckTemporaryPassword;
 use App\Http\Middleware\DesktopBorrwersIpFilter;
@@ -75,14 +76,6 @@ Route::middleware([
         Route::get('/control-panel/userControl', UsersControl::class)->name('controlPanel.user');
     });
 
-
-    //PAMO
-    // Route::get('/pamo/dashboard', Dashboard::class)->name('pamo.dashboard');
-    // Route::get('/pamo/invetory', Inventory::class)->name('pamo.inventory');
-    // Route::get('/pamo/transactions', Transactions::class)->name('pamo.transactions');
-    // Route::get('/pamo/generateBarcode', BarcodeGenerator::class)->name('pamo.barcode');
-    // Route::get('/print-barcode-view', [BarcodeGenerator::class, 'printBarcodes'])->name('print-barcode-view');
-
 });
 Route::get('/password/change', ChangePassword::class)->name('password.change');
 
@@ -95,6 +88,7 @@ Route::middleware([
     'auth:sanctum',
     'verified',
     'role:pamo,administrator,developer',
+    'check.temporary.password',
     ])->prefix('pamo')->group(function(){
     Route::get('/dashboard', Dashboard::class)->name('pamo.dashboard');
     Route::get('/inventory', Inventory::class)->name('pamo.inventory');
@@ -108,9 +102,14 @@ Route::middleware([
     'auth:sanctum',
     'verified',
     'role:bfo,administrator,developer',
+    'check.temporary.password'
 ])->prefix('bfo')->group(function(){
     Route::get('/dashboard', BFODashboard::class)->name('bfo.dashboard');
     Route::get('/cheque', Cheque::class)->name('bfo.cheque');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/user/mark-password-changed', [TemporaryPasswordController::class, 'markPasswordChanged']);
 });
 
 

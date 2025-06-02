@@ -2,42 +2,41 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Roles;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckRole
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
-    // public function handle(Request $request, Closure $next, $role)
-    // {
-    //     if (!$request->user() || !$request->user()->hasRole($role)) {
-    //         return redirect()->route('dashboard')
-    //             ->with('error', 'You do not have permission to access this page.');
-    //     }
-
-    //     return $next($request);
-    // }
-    public function handle(Request $request, Closure $next, ...$roles): Response
+    public function handle(Request $request, Closure $next, ...$roles)
     {
-        // Not authenticated
-        if (!$request->user()) {
-            return redirect()->route('login');
+        if (!auth()->check()) {
+            return redirect('/login');
         }
 
-        // Get user role and convert to lowercase
-        $userRole = strtolower($request->user()->role);
+        $user = auth()->user();
 
-        // Check if user role is in allowed roles
-        if (in_array($userRole, array_map('strtolower', $roles))) {
+        // Get role directly from database using role_id
+        if (!$user->role_id) {
+            abort(403, 'No role assigned');
+        }
+
+        $roleRecord = Roles::find($user->role_id);
+
+        if (!$roleRecord) {
+            abort(403, 'Invalid role assigned');
+        }
+
+        // Get role slug for comparison
+        $userRole = strtolower($roleRecord->slug);
+
+        // Check if user's role is in the allowed roles
+        if (in_array($userRole, $roles)) {
             return $next($request);
         }
 
-        // Return 404 for unauthorized roles
-        abort(404);
+        abort(403, 'Unauthorized - Role: ' . $roleRecord->name . ' not allowed');
+
     }
 }

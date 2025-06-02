@@ -7,8 +7,19 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @php
-        $userRole = strtolower(Auth::user()->role ?? 'user');
-        $roleTitle = strtoupper($userRole);
+        // Direct query to get role data
+        $user = Auth::user();
+        $roleRecord = null;
+        $userRole = 'user'; // default
+        $roleTitle = 'USER'; // default
+
+        if ($user->role_id) {
+            $roleRecord = \App\Models\Roles::find($user->role_id);
+            if ($roleRecord) {
+                $userRole = strtolower($roleRecord->slug);
+                $roleTitle = strtoupper($roleRecord->name);
+            }
+        }
     @endphp
 
     <title>{{ config('app.name', 'ITSSMO Tool') }} - {{ $roleTitle }}</title>
@@ -99,7 +110,7 @@
                         <!-- User Name and Role -->
                         <div class="text-center">
                             <h4 class="font-medium text-white">{{ Auth::user()->name }}</h4>
-                            <p class="text-xs text-blue-50">{{ Auth::user()->role ?? 'User' }}</p>
+                            <p class="text-xs text-blue-50">{{ $roleRecord ? $roleRecord->name : 'User' }}</p>
 
                             <button @click="profileModalOpen = true" class="w-full mt-3 bg-yellow-300 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-400 transition-colors">
                                 <span class="flex items-center justify-center">
@@ -114,8 +125,8 @@
                 <!-- Navigation Links -->
                 <nav class="flex-1 px-4 py-4 overflow-y-auto bg-blue-600"
                     x-data="{
-                        selectedDepartment: '{{ strtolower(Auth::user()->role ?? 'user') }}',
-                        userRole: '{{ strtolower(Auth::user()->role ?? 'user') }}',
+                        selectedDepartment: '{{ $userRole }}',
+                        userRole: '{{ $userRole }}',
 
                         init() {
                             // Only for admin/developer users, check localStorage
@@ -147,9 +158,6 @@
                         }
                     }">
                     <ul class="space-y-2">
-                        @php
-                            $userRole = strtolower(Auth::user()->role ?? 'user');
-                        @endphp
 
                         {{-- Department Selector (only show if user can access multiple departments) --}}
                         @if(in_array($userRole, ['administrator', 'developer']))
@@ -380,7 +388,7 @@
                                         </span>
                                     </label>
                                     <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
-                                        {{ Auth::user()->role ?? 'User' }}
+                                        {{ $roleRecord ? $roleRecord->name : 'User' }}  <!-- Use $roleRecord instead -->
                                     </div>
                                 </div>
 
@@ -619,6 +627,252 @@
             </div>
         </div>
     </div>
+
+    @if(session('force_password_change') || (!Auth::user()->is_temporary_password_used && Auth::user()->temporary_password))
+    <div id="passwordChangeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75"
+        x-data="{
+            isSubmitting: false,
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: '',
+            errors: {},
+            showCurrentPassword: false,
+            showNewPassword: false,
+            showConfirmPassword: false
+        }"
+        x-init="document.body.style.overflow = 'hidden'">
+
+        <!-- Modal Content -->
+        <div class="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-md relative">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
+                <div class="flex items-center">
+                    <span class="material-symbols-sharp text-white text-2xl mr-3">lock_reset</span>
+                    <div>
+                        <h3 class="text-xl font-semibold text-white">Password Change Required</h3>
+                        <p class="text-red-100 text-sm">You must change your temporary password to continue</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6">
+                <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div class="flex items-start">
+                        <span class="material-symbols-sharp text-amber-600 mr-2 mt-0.5">warning</span>
+                        <div class="text-sm text-amber-800">
+                            <p class="font-medium">Security Notice:</p>
+                            <p>For your account security, you must change your temporary password before accessing the system.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="passwordChangeForm"
+                    action="{{ route('user-password.update') }}"
+                    method="POST"
+                    class="space-y-4"
+                    @submit.prevent="
+                        isSubmitting = true;
+                        errors = {};
+
+                        // Client-side validation
+                        if (!currentPassword) {
+                            errors.current_password = ['Current password is required'];
+                            isSubmitting = false;
+                            return;
+                        }
+
+                        if (!newPassword) {
+                            errors.password = ['New password is required'];
+                            isSubmitting = false;
+                            return;
+                        }
+
+                        if (newPassword.length < 8) {
+                            errors.password = ['Password must be at least 8 characters'];
+                            isSubmitting = false;
+                            return;
+                        }
+
+                        if (newPassword !== confirmPassword) {
+                            errors.password_confirmation = ['Passwords do not match'];
+                            isSubmitting = false;
+                            return;
+                        }
+
+                        // Submit form using Jetstream's endpoint
+                        fetch($el.action, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                current_password: currentPassword,
+                                password: newPassword,
+                                password_confirmation: confirmPassword
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.errors) {
+                                errors = data.errors;
+                                isSubmitting = false;
+                            } else {
+                                // Success - update the user's temporary password status
+                                fetch('/user/mark-password-changed', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                        'Accept': 'application/json'
+                                    }
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            isSubmitting = false;
+                            alert('An error occurred. Please try again.');
+                        });
+                    ">
+                    @csrf
+                    @method('PUT')
+
+                    <!-- Current Password -->
+                    <div>
+                        <label for="current_password" class="block text-sm font-medium text-gray-700 mb-2">
+                            <span class="flex items-center">
+                                <span class="material-symbols-sharp text-sm mr-2 text-gray-500">key</span>
+                                Current Password
+                            </span>
+                        </label>
+                        <div class="relative">
+                            <input
+                                :type="showCurrentPassword ? 'text' : 'password'"
+                                x-model="currentPassword"
+                                id="current_password"
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+                                placeholder="Enter your current password"
+                                :class="errors.current_password ? 'border-red-500' : 'border-gray-300'">
+                            <button type="button"
+                                    @click="showCurrentPassword = !showCurrentPassword"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                <span class="material-symbols-sharp text-sm" x-text="showCurrentPassword ? 'visibility_off' : 'visibility'"></span>
+                            </button>
+                        </div>
+                        <div x-show="errors.current_password" class="mt-1 text-sm text-red-600" x-text="errors.current_password ? errors.current_password[0] : ''"></div>
+                    </div>
+
+                    <!-- New Password -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                            <span class="flex items-center">
+                                <span class="material-symbols-sharp text-sm mr-2 text-gray-500">lock</span>
+                                New Password
+                            </span>
+                        </label>
+                        <div class="relative">
+                            <input
+                                :type="showNewPassword ? 'text' : 'password'"
+                                x-model="newPassword"
+                                id="password"
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+                                placeholder="Enter your new password"
+                                :class="errors.password ? 'border-red-500' : 'border-gray-300'">
+                            <button type="button"
+                                    @click="showNewPassword = !showNewPassword"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                <span class="material-symbols-sharp text-sm" x-text="showNewPassword ? 'visibility_off' : 'visibility'"></span>
+                            </button>
+                        </div>
+                        <div x-show="errors.password" class="mt-1 text-sm text-red-600" x-text="errors.password ? errors.password[0] : ''"></div>
+                        <div class="mt-1 text-xs text-gray-500">
+                            Password must be at least 8 characters long
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div>
+                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
+                            <span class="flex items-center">
+                                <span class="material-symbols-sharp text-sm mr-2 text-gray-500">lock_check</span>
+                                Confirm New Password
+                            </span>
+                        </label>
+                        <div class="relative">
+                            <input
+                                :type="showConfirmPassword ? 'text' : 'password'"
+                                x-model="confirmPassword"
+                                id="password_confirmation"
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+                                placeholder="Confirm your new password"
+                                :class="errors.password_confirmation ? 'border-red-500' : 'border-gray-300'">
+                            <button type="button"
+                                    @click="showConfirmPassword = !showConfirmPassword"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                <span class="material-symbols-sharp text-sm" x-text="showConfirmPassword ? 'visibility_off' : 'visibility'"></span>
+                            </button>
+                        </div>
+                        <div x-show="errors.password_confirmation" class="mt-1 text-sm text-red-600" x-text="errors.password_confirmation ? errors.password_confirmation[0] : ''"></div>
+                    </div>
+
+                    <!-- Password Requirements -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p class="text-sm font-medium text-blue-800 mb-2">Password Requirements:</p>
+                        <ul class="text-xs text-blue-700 space-y-1">
+                            <li class="flex items-center">
+                                <span class="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></span>
+                                At least 8 characters long
+                            </li>
+                            <li class="flex items-center">
+                                <span class="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></span>
+                                Include uppercase and lowercase letters
+                            </li>
+                            <li class="flex items-center">
+                                <span class="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></span>
+                                Include at least one number
+                            </li>
+                            <li class="flex items-center">
+                                <span class="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></span>
+                                Include at least one special character
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-4">
+                        <button type="submit"
+                                :disabled="isSubmitting"
+                                class="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-700 border border-transparent rounded-lg shadow-sm hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span class="flex items-center justify-center">
+                                <span class="material-symbols-sharp text-sm mr-2">save</span>
+                                <span x-show="!isSubmitting">Change Password</span>
+                                <span x-show="isSubmitting">Changing Password...</span>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs text-gray-500">This modal cannot be closed until password is changed</p>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="text-xs text-red-600 hover:text-red-800 underline">
+                            Logout Instead
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
     {{-- <div
         x-show="profileModalOpen"
         x-transition:enter="transition ease-out duration-200"

@@ -1,5 +1,5 @@
 <!-- filepath: c:\inetpub\wwwroot\ITSSMO-Tool\resources\views\livewire\control-panel\users-control.blade.php -->
-<div class="container mx-auto px-4 py-6">
+<div class="container mx-auto">
     <!-- Header Section -->
     <div class="mb-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
@@ -93,7 +93,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <i class="fas fa-user-tag text-gray-400 w-4"></i>
-                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $user->role }}</span>
+                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $user->role->name ?? 'No Role' }}</span>
                             </div>
                             @if(!$user->is_temporary_password_used)
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">

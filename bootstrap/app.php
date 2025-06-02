@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
             'redirect.role' => RedirectBasedOnRole::class,
+            'check.temporary.password' => CheckTemporaryPassword::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

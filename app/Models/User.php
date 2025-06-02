@@ -33,6 +33,7 @@ class User extends Authenticatable
         'password',
         'temporary_password',
         'is_temporary_password_used',
+        'role_id'
     ];
 
     /**
@@ -82,10 +83,10 @@ class User extends Authenticatable
 
         // Check if user's role is in the provided roles
         return in_array($userRole, $roles);
-    }
+}
     public function role()
     {
-        return $this->belongsTo(Roles::class);
+        return $this->belongsTo(Roles::class, 'role_id');
     }
      /**
      * Check if the user is a developer
@@ -96,4 +97,6 @@ class User extends Authenticatable
     {
         return $this->hasRole('Developer') || $this->is_developer;
     }
+
+
 }
