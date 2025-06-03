@@ -118,6 +118,56 @@
                 </div>
             </x-nav-link>
         </li>
+        <!-- Master File Archive Dropdown -->
+        <li class="mb-2">
+            <div x-data="{ open: {{ request()->routeIs('master-file.*') ? 'true' : 'false' }} }" class="relative p-2 rounded">
+                <a href="" @click.prevent="open = !open" :class="{'rounded bg-gray-300 dark:bg-gray-700': open}">
+                    <div class="flex gap-3 items-center">
+                        <span class="material-symbols-sharp"> folder_managed </span>
+                        <h3>Master File Archive</h3>
+                        <span class="material-symbols-sharp transform transition-transform duration-300" :class="{'rotate-180': open}"> expand_more </span>
+                    </div>
+                </a>
+                <div x-show="open" x-collapse class="flex flex-col space-y-2 pl-10 mt-2">
+                    <x-nav-link wire:navigate href="{{ route('master-file.dashboard') }}" :active="request()->routeIs('master-file.dashboard')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                        <div class="flex gap-2 items-center">
+                            <span class="material-symbols-sharp text-sm"> dashboard </span>
+                            <span class="text-sm">Dashboard</span>
+                        </div>
+                    </x-nav-link>
+                    <x-nav-link wire:navigate href="{{ route('master-file.categories') }}" :active="request()->routeIs('master-file.categories')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                        <div class="flex gap-2 items-center">
+                            <span class="material-symbols-sharp text-sm"> category </span>
+                            <span class="text-sm">Categories</span>
+                        </div>
+                    </x-nav-link>
+                    <x-nav-link wire:navigate href="{{ route('master-file.upload') }}" :active="request()->routeIs('master-file.upload')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                        <div class="flex gap-2 items-center">
+                            <span class="material-symbols-sharp text-sm"> upload_file </span>
+                            <span class="text-sm">Upload Document</span>
+                        </div>
+                    </x-nav-link>
+                    <x-nav-link wire:navigate href="{{ route('master-file.search') }}" :active="request()->routeIs('master-file.search')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                        <div class="flex gap-2 items-center">
+                            <span class="material-symbols-sharp text-sm"> search </span>
+                            <span class="text-sm">Search Archive</span>
+                        </div>
+                    </x-nav-link>
+                    <x-nav-link wire:navigate href="{{ route('master-file.versions') }}" :active="request()->routeIs('master-file.versions')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                        <div class="flex gap-2 items-center">
+                            <span class="material-symbols-sharp text-sm"> history </span>
+                            <span class="text-sm">Version Control</span>
+                        </div>
+                    </x-nav-link>
+                    <x-nav-link wire:navigate href="{{ route('master-file.analytics') }}" :active="request()->routeIs('master-file.analytics')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                        <div class="flex gap-2 items-center">
+                            <span class="material-symbols-sharp text-sm"> analytics </span>
+                            <span class="text-sm">Analytics</span>
+                        </div>
+                    </x-nav-link>
+                </div>
+            </div>
+        </li>
         <h1 class="text-xs text-gray-500">Admin Access</h1>
         <li class="mb-2">
             <x-nav-link wire:navigate href="{{ route('controlPanel.admin') }}" :active="request()->routeIs('controlPanel.admin')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">

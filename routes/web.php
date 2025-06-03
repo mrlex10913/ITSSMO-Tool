@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MasterFileController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\TemporaryPasswordController;
 use App\Http\Controllers\UserRecords\FalcoData as UserRecordsFalcoData;
@@ -25,6 +26,7 @@ use App\Livewire\Examination\Admin\Questions;
 use App\Livewire\Examination\Admin\Subject;
 use App\Livewire\Examination\Coordinator\Codegenerator;
 use App\Livewire\Manuals\ITSSManual;
+use App\Livewire\MasterFiles\Dashboard as MasterFileDashboard;
 use App\Livewire\PAMO\AssetTracker;
 use App\Livewire\PAMO\BarcodeGenerator;
 use App\Livewire\PAMO\Dashboard;
@@ -74,6 +76,17 @@ Route::middleware([
         Route::get('/borrower-return', BorrowersReturn::class)->name('borrowers.return');
         Route::get('/control-panel', AdminControll::class)->name('controlPanel.admin');
         Route::get('/control-panel/userControl', UsersControl::class)->name('controlPanel.user');
+
+        Route::middleware(['auth', 'verified'])->prefix('master-file')->name('master-file.')->group(function () {
+            Route::get('/dashboard', MasterFileDashboard::class)->name('dashboard');
+            Route::get('/categories', \App\Livewire\MasterFiles\Categories::class)->name('categories');
+            Route::get('/upload', \App\Livewire\MasterFiles\Upload::class)->name('upload');
+            Route::get('/search', \App\Livewire\MasterFiles\Search::class)->name('search');
+            Route::get('/versions', \App\Livewire\MasterFiles\Versions::class)->name('versions');
+            Route::get('/analytics', \App\Livewire\MasterFiles\Analytics::class)->name('analytics');
+            Route::get('/file/{file}', \App\Livewire\MasterFiles\Show::class)->name('show');
+            Route::get('/file/{file}/download', [MasterFileController::class, 'download'])->name('download');
+        });
     });
 
 });
