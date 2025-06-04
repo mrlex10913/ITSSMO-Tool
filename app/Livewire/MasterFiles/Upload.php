@@ -27,7 +27,7 @@ class Upload extends Component
     public $is_confidential = false;
 
     protected $rules = [
-        'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx|max:10240', // 10MB max
+        'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx|max:30720', // 30MB max
         'title' => 'required|string|max:255',
         'description' => 'nullable|string',
         'document_code' => 'nullable|string|max:50|unique:master_files,document_code',
