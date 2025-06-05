@@ -53,15 +53,15 @@ class Search extends Component
             ->when(!Auth::user()->hasRole(['administrator', 'developer']), function($query) use ($userDepartment) {
                 $query->where(function($q) use ($userDepartment) {
                     $q->where('department', $userDepartment)
-                      ->orWhereJsonContains('visible_to_departments', $userDepartment);
+                    ->orWhereJsonContains('visible_to_departments', $userDepartment);
                 });
             })
             ->when($this->search, function($query) {
                 $query->where(function($q) {
                     $q->where('title', 'like', '%' . $this->search . '%')
-                      ->orWhere('description', 'like', '%' . $this->search . '%')
-                      ->orWhere('document_code', 'like', '%' . $this->search . '%')
-                      ->orWhereJsonContains('tags', $this->search);
+                    ->orWhere('description', 'like', '%' . $this->search . '%')
+                    ->orWhere('document_code', 'like', '%' . $this->search . '%')
+                    ->orWhereJsonContains('tags', $this->search);
                 });
             })
             ->when($this->category_filter, function($query) {
@@ -76,7 +76,7 @@ class Search extends Component
             ->when($this->date_to, function($query) {
                 $query->whereDate('created_at', '<=', $this->date_to);
             })
-            ->where('status', 'active')
+            ->where('status', 'active') // Only show active versions
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 

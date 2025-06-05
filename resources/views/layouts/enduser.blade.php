@@ -53,6 +53,13 @@
                 </div>
             </div>
         </div>
+        {{-- @if(flash()->message)
+            <div class="fixed top-4 right-4 z-50">
+                <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+                    {{ flash()->message }}
+                </div>
+            </div>
+        @endif --}}
 
         <!-- Main layout container -->
         <div class="flex flex-1 overflow-hidden">
@@ -628,7 +635,14 @@
         </div>
     </div>
 
-    @if(session('force_password_change') || (!Auth::user()->is_temporary_password_used && Auth::user()->temporary_password))
+    @php
+        $shouldShowPasswordModal = session('force_password_change') || Auth::user()->is_temporary_password_used == 0;
+    @endphp
+
+    @if($shouldShowPasswordModal)
+        @livewire('force-password-change')
+    @endif
+    {{-- @if(session('force_password_change') || (!Auth::user()->is_temporary_password_used && Auth::user()->temporary_password))
     <div id="passwordChangeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75"
         x-data="{
             isSubmitting: false,
@@ -668,7 +682,6 @@
                 </div>
 
                 <form id="passwordChangeForm"
-                    action="{{ route('user-password.update') }}"
                     method="POST"
                     class="space-y-4"
                     @submit.prevent="
@@ -700,8 +713,8 @@
                             return;
                         }
 
-                        // Submit form using Jetstream's endpoint
-                        fetch($el.action, {
+                        // Use our custom password update endpoint
+                        fetch('{{ route('user.update-password') }}', {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -714,33 +727,39 @@
                                 password_confirmation: confirmPassword
                             })
                         })
-                        .then(response => response.json())
+                        .then(response => {
+                            return response.json().then(data => {
+                                if (!response.ok) {
+                                    throw data;
+                                }
+                                return data;
+                            });
+                        })
                         .then(data => {
-                            if (data.errors) {
-                                errors = data.errors;
-                                isSubmitting = false;
-                            } else {
-                                // Success - update the user's temporary password status
-                                fetch('/user/mark-password-changed', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                        'Accept': 'application/json'
-                                    }
-                                }).then(() => {
-                                    window.location.reload();
-                                });
+                            if (data.success) {
+                                // Success - show success message and reload
+                                alert(data.message || 'Password changed successfully!');
+                                window.location.reload();
                             }
                         })
-                        .catch(error => {
-                            console.error('Error:', error);
+                        .catch(data => {
+                            console.error('Password update error:', data);
                             isSubmitting = false;
-                            alert('An error occurred. Please try again.');
+
+                            if (data.errors) {
+                                errors = data.errors;
+                            } else {
+                                errors = { general: ['An error occurred. Please try again.'] };
+                            }
                         });
                     ">
                     @csrf
                     @method('PUT')
+
+                    <!-- Show general error if exists -->
+                    <div x-show="errors.general" class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="text-sm text-red-600" x-text="errors.general ? errors.general[0] : ''"></div>
+                    </div>
 
                     <!-- Current Password -->
                     <div>
@@ -872,7 +891,7 @@
             </div>
         </div>
     </div>
-    @endif
+    @endif --}}
     {{-- <div
         x-show="profileModalOpen"
         x-transition:enter="transition ease-out duration-200"

@@ -60,9 +60,10 @@ class Dashboard extends Component
             ->when(!Auth::user()->isDeveloper(), function($query) {
                 $query->where(function($q) {
                     $q->where('department', $this->userDepartment)
-                      ->orWhereJsonContains('visible_to_departments', $this->userDepartment);
+                    ->orWhereJsonContains('visible_to_departments', $this->userDepartment);
                 });
             })
+            ->where('status', 'active') // Only show active versions
             ->latest()
             ->take(5)
             ->get();

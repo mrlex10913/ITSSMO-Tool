@@ -64,28 +64,36 @@ class MasterFile extends Model
 
     public function isLatestVersion(): bool
     {
-        if (!$this->parent_file_id) {
-            return true; // This is the original file
-        }
+        // if (!$this->parent_file_id) {
+        //     return true; // This is the original file
+        // }
 
-        return $this->version === $this->parentFile->versions()->max('version');
+        // return $this->version === $this->parentFile->versions()->max('version');
+        return $this->getLatestVersion()->id === $this->id;
     }
 
     public function getAllVersions()
     {
-        if ($this->parent_file_id) {
-            // This is a version, get all versions including the parent
-            return MasterFile::where('parent_file_id', $this->parent_file_id)
-                            ->orWhere('id', $this->parent_file_id)
-                            ->orderBy('version', 'desc')
-                            ->get();
-        } else {
-            // This is the parent, get all its versions
-            return MasterFile::where('parent_file_id', $this->id)
-                            ->orWhere('id', $this->id)
-                            ->orderBy('version', 'desc')
-                            ->get();
-        }
+        $parentId = $this->parent_file_id ?: $this->id;
+
+        return static::where(function($query) use ($parentId) {
+            $query->where('parent_file_id', $parentId)
+                ->orWhere('id', $parentId);
+        })
+        ->orderByRaw('CAST(SUBSTRING(version, 1, CHARINDEX(\'.\', version + \'.\') - 1) AS INT) DESC')
+        ->orderByRaw('CAST(SUBSTRING(version, CHARINDEX(\'.\', version + \'.\') + 1, LEN(version)) AS INT) DESC')
+        ->get();
+    }
+    public function getLatestVersion()
+    {
+        $parentId = $this->parent_file_id ?: $this->id;
+
+        return static::where(function($query) use ($parentId) {
+            $query->where('parent_file_id', $parentId)
+                ->orWhere('id', $parentId);
+        })
+        ->where('status', 'active')
+        ->first();
     }
 
     public function accessLogs()

@@ -310,6 +310,90 @@
         </form>
     </div>
 
+    <!-- Version Control Section -->
+    <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <span class="material-symbols-sharp text-indigo-600 mr-2">history</span>
+            Version Control
+        </h3>
+
+        <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center space-x-4">
+                <label class="flex items-center">
+                    <input type="radio"
+                        wire:model.live="is_new_version"
+                        value="false"
+                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-2 text-sm font-medium text-gray-700">Upload New Document</span>
+                </label>
+
+                <label class="flex items-center">
+                    <input type="radio"
+                        wire:model.live="is_new_version"
+                        value="true"
+                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-2 text-sm font-medium text-gray-700">Upload New Version</span>
+                </label>
+            </div>
+
+            @if($is_new_version)
+            <div class="mt-4 space-y-4">
+                <!-- Select Existing File -->
+                <div>
+                    <label for="existing_file" class="block text-sm font-medium text-gray-700 mb-2">
+                        Select Original Document <span class="text-red-500">*</span>
+                    </label>
+                    <select id="existing_file"
+                            wire:model.live="selected_existing_file"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Choose the document to update...</option>
+                        @foreach($existing_files as $existingFile)
+                            <option value="{{ $existingFile->id }}">
+                                {{ $existingFile->title }}
+                                ({{ $existingFile->document_code ?? 'No Code' }})
+                                - v{{ $existingFile->version }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('selected_existing_file')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Version Notes -->
+                <div>
+                    <label for="version_notes" class="block text-sm font-medium text-gray-700 mb-2">
+                        Version Notes
+                    </label>
+                    <textarea id="version_notes"
+                            wire:model="version_notes"
+                            rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Describe what changed in this version..."></textarea>
+                    @error('version_notes')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                @if($selected_existing_file)
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div class="flex items-center">
+                            <span class="material-symbols-sharp text-blue-600 mr-2">info</span>
+                            <div>
+                                <p class="text-sm font-medium text-blue-900">Creating New Version</p>
+                                <p class="text-xs text-blue-700">
+                                    The previous version will be archived and this will become the active version.
+                                    The document code and other metadata will be inherited.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+            @endif
+        </div>
+    </div>
+
     <!-- Upload Guidelines -->
     <div class="bg-blue-50 rounded-xl border border-blue-200 p-6">
         <h3 class="text-lg font-semibold text-blue-900 mb-4 flex items-center">

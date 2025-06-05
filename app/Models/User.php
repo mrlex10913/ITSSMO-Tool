@@ -71,19 +71,16 @@ class User extends Authenticatable
     }
     public function hasRole($roles): bool
     {
-        $userRole = $this->role;
+        $userRole = $this->role; // This calls the role() relationship
 
-        // If no role is set, return false
         if (!$userRole) {
             return false;
         }
 
-        // Convert single role to array for consistent handling
         $roles = is_array($roles) ? $roles : [$roles];
 
-        // Check if user's role is in the provided roles
-        return in_array($userRole, $roles);
-}
+        return in_array(strtolower($userRole->slug), array_map('strtolower', $roles));
+    }
     public function role()
     {
         return $this->belongsTo(Roles::class, 'role_id');

@@ -300,6 +300,8 @@
             }
         }
      }"
+     @payee-selected-autocomplete.window="payee = $event.detail"
+     @payee-selected.window="payee = $event.detail.name"
      @mousemove="drag($event)"
      @mouseup="stopDrag()">
 
@@ -309,7 +311,7 @@
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
                 <h1 class="text-3xl font-bold text-gray-800 mb-4 lg:mb-0">
                     <i class="fas fa-money-check-alt text-blue-600 mr-3"></i>
-                    Cheque Management System
+                    Cheque Issuance
                 </h1>
                 <div class="flex flex-wrap gap-3">
                     <button @click="toggleEditMode()"
@@ -318,6 +320,13 @@
                         <i :class="isEditMode ? 'fas fa-times mr-2' : 'fas fa-edit mr-2'"></i>
                         <span x-text="isEditMode ? 'Exit Edit' : 'Edit Mode'"></span>
                     </button>
+
+                    <!-- Add this new Upload Payee button -->
+                    <button @click="$dispatch('open-payee-modal')"
+                            class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
+                        <i class="fas fa-upload mr-2"></i>Upload Payee
+                    </button>
+
                     <button @click="printCheque()"
                             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                         <i class="fas fa-print mr-2"></i>Print Cheque
@@ -335,11 +344,12 @@
 
             <!-- Quick Fill Form - Remove memo field -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
+                @livewire('b-f-o.payee-autocomplete')
+                {{-- <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Payee Name</label>
                     <input type="text" x-model="payee" placeholder="Enter payee name"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
+                </div> --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Amount (Pesos)</label>
                     <input type="number" x-model="amount" placeholder="0.00" step="0.01"
@@ -480,6 +490,7 @@
                 </div>
             </div>
         </div>
+        @include('livewire.b-f-o.partials.upload-payee-modal')
     </div>
 <style>
 .draggable-field {

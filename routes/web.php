@@ -81,6 +81,7 @@ Route::middleware([
             Route::get('/dashboard', MasterFileDashboard::class)->name('dashboard');
             Route::get('/categories', \App\Livewire\MasterFiles\Categories::class)->name('categories');
             Route::get('/upload', \App\Livewire\MasterFiles\Upload::class)->name('upload');
+            Route::get('/upload/{parent_id}', \App\Livewire\MasterFiles\Upload::class)->name('upload-version');
             Route::get('/search', \App\Livewire\MasterFiles\Search::class)->name('search');
             Route::get('/versions', \App\Livewire\MasterFiles\Versions::class)->name('versions');
             Route::get('/analytics', \App\Livewire\MasterFiles\Analytics::class)->name('analytics');
@@ -90,7 +91,7 @@ Route::middleware([
     });
 
 });
-Route::get('/password/change', ChangePassword::class)->name('password.change');
+// Route::get('/password/change', ChangePassword::class)->name('password.change');
 
 // Route::get('/desktop/borrowers', BorrowersDesktop::class)->name('desktop.borrowers');
 Route::middleware(['ip.filter'])->group(function(){
@@ -121,9 +122,13 @@ Route::middleware([
     Route::get('/cheque', Cheque::class)->name('bfo.cheque');
 });
 
-Route::middleware(['auth'])->group(function () {
-    Route::post('/user/mark-password-changed', [TemporaryPasswordController::class, 'markPasswordChanged']);
-});
+Route::get('/password/change', ChangePassword::class)->name('password.change');
+// Route::middleware(['auth'])->group(function () {
+//     Route::put('/user/update-password', [App\Http\Controllers\TemporaryPasswordController::class, 'updatePassword'])
+//         ->name('user.update-password');
+//     Route::post('/user/mark-password-changed', [App\Http\Controllers\TemporaryPasswordController::class, 'markPasswordChanged'])
+//         ->name('user.mark-password-changed');
+// });
 
 
 

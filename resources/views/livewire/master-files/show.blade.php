@@ -57,6 +57,11 @@
                 <span class="material-symbols-sharp text-sm mr-2">share</span>
                 Share
             </button>
+            <a href="{{ route('master-file.upload-version', $file->id) }}"
+            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-indigo-700">
+                <span class="material-symbols-sharp text-sm mr-2">upload</span>
+                Upload New Version
+            </a>
         </div>
     </div>
 

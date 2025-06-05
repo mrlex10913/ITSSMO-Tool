@@ -29,30 +29,44 @@ class Versions extends Component
     {
         $userDepartment = Auth::user()->department ?? 'ITSS';
 
-        $files = MasterFile::with(['category', 'uploader', 'versions'])
+        // Get parent documents (or documents without parents)
+        $files = MasterFile::with(['category', 'uploader'])
             ->when(!Auth::user()->hasRole(['administrator', 'developer']), function($query) use ($userDepartment) {
                 $query->where(function($q) use ($userDepartment) {
                     $q->where('department', $userDepartment)
-                      ->orWhereJsonContains('visible_to_departments', $userDepartment);
+                    ->orWhereJsonContains('visible_to_departments', $userDepartment);
                 });
             })
             ->when($this->search, function($query) {
                 $query->where('title', 'like', '%' . $this->search . '%')
-                      ->orWhere('document_code', 'like', '%' . $this->search . '%');
+                    ->orWhere('document_code', 'like', '%' . $this->search . '%');
             })
-            ->whereNull('parent_file_id') // Only show parent files
-            ->where('status', 'active') // Only show active documents
+            // Show latest active version of each document group
+            ->where(function($query) {
+                $query->where('status', 'active')
+                    ->whereNull('parent_file_id'); // Parent documents
+            })
+            ->orWhere(function($query) {
+                // Or active versions that don't have a newer active version
+                $query->where('status', 'active')
+                    ->whereNotNull('parent_file_id');
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         $selectedFileVersions = null;
         if ($this->selectedFile) {
+            // Get all versions of the selected document
+            $selectedDoc = MasterFile::find($this->selectedFile);
+            $parentId = $selectedDoc->parent_file_id ?: $selectedDoc->id;
+
             $selectedFileVersions = MasterFile::with(['uploader'])
-                ->where(function($query) {
-                    $query->where('parent_file_id', $this->selectedFile)
-                          ->orWhere('id', $this->selectedFile);
+                ->where(function($query) use ($parentId) {
+                    $query->where('parent_file_id', $parentId)
+                        ->orWhere('id', $parentId);
                 })
-                ->orderBy('version', 'desc')
+                ->orderByRaw('CAST(SUBSTRING(version, 1, CHARINDEX(\'.\', version + \'.\') - 1) AS INT) DESC')
+                ->orderByRaw('CAST(SUBSTRING(version, CHARINDEX(\'.\', version + \'.\') + 1, LEN(version)) AS INT) DESC')
                 ->get();
         }
 
