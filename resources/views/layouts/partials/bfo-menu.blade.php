@@ -14,4 +14,11 @@
         Cheque Management
     </x-end-user-nav-link>
 </li>
-
+{{-- <li>
+    <x-end-user-nav-link
+        href="{{ route('bfo.cheque-list') }}{{ request()->get('dept') ? '?dept=' . request()->get('dept') : '' }}"
+        :active="request()->routeIs('bfo.cheque-list')"
+        icon="format_list_bulleted">
+        Cheque List
+    </x-end-user-nav-link>
+</li> --}}

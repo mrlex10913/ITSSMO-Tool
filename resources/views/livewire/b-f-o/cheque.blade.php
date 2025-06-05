@@ -1,10 +1,9 @@
-<!-- filepath: c:\inetpub\wwwroot\ITSSMO-Tool\resources\views\livewire\b-f-o\cheque.blade.php -->
 <div class="min-h-screen bg-gray-50 p-6"
      x-data="{
         // Form data
-        payee: '',
-        amount: '',
-        date: '{{ date('Y-m-d') }}',
+        payee: @entangle('payee'),
+        amount: @entangle('amount'),
+        date: @entangle('date'),
 
         // Edit mode state
         isEditMode: false,
@@ -231,23 +230,38 @@
         },
 
         printCheque() {
+            if (!this.payee || !this.amount || !this.date) {
+                alert('Please fill in all required fields (Payee, Amount, Date)');
+                return;
+            }
+            const positions = this.getFieldPositions();
+
+            // Get the ChequeManager Livewire component and call its method
+            const chequeManager = Livewire.find(document.querySelector('[wire\\:id]').getAttribute('wire:id'));
+            if (chequeManager) {
+                chequeManager.call('saveAndPrint', positions);
+            }
+        },
+
+        saveCheque() {
+            if (!this.payee || !this.amount || !this.date) {
+                alert('Please fill in all required fields (Payee, Amount, Date)');
+                return;
+            }
+            const positions = this.getFieldPositions();
+
+            // Get the ChequeManager Livewire component and call its method
+            const chequeManager = Livewire.find(document.querySelector('[wire\\:id]').getAttribute('wire:id'));
+            if (chequeManager) {
+                chequeManager.call('saveDraft', positions);
+            }
+        },
+
+        proceedWithPrint() {
             const container = this.$refs.chequeContainer;
             container.classList.add('print-mode');
             window.print();
             container.classList.remove('print-mode');
-        },
-
-        saveCheque() {
-            const chequeData = {
-                payee: this.payee,
-                amount: this.amount,
-                date: this.date,
-                // memo: this.memo, // Remove memo from save data
-                positions: this.getFieldPositions()
-            };
-
-            localStorage.setItem('chequeData', JSON.stringify(chequeData));
-            this.$dispatch('notify', { message: 'Cheque data saved successfully!', type: 'success' });
         },
 
         savePositions() {
@@ -302,10 +316,24 @@
      }"
      @payee-selected-autocomplete.window="payee = $event.detail"
      @payee-selected.window="payee = $event.detail.name"
+     @cheque-saved-proceed-print.window="proceedWithPrint()"
      @mousemove="drag($event)"
      @mouseup="stopDrag()">
-
+    {{-- @livewire('b-f-o.cheque-manager', [], key('cheque-manager')) --}}
     <div class="max-w-7xl mx-auto">
+        @if (session()->has('success'))
+            <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                <i class="fas fa-check-circle mr-2"></i>
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session()->has('error'))
+            <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                {{ session('error') }}
+            </div>
+        @endif
         <!-- Header Controls -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
@@ -352,12 +380,18 @@
                 </div> --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Amount (Pesos)</label>
-                    <input type="number" x-model="amount" placeholder="0.00" step="0.01"
+                    <input type="number"
+                           x-model="amount"
+                           wire:model="amount"
+                           placeholder="0.00"
+                           step="0.01"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input type="date" x-model="date"
+                    <input type="date"
+                           x-model="date"
+                           wire:model="date"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <!-- Remove memo input field -->

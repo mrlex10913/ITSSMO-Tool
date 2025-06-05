@@ -13,6 +13,7 @@ use App\Livewire\Assets\AssetsLists;
 use App\Livewire\Assets\AssetsTransfer;
 use App\Livewire\BFO\BFODashboard;
 use App\Livewire\BFO\Cheque;
+use App\Livewire\BFO\ChequeList;
 use App\Livewire\Borrowers\BorrowersForm;
 use App\Livewire\Borrowers\BorrowersLogs;
 use App\Livewire\Borrowers\BorrowersReturn;
@@ -117,9 +118,10 @@ Route::middleware([
     'verified',
     'role:bfo,administrator,developer',
     'check.temporary.password'
-])->prefix('bfo')->group(function(){
-    Route::get('/dashboard', BFODashboard::class)->name('bfo.dashboard');
-    Route::get('/cheque', Cheque::class)->name('bfo.cheque');
+])->prefix('bfo')->name('bfo.')->group(function(){  // Add ->name('bfo.') here
+    Route::get('/dashboard', BFODashboard::class)->name('dashboard');
+    Route::get('/cheque', Cheque::class)->name('cheque');
+    Route::get('/cheque-list', ChequeList::class)->name('cheque-list');
 });
 
 Route::get('/password/change', ChangePassword::class)->name('password.change');
