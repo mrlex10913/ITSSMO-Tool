@@ -46,6 +46,28 @@
                             </div>
                         @endif
 
+                        @if (session()->has('duplicates'))
+                            <div class="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
+                                <div class="font-medium mb-2">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    Duplicate payees skipped:
+                                </div>
+                                <ul class="text-sm space-y-1">
+                                    @foreach(session('duplicates') as $duplicate)
+                                        <li class="flex items-center">
+                                            <i class="fas fa-minus-circle mr-2 text-yellow-600"></i>
+                                            {{ $duplicate }}
+                                        </li>
+                                    @endforeach
+                                    @if(session()->has('more_duplicates'))
+                                        <li class="italic text-yellow-600">
+                                            ... and {{ session('more_duplicates') }} more duplicate(s)
+                                        </li>
+                                    @endif
+                                </ul>
+                            </div>
+                        @endif
+
                         <!-- Upload Section -->
                         <div class="mb-6 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                             <div class="text-center">
