@@ -94,7 +94,7 @@ class Cheque extends Component
         try {
             if ($this->savedChequeId) {
                 // Update existing draft
-                $cheque = ChequeModel::find($this->savedChequeId);
+                $cheque = BFOCheque::find($this->savedChequeId);  // Changed from ChequeModel to BFOCheque
                 $cheque->update([
                     'payee_name' => $this->payee,
                     'amount' => $this->amount,
@@ -104,8 +104,8 @@ class Cheque extends Component
                 ]);
             } else {
                 // Create new draft
-                $chequeNumber = ChequeModel::generateChequeNumber();
-                $cheque = ChequeModel::create([
+                $chequeNumber = BFOCheque::generateChequeNumber();  // Changed from ChequeModel to BFOCheque
+                $cheque = BFOCheque::create([  // Changed from ChequeModel to BFOCheque
                     'cheque_number' => $chequeNumber,
                     'payee_name' => $this->payee,
                     'amount' => $this->amount,
@@ -127,9 +127,9 @@ class Cheque extends Component
 
     private function numberToWords($num)
     {
-        $ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
-        $tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
-        $thousands = ['', 'THOUSAND', 'MILLION', 'BILLION'];
+        $ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        $tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+        $thousands = ['', 'Thousand', 'Million', 'Billion'];
 
         if ($num == 0) return 'ZERO PESOS ONLY';
 
@@ -140,7 +140,7 @@ class Cheque extends Component
 
         // Convert whole number part
         if ($wholePart === 0) {
-            $words = 'ZERO';
+        $words = 'Zero';
         } else {
             $thousandIndex = 0;
             while ($wholePart > 0) {
@@ -150,15 +150,16 @@ class Cheque extends Component
 
                     $hundreds = intval($chunk / 100);
                     if ($hundreds > 0) {
-                        $chunkWords .= $ones[$hundreds] . ' HUNDRED ';
+                        $chunkWords .= $ones[$hundreds] . ' Hundred ';
                     }
 
                     $remainder = $chunk % 100;
                     if ($remainder >= 20) {
-                        $chunkWords .= $tens[intval($remainder / 10)] . ' ';
+                        $chunkWords .= $tens[intval($remainder / 10)];
                         if ($remainder % 10 > 0) {
-                            $chunkWords .= $ones[$remainder % 10] . ' ';
+                            $chunkWords .= ' ' . $ones[$remainder % 10];
                         }
+                        $chunkWords .= ' ';
                     } else if ($remainder > 0) {
                         $chunkWords .= $ones[$remainder] . ' ';
                     }
@@ -175,25 +176,14 @@ class Cheque extends Component
             }
         }
 
-        // Add PESOS
-        $words .= 'PESOS';
+        // Add Pesos
+        $words .= 'Pesos';
 
-        // Add cents if present
+        // Add cents as a number
         if ($centsPart > 0) {
-            if ($centsPart < 20) {
-                $words .= ' AND ' . $ones[$centsPart] . ' CENTAVOS';
-            } else {
-                $centsText = '';
-                if ($centsPart >= 20) {
-                    $centsText .= $tens[intval($centsPart / 10)];
-                    if ($centsPart % 10 > 0) {
-                        $centsText .= ' ' . $ones[$centsPart % 10];
-                    }
-                }
-                $words .= ' AND ' . $centsText . ' CENTAVOS';
-            }
+            $words .= ' And ' . $centsPart . ' Cents';
         } else {
-            $words .= ' ONLY';
+            $words .= ' Only';
         }
 
         return trim($words);

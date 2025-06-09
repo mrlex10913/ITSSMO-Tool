@@ -74,6 +74,12 @@ class FortifyServiceProvider extends ServiceProvider
                         } catch (\Exception $e) {
                             return redirect('/');
                         }
+                     case 'itss':
+                        try {
+                            return redirect()->route('itss.dashboard');
+                        } catch (\Exception $e) {
+                            return redirect('/itss/dashboard');
+                        }
 
                     default:
                         abort(403, 'Unauthorized role: ' . $roleRecord->name);

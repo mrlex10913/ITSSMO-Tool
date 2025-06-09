@@ -18,10 +18,28 @@
             this.loadSavedPositions();
             this.updateFields();
 
-            // Watch for form changes
-            this.$watch('payee', () => this.updateFields());
-            this.$watch('amount', () => this.updateFields());
-            this.$watch('date', () => this.updateFields());
+            // Improved watchers that preserve positions
+            this.$watch('payee', () => {
+                const savedPositions = this.getFieldPositions();
+                this.updateFields();
+                setTimeout(() => this.applyFieldPositions(savedPositions), 50);
+            });
+
+            this.$watch('amount', () => {
+                const savedPositions = this.getFieldPositions();
+                this.updateFields();
+                setTimeout(() => this.applyFieldPositions(savedPositions), 50);
+            });
+
+            this.$watch('date', () => {
+                const savedPositions = this.getFieldPositions();
+                this.updateFields();
+                setTimeout(() => this.applyFieldPositions(savedPositions), 50);
+            });
+
+            // Add window events for better position persistence
+            window.addEventListener('beforeprint', () => this.savePositions());
+            window.addEventListener('afterprint', () => setTimeout(() => this.loadSavedPositions(), 100));
         },
 
         formatNumberWithCommas(num) {
@@ -30,11 +48,20 @@
         },
 
         toggleEditMode() {
+            this.savePositions();
+
             this.isEditMode = !this.isEditMode;
+
             if (!this.isEditMode && this.selectedField) {
                 this.selectedField.classList.remove('selected');
                 this.selectedField = null;
             }
+
+            // Prevent dragging if not in edit mode
+            const fields = document.querySelectorAll('.draggable-field');
+            fields.forEach(field => {
+                field.style.cursor = this.isEditMode ? 'move' : 'default';
+            });
         },
 
         selectField(event) {
@@ -97,7 +124,7 @@
         },
 
         updateSelectedFieldPosition() {
-            if (!this.selectedField) return;
+            if (!this.selectedField || !this.isEditMode) return;
 
             const x = this.$refs.fieldX.value;
             const y = this.$refs.fieldY.value;
@@ -111,7 +138,7 @@
         },
 
         updateSelectedFieldStyle() {
-            if (!this.selectedField) return;
+            if (!this.selectedField || !this.isEditMode) return;
 
             const fontSize = this.$refs.fontSize.value;
             const content = this.selectedField.querySelector('.field-content');
@@ -121,6 +148,9 @@
         },
 
         updateFields() {
+            // Update payee
+            const savedPositions = this.getFieldPositions();
+
             // Update payee
             const payeeDisplay = this.$refs.payeeDisplay;
             if (payeeDisplay) {
@@ -154,14 +184,17 @@
                     dateDisplay.textContent = `${month}-${day}-${year}`;
                 }
             }
+
+            // Restore positions after updating fields
+            setTimeout(() => this.applyFieldPositions(savedPositions), 50);
         },
 
         numberToWords(num) {
-            const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
-            const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
-            const thousands = ['', 'THOUSAND', 'MILLION', 'BILLION'];
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const thousands = ['', 'Thousand', 'Million', 'Billion'];
 
-            if (num == 0) return 'ZERO PESOS ONLY';
+            if (num == 0) return 'Zero Pesos Only';
 
             let words = '';
             let parts = num.toString().split('.');
@@ -170,7 +203,7 @@
 
             // Convert whole number part
             if (wholePart === 0) {
-                words = 'ZERO';
+                words = 'Zero';
             } else {
                 let thousandIndex = 0;
                 while (wholePart > 0) {
@@ -180,15 +213,16 @@
 
                         let hundreds = Math.floor(chunk / 100);
                         if (hundreds > 0) {
-                            chunkWords += ones[hundreds] + ' HUNDRED ';
+                            chunkWords += ones[hundreds] + ' Hundred ';
                         }
 
                         let remainder = chunk % 100;
                         if (remainder >= 20) {
-                            chunkWords += tens[Math.floor(remainder / 10)] + ' ';
+                            chunkWords += tens[Math.floor(remainder / 10)];
                             if (remainder % 10 > 0) {
-                                chunkWords += ones[remainder % 10] + ' ';
+                                chunkWords += ' ' + ones[remainder % 10];
                             }
+                            chunkWords += ' ';
                         } else if (remainder > 0) {
                             chunkWords += ones[remainder] + ' ';
                         }
@@ -205,25 +239,14 @@
                 }
             }
 
-            // Add PESOS
-            words += 'PESOS';
+            // Add Pesos
+            words += 'Pesos';
 
-            // Add cents if present
+            // Add cents if present (as a number)
             if (centsPart > 0) {
-                if (centsPart < 20) {
-                    words += ' AND ' + ones[centsPart] + ' CENTAVOS';
-                } else {
-                    let centsText = '';
-                    if (centsPart >= 20) {
-                        centsText += tens[Math.floor(centsPart / 10)];
-                        if (centsPart % 10 > 0) {
-                            centsText += ' ' + ones[centsPart % 10];
-                        }
-                    }
-                    words += ' AND ' + centsText + ' CENTAVOS';
-                }
+                words += ' And ' + centsPart + ' Cents';
             } else {
-                words += ' ONLY';
+                words += ' Only';
             }
 
             return words.trim();
@@ -234,13 +257,14 @@
                 alert('Please fill in all required fields (Payee, Amount, Date)');
                 return;
             }
+
+            // Save positions before proceeding
+            this.savePositions();
+
             const positions = this.getFieldPositions();
 
-            // Get the ChequeManager Livewire component and call its method
-            const chequeManager = Livewire.find(document.querySelector('[wire\\:id]').getAttribute('wire:id'));
-            if (chequeManager) {
-                chequeManager.call('saveAndPrint', positions);
-            }
+            // Use $wire directly since this is the component
+            $wire.saveAndPrint(positions);
         },
 
         saveCheque() {
@@ -248,20 +272,31 @@
                 alert('Please fill in all required fields (Payee, Amount, Date)');
                 return;
             }
+
+            // Save positions before proceeding
+            this.savePositions();
+
             const positions = this.getFieldPositions();
 
-            // Get the ChequeManager Livewire component and call its method
-            const chequeManager = Livewire.find(document.querySelector('[wire\\:id]').getAttribute('wire:id'));
-            if (chequeManager) {
-                chequeManager.call('saveDraft', positions);
-            }
+            // Use $wire directly since this is the component
+            $wire.saveDraft(positions);
         },
 
         proceedWithPrint() {
+            // Save positions before printing
+            this.savePositions();
+
             const container = this.$refs.chequeContainer;
             container.classList.add('print-mode');
+
+            // Print
             window.print();
+
+            // Restore after printing
             container.classList.remove('print-mode');
+
+            // Make sure to reload positions after printing
+            setTimeout(() => this.loadSavedPositions(), 100);
         },
 
         savePositions() {
@@ -291,20 +326,25 @@
             if (saved) {
                 const positions = JSON.parse(saved);
 
-                setTimeout(() => {
-                    Object.keys(positions).forEach(fieldId => {
-                        const field = document.getElementById(fieldId);
-                        const content = field?.querySelector('.field-content');
+                // Apply positions immediately and with a delay to ensure they're applied
+                this.applyFieldPositions(positions);
 
-                        if (field && positions[fieldId]) {
-                            if (positions[fieldId].left) field.style.left = positions[fieldId].left;
-                            if (positions[fieldId].top) field.style.top = positions[fieldId].top;
-                            if (positions[fieldId].width) field.style.width = positions[fieldId].width;
-                            if (positions[fieldId].fontSize && content) content.style.fontSize = positions[fieldId].fontSize;
-                        }
-                    });
-                }, 100);
+                // Also apply again after a delay to handle dynamic loading
+                setTimeout(() => this.applyFieldPositions(positions), 100);
             }
+        },
+        applyFieldPositions(positions) {
+            Object.keys(positions).forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                const content = field?.querySelector('.field-content');
+
+                if (field && positions[fieldId]) {
+                    if (positions[fieldId].left) field.style.left = positions[fieldId].left;
+                    if (positions[fieldId].top) field.style.top = positions[fieldId].top;
+                    if (positions[fieldId].width) field.style.width = positions[fieldId].width;
+                    if (positions[fieldId].fontSize && content) content.style.fontSize = positions[fieldId].fontSize;
+                }
+            });
         },
 
         resetPositions() {
@@ -639,6 +679,15 @@
     /* Remove box borders from amount field */
     .border.border-gray-400 {
         border: none !important;
+    }
+    :not(.edit-mode) .draggable-field {
+    cursor: default !important;
+    border-color: transparent !important;
+    }
+
+    :not(.edit-mode) .draggable-field:hover {
+        border-color: transparent !important;
+        background-color: transparent !important;
     }
 }
 </style>

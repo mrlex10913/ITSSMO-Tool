@@ -124,6 +124,17 @@ Route::middleware([
     Route::get('/cheque-list', ChequeList::class)->name('cheque-list');
 });
 
+Route::middleware([
+    'auth:sanctum',
+    'verified',
+    'role:itss,administrator,developer',
+    'check.temporary.password'
+])->prefix('itss')->name('itss.')->group(function(){
+    Route::get('/dashboard', App\Livewire\ITSS\Dashboard::class)->name('dashboard');
+    Route::get('/id-production', App\Livewire\ITSS\IDProduction::class)->name('id-production');
+    Route::get('/helpdesk', App\Livewire\ITSS\Helpdesk::class)->name('helpdesk');
+});
+
 Route::get('/password/change', ChangePassword::class)->name('password.change');
 // Route::middleware(['auth'])->group(function () {
 //     Route::put('/user/update-password', [App\Http\Controllers\TemporaryPasswordController::class, 'updatePassword'])
