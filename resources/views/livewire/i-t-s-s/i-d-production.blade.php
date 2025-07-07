@@ -1,85 +1,134 @@
-<div>
-    <div class="sm:px-6 lg:px-8">
-        <h1 class="text-2xl font-semibold text-gray-900 mb-6">ID Production System</h1>
+<!-- filepath: c:\inetpub\wwwroot\ITSSMO-Tool\resources\views\livewire\i-t-s-s\i-d-production.blade.php -->
+<div class="relative w-full max-w-md">
+    <!-- Front Side of ID Card - College -->
+    <div id="college-front" class="rounded-xl shadow-lg aspect-[54/86] relative overflow-hidden">
+        <!-- Yellow Top Bar - adjusted for portrait orientation -->
+        <div class="bg-yellow-400 h-1/5 w-full p-2">
+            <div class="flex justify-between items-center">
+                <div class="flex-grow"></div>
+                <!-- STI Logo in yellow header -->
+                <div class="w-16 h-16">
+                    <img src="{{ asset('images/STI Only Clolored.png') }}" alt="STI Logo" class="w-full h-full object-contain">
+                </div>
+            </div>
+        </div>
 
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                    <div class="flex items-center mb-4 md:mb-0">
-                        <span class="material-symbols-sharp text-blue-600 mr-2 text-2xl">badge</span>
-                        <h2 class="text-lg font-medium text-gray-900">ID Request Management</h2>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            <span class="flex items-center">
-                                <span class="material-symbols-sharp text-sm mr-1">add</span>
-                                New ID Request
-                            </span>
-                        </button>
-                    </div>
+        <!-- Blue Main Area - adjusted for portrait layout -->
+        <div class="bg-blue-600 h-4/5 w-full relative p-3">
+            <!-- Watermark design elements -->
+            <div class="absolute inset-0 opacity-20 pointer-events-none">
+                <div class="absolute bottom-0 right-[-105px] h-3/5">
+                    <img src="{{ asset('images/SEAL WHITE LIKE ALEX.png') }}" alt="STI Emblem" class="w-full h-full object-contain">
                 </div>
             </div>
 
-            <!-- Filters & Search -->
-            <div class="p-4 bg-gray-50 border-b border-gray-200">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div class="md:flex-1">
-                        <input type="text" placeholder="Search by name or ID number..."
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
-                            <option value="printed">Printed</option>
-                            <option value="completed">Completed</option>
-                            <option value="rejected">Rejected</option>
-                        </select>
-                        <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Types</option>
-                            <option value="new">New ID</option>
-                            <option value="replacement">Replacement</option>
-                            <option value="renewal">Renewal</option>
-                        </select>
-                    </div>
+            <div class="text-center text-yellow-400 mt-2">
+                <h1 class="font-bold text-xl">STI West Negros University</h1>
+            </div>
+
+            <!-- Photo Area - positioned for portrait layout -->
+            <div class="w-32 h-40 bg-white border-4 border-white rounded-lg mx-auto mt-4">
+                <div class="w-full h-full flex items-center justify-center">
+                    <span class="material-symbols-sharp text-gray-400 text-3xl">person</span>
                 </div>
             </div>
 
-            <!-- Table of ID Requests -->
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Request Info
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Photo
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Request Details
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <!-- Empty state -->
-                        <tr>
-                            <td colspan="5" class="px-6 py-16 text-center">
-                                <span class="material-symbols-sharp text-gray-300 text-5xl mb-4 block mx-auto">badge</span>
-                                <p class="text-gray-500 text-lg font-medium">No ID requests found</p>
-                                <p class="text-gray-400 text-sm mt-1">New requests will appear here</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- ID Information - repositioned for portrait layout -->
+            <div class="text-center text-white mt-6">
+                <h3 class="font-bold text-2xl tracking-wider mb-0">Panaguiton</h3>
+                <p class="text-white text-sm mb-1">Nikki T.</p>
+                <p class="text-white text-sm">BS in Civil Engineering</p>
+            </div>
+
+            <!-- Year -->
+            <div class="absolute bottom-1 right-2 text-white opacity-60 text-xs">
+                1983
             </div>
         </div>
     </div>
+
+    <!-- Back Side of ID Card - adjusted for portrait orientation -->
+    <div id="id-back" class="hidden bg-white rounded-xl shadow-lg aspect-[54/86] relative overflow-hidden p-3">
+        <div class="text-center text-sm font-semibold">
+            <p>Student No.</p>
+            <p class="font-bold text-lg mb-1">23-6067-990</p>
+        </div>
+
+        <!-- Signature Line -->
+        <div class="w-full border-b border-gray-500 mt-2 mb-1"></div>
+        <p class="text-[10px] text-gray-600 text-center mb-2">Student's Signature</p>
+
+        <!-- Address - adjusted spacing for portrait layout -->
+        <div class="text-xs">
+            <p class="font-semibold">Home Address:</p>
+            <p class="mb-2">131 Prk Sawmill 3 Brgy. Beta, Bacolod City, Negros Occidental</p>
+
+            <p class="font-semibold">In case of emergency, please contact:</p>
+            <p>Erna Besmanos</p>
+            <p class="mb-3">9469065822</p>
+        </div>
+
+        <!-- Admin Signature -->
+        <div class="text-center mt-3">
+            <div class="w-28 mx-auto border-b border-gray-600 mb-1"></div>
+            <p class="text-xs font-semibold">Ryan Mark S. Molina</p>
+            <p class="text-xs">Executive Vice President</p>
+        </div>
+
+        <!-- University Info -->
+        <div class="text-xs text-center font-semibold mt-3">
+            <p>STI West Negros University</p>
+            <p>Burgos St., Brgy. Villamonte</p>
+            <p>Bacolod City</p>
+            <p>Tel.: (034) 434-4561</p>
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-gray-400 my-2"></div>
+
+        <!-- Reminders Section -->
+        <div class="text-[9px]">
+            <p class="font-semibold">Reminders:</p>
+            <ul class="list-disc list-inside">
+                <li>This ID is exclusively for College students</li>
+                <li>Students are required to wear this ID inside STI premises</li>
+                <li>This ID is not valid without the validation sticker for the current term and school year</li>
+                <li>Tampering in any way invalidates the ID</li>
+                <li>This ID is non-transferrable</li>
+                <li>If found, please return to the owner or campus</li>
+            </ul>
+        </div>
+    </div>
+    <!-- Front/Back Toggle Controls -->
+<div class="mt-6 flex justify-center space-x-4">
+    <button id="show-front" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+        Show Front
+    </button>
+    <button id="show-back" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+        Show Back
+    </button>
 </div>
+
+<!-- JavaScript for Front/Back toggling -->
+<script>
+    document.getElementById('show-front').addEventListener('click', function() {
+        document.getElementById('college-front').classList.remove('hidden');
+        document.getElementById('id-back').classList.add('hidden');
+        this.classList.add('bg-blue-600', 'text-white');
+        this.classList.remove('bg-gray-200', 'text-gray-800');
+        document.getElementById('show-back').classList.add('bg-gray-200', 'text-gray-800');
+        document.getElementById('show-back').classList.remove('bg-blue-600', 'text-white');
+    });
+
+    document.getElementById('show-back').addEventListener('click', function() {
+        document.getElementById('college-front').classList.add('hidden');
+        document.getElementById('id-back').classList.remove('hidden');
+        this.classList.add('bg-blue-600', 'text-white');
+        this.classList.remove('bg-gray-200', 'text-gray-800');
+        document.getElementById('show-front').classList.add('bg-gray-200', 'text-gray-800');
+        document.getElementById('show-front').classList.remove('bg-blue-600', 'text-white');
+    });
+</script>
+</div>
+
+

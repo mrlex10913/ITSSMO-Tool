@@ -81,6 +81,10 @@
 
             const computedStyle = window.getComputedStyle(this.selectedField.querySelector('.field-content'));
             this.$refs.fontSize.value = computedStyle.fontSize;
+
+            if (this.selectedField.id === 'dateField') {
+                this.loadDateSpacingControls();
+            }
         },
 
         startDrag(event) {
@@ -178,15 +182,106 @@
                 const dateDisplay = this.$refs.dateDisplay;
                 if (dateDisplay) {
                     const dateObj = new Date(this.date);
+
+                    // Get date components
                     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
                     const day = String(dateObj.getDate()).padStart(2, '0');
-                    const year = dateObj.getFullYear();
-                    dateDisplay.textContent = `${month}-${day}-${year}`;
+                    const year = String(dateObj.getFullYear());
+
+                    // Clear previous content
+                    dateDisplay.innerHTML = '';
+
+                    // Create month digits with custom spacing
+                    const monthContainer = document.createElement('span');
+                    monthContainer.className = 'date-group month-group';
+                    month.split('').forEach(digit => {
+                        const span = document.createElement('span');
+                        span.className = 'date-digit';
+                        span.textContent = digit;
+                        monthContainer.appendChild(span);
+                    });
+                    dateDisplay.appendChild(monthContainer);
+
+                    // Add space between groups (controlled by CSS)
+                    const monthDaySpacer = document.createElement('span');
+                    monthDaySpacer.className = 'date-spacer month-day-spacer';
+                    dateDisplay.appendChild(monthDaySpacer);
+
+                    // Create day digits with custom spacing
+                    const dayContainer = document.createElement('span');
+                    dayContainer.className = 'date-group day-group';
+                    day.split('').forEach(digit => {
+                        const span = document.createElement('span');
+                        span.className = 'date-digit';
+                        span.textContent = digit;
+                        dayContainer.appendChild(span);
+                    });
+                    dateDisplay.appendChild(dayContainer);
+
+                    // Add space between groups (controlled by CSS)
+                    const dayYearSpacer = document.createElement('span');
+                    dayYearSpacer.className = 'date-spacer day-year-spacer';
+                    dateDisplay.appendChild(dayYearSpacer);
+
+                    // Create year digits with custom spacing
+                    const yearContainer = document.createElement('span');
+                    yearContainer.className = 'date-group year-group';
+                    year.split('').forEach(digit => {
+                        const span = document.createElement('span');
+                        span.className = 'date-digit';
+                        span.textContent = digit;
+                        yearContainer.appendChild(span);
+                    });
+                    dateDisplay.appendChild(yearContainer);
                 }
             }
 
             // Restore positions after updating fields
             setTimeout(() => this.applyFieldPositions(savedPositions), 50);
+        },
+
+        updateDateSpacing(type) {
+            if (!this.selectedField || this.selectedField.id !== 'dateField') return;
+
+            const dateField = this.selectedField;
+
+            switch(type) {
+                case 'digit':
+                    dateField.style.setProperty('--digit-spacing', `${this.$refs.digitSpacing.value}px`);
+                    break;
+                case 'month-day':
+                    dateField.style.setProperty('--month-day-spacing', `${this.$refs.monthDaySpacing.value}px`);
+                    break;
+                case 'day-year':
+                    dateField.style.setProperty('--day-year-spacing', `${this.$refs.dayYearSpacing.value}px`);
+                    break;
+                case 'month':
+                    dateField.style.setProperty('--month-spacing', `${this.$refs.monthSpacing.value}px`);
+                    break;
+                case 'day':
+                    dateField.style.setProperty('--day-spacing', `${this.$refs.daySpacing.value}px`);
+                    break;
+                case 'year':
+                    dateField.style.setProperty('--year-spacing', `${this.$refs.yearSpacing.value}px`);
+                    break;
+            }
+
+            this.savePositions(); // Save the updated spacing
+        },
+
+        // Update the loadDateSpacingControls to set control values from saved state
+        loadDateSpacingControls() {
+            if (!this.selectedField || this.selectedField.id !== 'dateField') return;
+
+            const computedStyle = getComputedStyle(this.selectedField);
+
+            // Set spacing control values
+            this.$refs.digitSpacing.value = parseInt(computedStyle.getPropertyValue('--digit-spacing') || 0);
+            this.$refs.monthDaySpacing.value = parseInt(computedStyle.getPropertyValue('--month-day-spacing') || 10);
+            this.$refs.dayYearSpacing.value = parseInt(computedStyle.getPropertyValue('--day-year-spacing') || 10);
+            this.$refs.monthSpacing.value = parseInt(computedStyle.getPropertyValue('--month-spacing') || 0);
+            this.$refs.daySpacing.value = parseInt(computedStyle.getPropertyValue('--day-spacing') || 0);
+            this.$refs.yearSpacing.value = parseInt(computedStyle.getPropertyValue('--year-spacing') || 0);
         },
 
         numberToWords(num) {
@@ -306,16 +401,33 @@
 
         getFieldPositions() {
             const fields = document.querySelectorAll('.draggable-field');
-            const positions = {};
+            const positions = {}; // Define positions object first
 
             fields.forEach(field => {
                 const content = field.querySelector('.field-content');
-                positions[field.id] = {
+                // Create a new position object for EACH field
+                const position = {
                     left: field.style.left,
                     top: field.style.top,
                     width: field.style.width,
-                    fontSize: content.style.fontSize
+                    fontSize: content ? content.style.fontSize : null
                 };
+
+                // Add date spacing properties if this is the date field
+                if (field.id === 'dateField') {
+                    const style = getComputedStyle(field);
+                    position.dateSpacing = {
+                        digit: style.getPropertyValue('--digit-spacing'),
+                        monthDay: style.getPropertyValue('--month-day-spacing'),
+                        dayYear: style.getPropertyValue('--day-year-spacing'),
+                        month: style.getPropertyValue('--month-spacing'),
+                        day: style.getPropertyValue('--day-spacing'),
+                        year: style.getPropertyValue('--year-spacing')
+                    };
+                }
+
+                // Store the position in the positions object
+                positions[field.id] = position;
             });
 
             return positions;
@@ -343,6 +455,16 @@
                     if (positions[fieldId].top) field.style.top = positions[fieldId].top;
                     if (positions[fieldId].width) field.style.width = positions[fieldId].width;
                     if (positions[fieldId].fontSize && content) content.style.fontSize = positions[fieldId].fontSize;
+
+                    if (fieldId === 'dateField' && positions[fieldId].dateSpacing) {
+                        const spacing = positions[fieldId].dateSpacing;
+                        if (spacing.digit) field.style.setProperty('--digit-spacing', spacing.digit);
+                        if (spacing.monthDay) field.style.setProperty('--month-day-spacing', spacing.monthDay);
+                        if (spacing.dayYear) field.style.setProperty('--day-year-spacing', spacing.dayYear);
+                        if (spacing.month) field.style.setProperty('--month-spacing', spacing.month);
+                        if (spacing.day) field.style.setProperty('--day-spacing', spacing.day);
+                        if (spacing.year) field.style.setProperty('--year-spacing', spacing.year);
+                    }
                 }
             });
         },
@@ -536,6 +658,48 @@
                     </div>
                 </div>
             </div>
+
+            <div x-show="isEditMode && selectedField && selectedField.id === 'dateField'" class="mt-4 bg-gray-100 p-4 rounded-md">
+                <h4 class="font-medium mb-2">Date Spacing Controls</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Digit Spacing (px)</label>
+                        <input type="number" x-ref="digitSpacing" value="0" min="0" max="20"
+                            @input="updateDateSpacing('digit')"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Month-Day Gap (px)</label>
+                        <input type="number" x-ref="monthDaySpacing" value="10" min="0" max="50"
+                            @input="updateDateSpacing('month-day')"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Day-Year Gap (px)</label>
+                        <input type="number" x-ref="dayYearSpacing" value="10" min="0" max="50"
+                            @input="updateDateSpacing('day-year')"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Month Letter Spacing (px)</label>
+                        <input type="number" x-ref="monthSpacing" value="0" min="0" max="20"
+                            @input="updateDateSpacing('month')"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Day Letter Spacing (px)</label>
+                        <input type="number" x-ref="daySpacing" value="0" min="0" max="20"
+                            @input="updateDateSpacing('day')"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Year Letter Spacing (px)</label>
+                        <input type="number" x-ref="yearSpacing" value="0" min="0" max="20"
+                            @input="updateDateSpacing('year')"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Instructions -->
@@ -567,6 +731,44 @@
         @include('livewire.b-f-o.partials.upload-payee-modal')
     </div>
 <style>
+
+.date-group {
+    display: inline-flex;
+}
+
+.date-digit {
+    display: inline-block;
+    margin-right: var(--digit-spacing, 0px);
+}
+
+.date-digit:last-child {
+    margin-right: 0;
+}
+
+.date-spacer {
+    display: inline-block;
+    width: var(--group-spacing, 0px);
+}
+
+.month-group {
+    letter-spacing: var(--month-spacing, 0px);
+}
+
+.day-group {
+    letter-spacing: var(--day-spacing, 0px);
+}
+
+.year-group {
+    letter-spacing: var(--year-spacing, 0px);
+}
+
+.month-day-spacer {
+    width: var(--month-day-spacing, 10px);
+}
+
+.day-year-spacer {
+    width: var(--day-year-spacing, 10px);
+}
 .draggable-field {
     cursor: move;
     user-select: none;
