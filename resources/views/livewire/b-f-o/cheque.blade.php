@@ -441,6 +441,8 @@
                 // Apply positions immediately and with a delay to ensure they're applied
                 this.applyFieldPositions(positions);
 
+                this.updateFields();
+
                 // Also apply again after a delay to handle dynamic loading
                 setTimeout(() => this.applyFieldPositions(positions), 100);
             }
