@@ -21,15 +21,23 @@ class RedirectBasedOnRole
             return redirect()->route('login');
         }
 
-        // Get user role and convert to lowercase
-        $userRole = strtolower($request->user()->role);
+        $user = $request->user();
 
-        // Check if user role is in allowed roles
-        if (in_array($userRole, array_map('strtolower', $roles))) {
+        // Check if user has any of the required roles using the existing hasRole method
+        if ($user->hasRole($roles)) {
             return $next($request);
         }
 
-        // Return 404 for unauthorized roles
+        // Log unauthorized access attempt for security monitoring
+        Log::warning('Unauthorized access attempt', [
+            'user_id' => $user->getAuthIdentifier(),
+            'user_role' => $user->role?->slug ?? 'no_role',
+            'required_roles' => $roles,
+            'url' => $request->fullUrl(),
+            'ip' => $request->ip(),
+        ]);
+
+        // Return 404 for unauthorized roles to avoid revealing route existence
         abort(404);
     }
 }

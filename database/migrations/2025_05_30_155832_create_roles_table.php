@@ -28,8 +28,10 @@ return new class extends Migration
         // Seed default roles
         $roles = [
             ['name' => 'Administrator', 'slug' => 'administrator', 'description' => 'Full system access', 'is_default' => false],
+            ['name' => 'Developer', 'slug' => 'developer', 'description' => 'System developer access', 'is_default' => false],
             ['name' => 'PAMO', 'slug' => 'pamo', 'description' => 'Property and Asset Management Officer', 'is_default' => false],
             ['name' => 'BFO', 'slug' => 'bfo', 'description' => 'Budget and Finance Officer', 'is_default' => false],
+            ['name' => 'ITSS', 'slug' => 'itss', 'description' => 'Information Technology Support Staff', 'is_default' => false],
             ['name' => 'User', 'slug' => 'user', 'description' => 'Regular system user', 'is_default' => true],
         ];
         foreach ($roles as $role) {

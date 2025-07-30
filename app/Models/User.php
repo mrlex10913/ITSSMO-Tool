@@ -71,15 +71,21 @@ class User extends Authenticatable
     }
     public function hasRole($roles): bool
     {
-        $userRole = $this->role; // This calls the role() relationship
+        // Load the role relationship if not already loaded
+        if (!$this->relationLoaded('role')) {
+            $this->load('role');
+        }
 
-        if (!$userRole) {
+        // Get the actual role model through the relationship
+        $userRoleModel = $this->getRelation('role');
+
+        if (!$userRoleModel) {
             return false;
         }
 
         $roles = is_array($roles) ? $roles : [$roles];
 
-        return in_array(strtolower($userRole->slug), array_map('strtolower', $roles));
+        return in_array(strtolower($userRoleModel->slug), array_map('strtolower', $roles));
     }
     public function role()
     {
@@ -92,7 +98,7 @@ class User extends Authenticatable
      */
     public function isDeveloper(): bool
     {
-        return $this->hasRole('Developer') || $this->is_developer;
+        return $this->hasRole('developer');
     }
 
 
