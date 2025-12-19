@@ -1,4 +1,3 @@
-<!-- filepath: c:\inetpub\wwwroot\ITSSMO-Tool\resources\views\livewire\control-panel\users-control.blade.php -->
 <div class="container mx-auto">
     <!-- Header Section -->
     <div class="mb-6">
@@ -142,7 +141,7 @@
     </div>
 
     <!-- Edit User Modal -->
-    <x-dialog-modal wire:model="openSpecificUserModal" maxWidth="2xl">
+    <x-dialog-modal wire:model="openSpecificUserModal" maxWidth="5xl">
         <x-slot name="title">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -156,110 +155,157 @@
         </x-slot>
 
         <x-slot name="content">
-            <div class="space-y-6">
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        <i class="fas fa-camera mr-2 text-purple-500"></i>Profile Image
-                    </label>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left column: All user information -->
+                <div class="space-y-6">
+                    <div class="mb-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <i class="fas fa-camera mr-2 text-purple-500"></i>Profile Image
+                        </label>
 
-                    @if($temporaryProfileImage)
-                        <div class="mb-3">
-                            <img src="{{ $temporaryProfileImage->temporaryUrl() }}"
-                                class="w-24 h-24 object-cover rounded-full border-2 border-blue-500">
+                        @if($temporaryProfileImage)
+                            <div class="mb-3">
+                                <img src="{{ $temporaryProfileImage->temporaryUrl() }}"
+                                    class="w-24 h-24 object-cover rounded-full border-2 border-blue-500">
+                            </div>
+                        @elseif($profile_image)
+                            <div class="mb-3">
+                                <img src="{{ asset('storage/' . $profile_image) }}"
+                                    class="w-24 h-24 object-cover rounded-full border-2 border-blue-500">
+                            </div>
+                        @endif
+
+                        <input type="file" wire:model="temporaryProfileImage"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <div class="text-xs text-gray-500 mt-1">
+                            Upload a new image to replace the current one
                         </div>
-                    @elseif($profile_image)
-                        <div class="mb-3">
-                            <img src="{{ asset('storage/' . $profile_image) }}"
-                                class="w-24 h-24 object-cover rounded-full border-2 border-blue-500">
+                        @error('temporaryProfileImage') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="relative">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <i class="fas fa-envelope mr-2 text-blue-500"></i>Email Address
+                        </label>
+                        <input type="email" wire:model.defer="email"
+                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                               placeholder="user@company.com">
+                        <p class="text-xs text-gray-500 mt-1">Use company O365 account for SSO integration</p>
+                        @error('email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Password Section -->
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-key mr-2 text-green-500"></i>Temporary Password
+                            </label>
+                            <x-button wire:click="generateTemporaryPassword"
+                                      class="bg-green-600 hover:bg-green-700 text-sm px-4 py-2">
+                                <i class="fas fa-refresh mr-1"></i>Reset Password
+                            </x-button>
                         </div>
-                    @endif
-
-                    <input type="file" wire:model="temporaryProfileImage"
-                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                    <div class="text-xs text-gray-500 mt-1">
-                        Upload a new image to replace the current one
+                        <input type="text" wire:model.defer="temporaryPassword" disabled
+                               class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 font-mono">
+                        @error('temporaryPassword') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
-                    @error('temporaryProfileImage') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+
+                    <!-- User core fields -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-id-card mr-2 text-purple-500"></i>ID Number
+                            </label>
+                            <input type="text" wire:model.defer="id_number"
+                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                   placeholder="EMP001">
+                            @error('id_number') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-user mr-2 text-blue-500"></i>Full Name
+                            </label>
+                            <input type="text" wire:model.defer="name"
+                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                   placeholder="John Doe">
+                            @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-building mr-2 text-orange-500"></i>Department
+                            </label>
+                            <select wire:model.defer="department"
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select Department</option>
+                                @foreach($departments as $key => $deptName)
+                                    <option value="{{ $key }}">{{ $deptName }}</option>
+                                @endforeach
+                            </select>
+                            @error('department') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-user-tag mr-2 text-red-500"></i>User Role
+                            </label>
+                            <select wire:model.defer="role_id"
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select Role</option>
+                                @foreach($roles as $role)
+                                    <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('role_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
                 </div>
-                <!-- Email Field -->
-                <div class="relative">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        <i class="fas fa-envelope mr-2 text-blue-500"></i>Email Address
-                    </label>
-                    <input type="email" wire:model.defer="email"
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                           placeholder="user@company.com">
-                    <p class="text-xs text-gray-500 mt-1">Use company O365 account for SSO integration</p>
-                    @error('email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
 
-                <!-- Password Section -->
-                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            <i class="fas fa-key mr-2 text-green-500"></i>Temporary Password
-                        </label>
-                        <x-button wire:click="generateTemporaryPassword"
-                                  class="bg-green-600 hover:bg-green-700 text-sm px-4 py-2">
-                            <i class="fas fa-refresh mr-1"></i>Reset Password
-                        </x-button>
-                    </div>
-                    <input type="text" wire:model.defer="temporaryPassword" disabled
-                           class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 font-mono">
-                    @error('temporaryPassword') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
+                <!-- Right: Menu Controller -->
+                <div class="lg:col-span-1">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                <i class="fas fa-bars mr-2 text-blue-500"></i>Menu Access
+                            </label>
+                            <div class="flex items-center gap-2 text-xs">
+                                <button type="button" wire:click="selectAllRoleMenus" class="px-2 py-1 border rounded">Select All (Role)</button>
+                                <button type="button" wire:click="deselectAllMenus" class="px-2 py-1 border rounded">Clear</button>
+                                <button type="button" wire:click="resetUserMenusToRoleDefaults" class="px-2 py-1 border rounded">Reset to Role</button>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">Defaults come from the user's role. Toggle to override per-user access.</p>
 
-                <!-- User Information Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            <i class="fas fa-id-card mr-2 text-purple-500"></i>ID Number
-                        </label>
-                        <input type="text" wire:model.defer="id_number"
-                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                               placeholder="EMP001">
-                        @error('id_number') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            <i class="fas fa-user mr-2 text-blue-500"></i>Full Name
-                        </label>
-                        <input type="text" wire:model.defer="name"
-                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                               placeholder="John Doe">
-                        @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            <i class="fas fa-building mr-2 text-orange-500"></i>Department
-                        </label>
-                        <select wire:model.defer="department"
-                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                            <option value="">Select Department</option>
-                            @foreach($departments as $key => $deptName)
-                                <option value="{{ $key }}">{{ $deptName }}</option>
+                        @php $bySection = $this->roleMenus->groupBy('section'); @endphp
+                        <div class="max-h-72 overflow-auto pr-1 space-y-3">
+                            @foreach($bySection as $section => $items)
+                                <div class="border rounded-lg overflow-hidden">
+                                    <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                                        {{ $section ?: 'General' }}
+                                    </div>
+                                    <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        @foreach($items as $item)
+                                            <label class="flex items-center justify-between gap-2 p-2 border rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-sm">
+                                                <div class="flex items-center gap-2 min-w-0">
+                                                    @if($item->icon)
+                                                        <span class="material-symbols-sharp text-base shrink-0">{{ $item->icon }}</span>
+                                                    @endif
+                                                    <span class="truncate">{{ $item->label }}</span>
+                                                </div>
+                                                <input type="checkbox" value="{{ $item->id }}" wire:model="selectedMenuIds" class="h-4 w-4">
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
                             @endforeach
-                        </select>
-                        @error('department') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                    </div>
+                        </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            <i class="fas fa-user-tag mr-2 text-red-500"></i>User Role
-                        </label>
-                        <select wire:model.defer="role_id"
-                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                            <option value="">Select Role</option>
-                            @foreach($roles as $role)
-                                <option value="{{ $role->id }}">{{ $role->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('role_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <div class="mt-3 text-right">
+                            <button type="button" wire:click="saveUserMenus" class="px-3 py-2 border rounded">Save Menu Access</button>
+                        </div>
                     </div>
                 </div>
-            </div>
         </x-slot>
 
         <x-slot name="footer">
@@ -276,7 +322,7 @@
     </x-dialog-modal>
 
     <!-- Add User Modal -->
-    <x-dialog-modal wire:model="NewUserAccessModal" maxWidth="2xl">
+    <x-dialog-modal wire:model="NewUserAccessModal" maxWidth="5xl">
         <x-slot name="title">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">

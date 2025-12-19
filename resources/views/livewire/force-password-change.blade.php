@@ -1,4 +1,4 @@
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75">
+<div x-data="{ open: @entangle('visible') }" x-cloak x-show="open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75" aria-modal="true" role="dialog">
     <!-- Modal Content -->
     <div class="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-md relative">
         <!-- Modal Header -->
@@ -45,7 +45,11 @@
                             type="{{ $showCurrentPassword ? 'text' : 'password' }}"
                             wire:model="currentPassword"
                             id="currentPassword"
-                            class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors @error('currentPassword') border-red-500 @enderror"
+                            @class([
+                                'w-full px-3 py-2 pr-10 border rounded-lg shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors',
+                                'border-red-500' => $errors->has('currentPassword'),
+                                'border-gray-300' => ! $errors->has('currentPassword')
+                            ])
                             placeholder="Enter your current password">
                         <button type="button"
                                 wire:click="$toggle('showCurrentPassword')"
@@ -73,7 +77,11 @@
                             type="{{ $showNewPassword ? 'text' : 'password' }}"
                             wire:model="password"
                             id="password"
-                            class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors @error('password') border-red-500 @enderror"
+                            @class([
+                                'w-full px-3 py-2 pr-10 border rounded-lg shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors',
+                                'border-red-500' => $errors->has('password'),
+                                'border-gray-300' => ! $errors->has('password')
+                            ])
                             placeholder="Enter your new password">
                         <button type="button"
                                 wire:click="$toggle('showNewPassword')"
@@ -104,7 +112,11 @@
                             type="{{ $showConfirmPassword ? 'text' : 'password' }}"
                             wire:model="password_confirmation"
                             id="password_confirmation"
-                            class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors @error('password_confirmation') border-red-500 @enderror"
+                            @class([
+                                'w-full px-3 py-2 pr-10 border rounded-lg shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors',
+                                'border-red-500' => $errors->has('password_confirmation'),
+                                'border-gray-300' => ! $errors->has('password_confirmation')
+                            ])
                             placeholder="Confirm your new password">
                         <button type="button"
                                 wire:click="$toggle('showConfirmPassword')"

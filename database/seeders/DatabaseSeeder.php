@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // Run the default user seeder
         $this->call([
             DefaultUserSeeder::class,
+            MenuSeeder::class,
         ]);
 
         // User::factory(10)->create();

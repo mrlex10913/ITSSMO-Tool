@@ -33,7 +33,7 @@ class User extends Authenticatable
         'password',
         'temporary_password',
         'is_temporary_password_used',
-        'role_id'
+        'role_id',
     ];
 
     /**
@@ -69,17 +69,18 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
     public function hasRole($roles): bool
     {
         // Load the role relationship if not already loaded
-        if (!$this->relationLoaded('role')) {
+        if (! $this->relationLoaded('role')) {
             $this->load('role');
         }
 
         // Get the actual role model through the relationship
         $userRoleModel = $this->getRelation('role');
 
-        if (!$userRoleModel) {
+        if (! $userRoleModel) {
             return false;
         }
 
@@ -87,19 +88,25 @@ class User extends Authenticatable
 
         return in_array(strtolower($userRoleModel->slug), array_map('strtolower', $roles));
     }
+
     public function role()
     {
         return $this->belongsTo(Roles::class, 'role_id');
     }
-     /**
+
+    /**
      * Check if the user is a developer
-     *
-     * @return bool
      */
     public function isDeveloper(): bool
     {
         return $this->hasRole('developer');
     }
 
-
+    /**
+     * Menus explicitly assigned to this user (overrides role menus when present).
+     */
+    public function menus()
+    {
+        return $this->belongsToMany(Menu::class, 'menu_user', 'user_id', 'menu_id')->withTimestamps();
+    }
 }

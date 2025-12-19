@@ -2,11 +2,14 @@
 
 namespace App\Livewire\ControlPanel;
 
+use App\Models\Department;
+use App\Models\Menu;
 use App\Models\Roles;
 use App\Models\User;
+use App\Services\Menu\MenuBuilder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -14,44 +17,56 @@ use Livewire\WithPagination;
 
 class UsersControl extends Component
 {
-    use WithPagination;
     use WithFileUploads;
+    use WithPagination;
+
     // User properties
     public $id_number;
+
     public $name;
+
     public $email;
+
     public $department;
+
     public $role_id;
+
     public $password;
+
     public $temporaryPassword;
+
     public $updateAccessID;
+
+    // Per-user menu management
+    /** @var array<int> */
+    public $selectedMenuIds = [];
+
+    /** @var array<int> */
+    public $roleMenuIds = [];
 
     // UI control
     public $openSpecificUserModal = false;
+
     public $NewUserAccessModal = false;
+
     public $deleteConfirmationModal = false;
+
+    /** @var ?User */
     public $userToDelete;
 
     // Search and filter
     public $search = '';
+
     public $roleFilter = '';
+
     public $perPage = 12;
 
     public $profile_image;
+
     public $temporaryProfileImage;
 
-    // Department options - could be moved to a model in a more complex system
-    public $departments = [
-        'IT' => 'Information Technology',
-        'HR' => 'Human Resources',
-        'Finance' => 'Finance Department',
-        'Operations' => 'Operations',
-        'Admin' => 'Administration',
-        'Procurement' => 'Procurement',
-        'Logistics' => 'Logistics'
-    ];
-
-
+    // Department options (loaded from DB)
+    public $departments = [];
 
     protected function rules()
     {
@@ -65,7 +80,7 @@ class UsersControl extends Component
         ];
 
         // Only validate email uniqueness when creating a new user or changing email
-        if (!$this->updateAccessID) {
+        if (! $this->updateAccessID) {
             $rules['email'] = 'required|string|email|max:255|unique:users';
             $rules['temporaryPassword'] = 'required|string|min:8';
         } else {
@@ -83,12 +98,14 @@ class UsersControl extends Component
         'department.required' => 'Department is required',
         'role_id.required' => 'User role is required',
         'role_id.exists' => 'Selected role is invalid',
-        'id_number.required' => 'ID number is required'
+        'id_number.required' => 'ID number is required',
     ];
+
     public function updatingSearch()
     {
         $this->resetPage();
     }
+
     public function updatingRoleFilter()
     {
         $this->resetPage();
@@ -99,8 +116,9 @@ class UsersControl extends Component
         $this->openSpecificUserModal = true;
         $userFind = User::find($userId);
 
-        if (!$userFind) {
+        if (! $userFind) {
             flash()->error('User not found');
+
             return;
         }
 
@@ -108,7 +126,7 @@ class UsersControl extends Component
         $this->email = $userFind->email;
         $this->name = $userFind->name;
 
-        if($userFind->temporary_password == null){
+        if ($userFind->temporary_password == null) {
             $this->temporaryPassword = 'Password Already Changed';
         } else {
             $this->temporaryPassword = $userFind->temporary_password;
@@ -119,15 +137,32 @@ class UsersControl extends Component
         $this->role_id = $userFind->role_id;
         // Store the current profile photo path
         $this->profile_image = $userFind->profile_photo_path;
+
+        // Load role menus and user-specific overrides
+        $this->roleMenuIds = Menu::query()
+            ->active()
+            ->whereHas('roles', function ($q) use ($userFind) {
+                $q->where('roles.id', $userFind->role_id);
+            })
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->pluck('id')
+            ->map(fn ($i) => (int) $i)
+            ->all();
+
+        $userMenuIds = $userFind->menus()->pluck('menus.id')->map(fn ($i) => (int) $i)->all();
+        $this->selectedMenuIds = ! empty($userMenuIds) ? $userMenuIds : $this->roleMenuIds;
     }
+
     public function updateSpecificUserAccessModal()
     {
         try {
             $this->validate();
 
             $updateAccess = User::find($this->updateAccessID);
-            if (!$updateAccess) {
+            if (! $updateAccess) {
                 flash()->error('User not found');
+
                 return;
             }
 
@@ -156,48 +191,60 @@ class UsersControl extends Component
 
             $updateAccess->save();
 
+            // Persist per-user menu access
+            $ids = array_map('intval', $this->selectedMenuIds ?? []);
+            $updateAccess->menus()->sync($ids);
+            app(MenuBuilder::class)->clearMenuCacheForUserId($updateAccess->id);
+
             flash()->success('User account has been updated successfully');
             $this->openSpecificUserModal = false;
             $this->resetForm();
 
-        } catch(ValidationException $e) {
+        } catch (ValidationException $e) {
             flash()->error('Please check the form for errors');
             throw $e;
         }
     }
+
     public function generateTemporaryPassword()
     {
-        // Generate a more secure password with mixed characters
-        $this->temporaryPassword = Str::password(10, true, true, true, false);
+        // Set default temporary password per request
+        $this->temporaryPassword = '#AimHigh';
     }
+
     public function OpenNewUserAccessModal()
     {
         $this->resetForm();
         $this->generateTemporaryPassword();
         $this->NewUserAccessModal = true;
     }
+
     public function confirmDelete($userId)
     {
         $this->userToDelete = User::find($userId);
 
-        if (!$this->userToDelete) {
+        if (! $this->userToDelete) {
             flash()->error('User not found');
+
             return;
         }
 
         $this->deleteConfirmationModal = true;
     }
+
     public function deleteUser()
     {
         try {
-            if (!$this->userToDelete) {
+            if (! $this->userToDelete) {
                 flash()->error('User not found');
+
                 return;
             }
 
             // Prevent deleting yourself
-            if ($this->userToDelete->id === auth()->id()) {
+            if (($this->userToDelete->id ?? null) === (Auth::user()?->id)) {
                 flash()->error('You cannot delete your own account');
+
                 return;
             }
 
@@ -212,9 +259,10 @@ class UsersControl extends Component
             flash()->error('An error occurred while deleting the user');
         }
     }
+
     public function saveUser()
     {
-        try{
+        try {
             $this->validate();
 
             $userData = [
@@ -239,7 +287,7 @@ class UsersControl extends Component
             $this->NewUserAccessModal = false;
             $this->resetForm();
 
-        } catch(ValidationException $e){
+        } catch (ValidationException $e) {
             flash()->error('Please check the form for errors');
             throw $e;
         }
@@ -260,21 +308,109 @@ class UsersControl extends Component
             'role_id',
             'updateAccessID',
             'temporaryPassword',
-            'temporaryProfileImage'
+            'temporaryProfileImage',
+            'selectedMenuIds',
+            'roleMenuIds',
         ]);
     }
+
+    /**
+     * Computed list of menus available to the user's role for the edit modal.
+     */
+    public function getRoleMenusProperty()
+    {
+        $roleId = $this->role_id ?: (User::find($this->updateAccessID)?->role_id ?? null);
+        if (! $roleId) {
+            return collect();
+        }
+
+        return Menu::query()
+            ->active()
+            ->whereHas('roles', function ($q) use ($roleId) {
+                $q->where('roles.id', $roleId);
+            })
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get(['id', 'label', 'section', 'icon', 'route', 'url']);
+    }
+
+    /** Save only the menu access without closing modal. */
+    public function saveUserMenus(): void
+    {
+        if (! $this->updateAccessID) {
+            return;
+        }
+        $user = User::find($this->updateAccessID);
+        if (! $user) {
+            return;
+        }
+        $ids = array_map('intval', $this->selectedMenuIds ?? []);
+        $user->menus()->sync($ids);
+        app(MenuBuilder::class)->clearMenuCacheForUserId($user->id);
+        flash()->success('Menu access updated.');
+    }
+
+    /** Reset to role defaults (clears user-specific overrides). */
+    public function resetUserMenusToRoleDefaults(): void
+    {
+        if (! $this->updateAccessID) {
+            return;
+        }
+        $user = User::find($this->updateAccessID);
+        if (! $user) {
+            return;
+        }
+        $user->menus()->detach();
+        app(MenuBuilder::class)->clearMenuCacheForUserId($user->id);
+        // Reflect defaults in UI immediately
+        $this->roleMenuIds = Menu::query()
+            ->active()
+            ->whereHas('roles', function ($q) use ($user) {
+                $q->where('roles.id', $user->role_id);
+            })
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->pluck('id')
+            ->map(fn ($i) => (int) $i)
+            ->all();
+        $this->selectedMenuIds = $this->roleMenuIds;
+        flash()->success('Menu access reset to role defaults.');
+    }
+
+    /** Select all menus available to the user's role. */
+    public function selectAllRoleMenus(): void
+    {
+        $this->selectedMenuIds = $this->roleMenuIds ?? [];
+    }
+
+    /** Deselect all menus. */
+    public function deselectAllMenus(): void
+    {
+        $this->selectedMenuIds = [];
+    }
+
     public function render()
     {
+        // Load departments lazily for the UI (key => name)
+        if ($this->departments === [] || $this->departments === null) {
+            $this->departments = Department::query()
+                ->active()
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['slug', 'name'])
+                ->mapWithKeys(fn ($d) => [$d->slug => $d->name])
+                ->toArray();
+        }
         $this->breadCrumbUsersPanel();
 
         $query = User::query();
 
         if ($this->search) {
-            $query->where(function($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%')
-                  ->orWhere('id_number', 'like', '%' . $this->search . '%')
-                  ->orWhere('department', 'like', '%' . $this->search . '%');
+            $query->where(function ($q) {
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('email', 'like', '%'.$this->search.'%')
+                    ->orWhere('id_number', 'like', '%'.$this->search.'%')
+                    ->orWhere('department', 'like', '%'.$this->search.'%');
             });
         }
 

@@ -34,14 +34,133 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+    <script>
+        (function(){
+            try {
+                if (typeof Echo !== 'undefined' && window.Pusher) {
+                    window.Echo = new Echo({
+                        broadcaster: 'pusher',
+                        key: '{{ env('REVERB_APP_KEY', env('PUSHER_APP_KEY', 'local')) }}',
+                        cluster: '{{ env('PUSHER_APP_CLUSTER', 'mt1') }}',
+                        wsHost: (function(){
+                            try {
+                                var h = '{{ env('REVERB_HOST', request()->getHost()) }}';
+                                if (h === '127.0.0.1' || h === 'localhost' || !h) { return window.location.hostname; }
+                                return h;
+                            } catch(_) { return window.location.hostname; }
+                        })(),
+                        wsPort: {{ (int) env('REVERB_PORT', 6001) }},
+                        wssPort: {{ (int) env('REVERB_PORT', 6001) }},
+                        forceTLS: {{ env('REVERB_SCHEME','ws') === 'wss' ? 'true' : 'false' }},
+                        disableStats: true,
+                        enabledTransports: ['ws','wss'],
+                        authorizer: (channel, options) => ({
+                            authorize: (socketId, callback) => {
+                                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                                fetch('/broadcasting/auth', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': token,
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                    },
+                                    credentials: 'same-origin',
+                                    body: JSON.stringify({ socket_id: socketId, channel_name: channel.name })
+                                }).then(async (resp) => {
+                                    if (!resp.ok) throw new Error('Auth failed');
+                                    const data = await resp.json();
+                                    callback(false, data);
+                                }).catch(err => callback(true, err));
+                            }
+                        }),
+                    });
+                }
+                const uid = {{ (int) (auth()->id() ?? 0) }};
+                @php
+                    $user = auth()->user();
+                    $roleSlug = '';
+                    if ($user) {
+                        $roleSlug = strtolower(optional($user->role)->slug ?? '');
+                        if (!$roleSlug && $user->role_id) {
+                            $roleModel = \App\Models\Roles::find($user->role_id);
+                            $roleSlug = $roleModel ? strtolower($roleModel->slug) : '';
+                        }
+                    }
+                    $canTicketsBool = in_array($roleSlug, ['itss','administrator','developer']);
+                @endphp
+                const canTickets = {{ $canTicketsBool ? 'true' : 'false' }};
+                if (window.Echo && uid) {
+                    window.Echo.private('user.'+uid).listen('.TicketCommentCreated', (e) => {
+                        window.dispatchEvent(new CustomEvent('helpdesk-comment-created', { detail: e }));
+                    });
+                    // Mention notifications
+                    window.Echo.private('user.'+uid).listen('.MentionedInTicket', (e) => {
+                        try {
+                            const title = `Mentioned on Ticket #${e.ticketNo}`;
+                            const body = `${e.byName || 'Someone'} mentioned you.`;
+                            // Browser Notification API
+                            if ('Notification' in window) {
+                                if (Notification.permission === 'granted') {
+                                    new Notification(title, { body });
+                                } else if (Notification.permission !== 'denied') {
+                                    Notification.requestPermission().then(p => {
+                                        if (p === 'granted') new Notification(title, { body });
+                                    });
+                                }
+                            }
+                            // Optional: lightweight beep
+                            try {
+                                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                                const o = ctx.createOscillator();
+                                const g = ctx.createGain();
+                                o.type = 'sine';
+                                o.frequency.value = 880; // A5
+                                o.connect(g); g.connect(ctx.destination);
+                                g.gain.setValueAtTime(0.001, ctx.currentTime);
+                                g.gain.exponentialRampToValueAtTime(0.1, ctx.currentTime + 0.01);
+                                o.start();
+                                setTimeout(() => { g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05); o.stop(); }, 200);
+                            } catch(_) {}
+                        } catch(_) {}
+                    });
+                    // For agents using this layout, listen to global tickets updates
+                    try {
+                        if (canTickets) {
+                            window.Echo.private('tickets').listen('.TicketChanged', (e) => {
+                                console.debug('TicketChanged received', e);
+                                window.dispatchEvent(new CustomEvent('helpdesk-ticket-changed', { detail: e }));
+                            });
+                        }
+                    } catch(_) {}
+                }
+                // Public CSAT channel for enforcement toggles
+                try {
+                    if (window.Echo) {
+                        window.Echo.channel('csat').listen('CsatEnforcementChanged', (e) => {
+                            console.debug('CsatEnforcementChanged received', e);
+                            if (window.Livewire) {
+                                window.Livewire.dispatch('csat:check');
+                            }
+                        });
+                    }
+                } catch(_) {}
+            } catch (e) { /* noop */ }
+        })();
+    </script>
 </head>
-<body class="font-sans antialiased bg-gradient-to-br from-blue-50 to-yellow-100 min-h-screen">
+<body class="font-sans antialiased bg-gradient-to-br from-blue-50 to-yellow-100 min-h-screen overflow-hidden">
+    @auth
+        @livewire('csat.overlay')
+    @endauth
     <div x-data="{ sidebarOpen: false, profileModalOpen: false }" class="bg-cyan-50 h-screen flex flex-col">
         <!-- Mobile menu button -->
         <div class="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white shadow-sm border-b border-cyan-100">
             <div class="flex items-center justify-between p-4">
                 <button @click="sidebarOpen = !sidebarOpen" class="text-blue-600 focus:outline-none">
-                    <span class="material-symbols-sharp text-2xl">menu</span>
+                    <x-heroicon name="bars-3" class="w-6 h-6" />
                 </button>
                 <span class="text-lg font-semibold text-blue-600">PAMO Dashboard</span>
                 <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-300">
@@ -94,7 +213,7 @@
                         </span>
                     </a>
                     <button @click="sidebarOpen = false" class="lg:hidden text-white focus:outline-none">
-                        <span class="material-symbols-sharp text-2xl">close</span>
+                        <x-heroicon name="x-mark" class="w-6 h-6" />
                     </button>
                 </div>
 
@@ -121,7 +240,7 @@
 
                             <button @click="profileModalOpen = true" class="w-full mt-3 bg-yellow-300 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-400 transition-colors">
                                 <span class="flex items-center justify-center">
-                                    <span class="material-symbols-sharp text-xs mr-1">person</span>
+                                    <x-heroicon name="user" class="w-4 h-4 mr-1" />
                                     My Profile & Assets
                                 </span>
                             </button>
@@ -166,6 +285,13 @@
                             this.selectedDepartment = dept;
                         }
                     }">
+                    @php
+                        /** Ensure MenuBuilder is available for all sections */
+                        if (!isset($menuBuilder)) {
+                            /** @var \App\Services\Menu\MenuBuilder $menuBuilder */
+                            $menuBuilder = app(\App\Services\Menu\MenuBuilder::class);
+                        }
+                    @endphp
                     <ul class="space-y-2">
 
                         {{-- Department Selector (only show if user can access multiple departments) --}}
@@ -193,39 +319,131 @@
                             </li>
                         @endif
 
-                        {{-- PAMO Menu --}}
+                        {{-- PAMO Menu (DB-backed with fallback) --}}
+                        @if(in_array($userRole, ['administrator', 'developer', 'pamo']))
                         <div x-show="selectedDepartment === 'pamo'" x-transition>
-                            @include('layouts.partials.pamo-menu')
+                            @php
+                                $pamoMenu = $menuBuilder->getMenuForRoleSlug('pamo');
+                            @endphp
+                            @if(!empty($pamoMenu))
+                                @php $__section = null; @endphp
+                                @foreach($pamoMenu as $item)
+                                    @php $sec = $item['section'] ?? null; @endphp
+                                    @if($sec && $sec !== $__section)
+                                        <li class="pt-2 border-t border-blue-500 mt-2 text-blue-200 text-xs px-3">{{ $sec }}</li>
+                                        @php $__section = $sec; @endphp
+                                    @endif
+                                    <li>
+                                        @php $isActive = $item['route'] ? request()->routeIs($item['route']) : false; @endphp
+                                        <x-end-user-nav-link
+                                            href="{{ $item['route'] ? route($item['route']) : ($item['url'] ?? '#') }}{{ request()->get('dept') ? '?dept=' . request()->get('dept') : '' }}"
+                                            :active="$isActive"
+                                            icon="{{ $item['icon'] ?? 'menu' }}">
+                                            {{ $item['label'] }}
+                                        </x-end-user-nav-link>
+                                    </li>
+                                @endforeach
+                            @else
+                                @include('layouts.partials.pamo-menu')
+                            @endif
                         </div>
+                        @endif
 
-                        {{-- BFO Menu --}}
+                        {{-- BFO Menu (DB-backed with fallback) --}}
+                        @if(in_array($userRole, ['administrator', 'developer', 'bfo']))
                         <div x-show="selectedDepartment === 'bfo'" x-transition>
-                            @include('layouts.partials.bfo-menu')
+                            @php $bfoMenu = $menuBuilder->getMenuForRoleSlug('bfo'); @endphp
+                            @if(!empty($bfoMenu))
+                                @php $__section = null; @endphp
+                                @foreach($bfoMenu as $item)
+                                    @php $sec = $item['section'] ?? null; @endphp
+                                    @if($sec && $sec !== $__section)
+                                        <li class="pt-2 border-t border-blue-500 mt-2 text-blue-200 text-xs px-3">{{ $sec }}</li>
+                                        @php $__section = $sec; @endphp
+                                    @endif
+                                    <li>
+                                        @php $isActive = $item['route'] ? request()->routeIs($item['route']) : false; @endphp
+                                        <x-end-user-nav-link
+                                            href="{{ $item['route'] ? route($item['route']) : ($item['url'] ?? '#') }}{{ request()->get('dept') ? '?dept=' . request()->get('dept') : '' }}"
+                                            :active="$isActive"
+                                            icon="{{ $item['icon'] ?? 'menu' }}">
+                                            {{ $item['label'] }}
+                                        </x-end-user-nav-link>
+                                    </li>
+                                @endforeach
+                            @else
+                                @include('layouts.partials.bfo-menu')
+                            @endif
                         </div>
+                        @endif
 
-                        {{-- ITSS Menu --}}
+                        {{-- ITSS Menu (DB-backed with fallback) --}}
+                        @if(in_array($userRole, ['administrator', 'developer', 'itss']))
                         <div x-show="selectedDepartment === 'itss'" x-transition>
-                            @include('layouts.partials.itss-menu')
+                            @php $itssMenu = $menuBuilder->getMenuForRoleSlug('itss'); @endphp
+                            @if(!empty($itssMenu))
+                                @php $__section = null; @endphp
+                                @foreach($itssMenu as $item)
+                                    @php $sec = $item['section'] ?? null; @endphp
+                                    @if($sec && $sec !== $__section)
+                                        <li class="pt-2 border-t border-blue-500 mt-2 text-blue-200 text-xs px-3">{{ $sec }}</li>
+                                        @php $__section = $sec; @endphp
+                                    @endif
+                                    <li>
+                                        @php $isActive = $item['route'] ? request()->routeIs($item['route']) : false; @endphp
+                                        <x-end-user-nav-link
+                                            href="{{ $item['route'] ? route($item['route']) : ($item['url'] ?? '#') }}{{ request()->get('dept') ? '?dept=' . request()->get('dept') : '' }}"
+                                            :active="$isActive"
+                                            icon="{{ $item['icon'] ?? 'menu' }}">
+                                            {{ $item['label'] }}
+                                        </x-end-user-nav-link>
+                                    </li>
+                                @endforeach
+                            @else
+                                @include('layouts.partials.itss-menu')
+                            @endif
                         </div>
+                        @endif
 
-                        {{-- Default Menu for other roles --}}
-                        @if(!in_array($userRole, ['pamo', 'bfo', 'administrator', 'developer']))
-                            <li>
-                                <x-end-user-nav-link
-                                    href="{{ route('dashboard') }}"
-                                    :active="request()->routeIs('dashboard')"
-                                    icon="dashboard">
-                                    Dashboard
-                                </x-end-user-nav-link>
-                            </li>
-                            <li>
-                                <x-end-user-nav-link
-                                    href="{{ route('password.change') }}"
-                                    :active="request()->routeIs('password.change')"
-                                    icon="lock">
-                                    Change Password
-                                </x-end-user-nav-link>
-                            </li>
+                        {{-- Default Menu for other roles (DB-backed if available) --}}
+                        @if(!in_array($userRole, ['pamo', 'bfo', 'administrator', 'developer', 'itss']))
+                            @php $genericMenu = $menuBuilder->getMenuForRoleSlug($userRole); @endphp
+                            @if(!empty($genericMenu))
+                                @php $__section = null; @endphp
+                                @foreach($genericMenu as $item)
+                                    @php $sec = $item['section'] ?? null; @endphp
+                                    @if($sec && $sec !== $__section)
+                                        <li class="pt-2 border-t border-blue-500 mt-2 text-blue-200 text-xs px-3">{{ $sec }}</li>
+                                        @php $__section = $sec; @endphp
+                                    @endif
+                                    <li>
+                                        @php $isActive = $item['route'] ? request()->routeIs($item['route']) : false; @endphp
+                                        <x-end-user-nav-link
+                                            href="{{ $item['route'] ? route($item['route']) : ($item['url'] ?? '#') }}"
+                                            :active="$isActive"
+                                            icon="{{ $item['icon'] ?? 'menu' }}">
+                                            {{ $item['label'] }}
+                                        </x-end-user-nav-link>
+                                    </li>
+                                @endforeach
+                            @else
+                                <li>
+                                    <x-end-user-nav-link
+                                        href="{{ route('generic.dashboard') }}"
+                                        :active="request()->routeIs('generic.dashboard')"
+                                        icon="dashboard">
+                                        Dashboard
+                                    </x-end-user-nav-link>
+                                </li>
+                                <li>
+                                    <x-end-user-nav-link
+                                        href="{{ route('password.change') }}"
+                                        :active="request()->routeIs('password.change')"
+                                        icon="lock">
+                                        Change Password
+                                    </x-end-user-nav-link>
+                                </li>
+                            @endif
                         @endif
 
                         {{-- Back to Main System Link --}}
@@ -248,7 +466,7 @@
                         @csrf
                         <button type="submit"
                                 class="flex items-center w-full p-2 text-left text-yellow-300 rounded hover:bg-blue-700">
-                            <span class="material-symbols-sharp">logout</span>
+                            <x-heroicon name="arrow-right-on-rectangle" class="w-5 h-5" />
                             <span class="ml-3">Log Out</span>
                         </button>
                     </form>
@@ -257,7 +475,7 @@
 
             <!-- Main Content -->
             <div class="flex-1 overflow-y-auto bg-cyan-50">
-                <main class="py-16 lg:py-6 px-4 lg:px-8">
+                <main class="py-6 px-4 lg:px-8">
                     {{ $slot }}
                 </main>
             </div>
@@ -290,7 +508,7 @@
                     </div>
                     <button @click="profileModalOpen = false"
                             class="text-white hover:text-yellow-300 transition-colors p-2 rounded-lg hover:bg-white/10">
-                        <span class="material-symbols-sharp text-2xl">close</span>
+                        <x-heroicon name="x-mark" class="w-6 h-6" />
                     </button>
                 </div>
             </div>
@@ -302,7 +520,7 @@
                 <div class="space-y-6">
                     <div class="bg-gray-50 rounded-lg p-6">
                         <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <span class="material-symbols-sharp text-blue-600 mr-2">person</span>
+                            <x-heroicon name="user" class="w-5 h-5 text-blue-600 mr-2" />
                             Personal Information
                         </h4>
 
@@ -357,7 +575,7 @@
                                             ">
                                         <label for="photo"
                                             class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
-                                            <span class="material-symbols-sharp text-sm mr-2">photo_camera</span>
+                                            <x-heroicon name="camera" class="w-4 h-4 mr-2" />
                                             Change Photo
                                         </label>
                                     </div>
@@ -370,7 +588,7 @@
                                 <div>
                                     <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
                                         <span class="flex items-center">
-                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">badge</span>
+                                            <x-heroicon name="identification" class="w-4 h-4 mr-2 text-gray-500" />
                                             Full Name
                                         </span>
                                     </label>
@@ -386,7 +604,7 @@
                                 <div>
                                     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
                                         <span class="flex items-center">
-                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">email</span>
+                                            <x-heroicon name="envelope" class="w-4 h-4 mr-2 text-gray-500" />
                                             Email Address
                                         </span>
                                     </label>
@@ -402,7 +620,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
                                         <span class="flex items-center">
-                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">work</span>
+                                            <x-heroicon name="briefcase" class="w-4 h-4 mr-2 text-gray-500" />
                                             Role
                                         </span>
                                     </label>
@@ -415,7 +633,7 @@
                                 <div>
                                     <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
                                         <span class="flex items-center">
-                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">business</span>
+                                            <x-heroicon name="building-office" class="w-4 h-4 mr-2 text-gray-500" />
                                             Department
                                         </span>
                                     </label>
@@ -431,7 +649,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
                                         <span class="flex items-center">
-                                            <span class="material-symbols-sharp text-sm mr-2 text-gray-500">numbers</span>
+                                            <x-heroicon name="hashtag" class="w-4 h-4 mr-2 text-gray-500" />
                                             ID Number
                                         </span>
                                     </label>
@@ -447,7 +665,7 @@
                                         :disabled="isSubmitting"
                                         class="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200">
                                     <span class="flex items-center justify-center">
-                                        <span class="material-symbols-sharp text-sm mr-2">save</span>
+                                        <x-heroicon name="check" class="w-4 h-4 mr-2" />
                                         <span x-show="!isSubmitting">Update Profile</span>
                                         <span x-show="isSubmitting">Updating...</span>
                                     </span>
@@ -461,7 +679,7 @@
                 <div class="space-y-6">
                     <div class="bg-gray-50 rounded-lg p-6">
                         <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <span class="material-symbols-sharp text-blue-600 mr-2">inventory_2</span>
+                            <x-heroicon name="archive-box" class="w-5 h-5 text-blue-600 mr-2" />
                             My Accountable Assets
                         </h4>
 
@@ -504,7 +722,7 @@
                                         <div class="flex items-start space-x-3">
                                             <!-- Asset Icon -->
                                             <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                <span class="material-symbols-sharp text-blue-600 text-sm">
+                                                <x-heroicon name="user" class="w-4 h-4 text-blue-600" />
                                                     @if(str_contains(strtolower($asset->category->name ?? ''), 'laptop'))
                                                         laptop
                                                     @elseif(str_contains(strtolower($asset->category->name ?? ''), 'desktop'))
@@ -563,7 +781,7 @@
                                                 <!-- Location -->
                                                 @if($asset->location)
                                                     <div class="mt-2 flex items-center text-xs text-gray-500">
-                                                        <span class="material-symbols-sharp text-xs mr-1">location_on</span>
+                                                        <x-heroicon name="map-pin" class="w-3.5 h-3.5 mr-1" />
                                                         {{ $asset->location->name }}
                                                     </div>
                                                 @endif
@@ -592,7 +810,7 @@
                         @elseif($userIdNumber && !$masterListUser)
                             <!-- User not found in master list -->
                             <div class="text-center py-8">
-                                <span class="material-symbols-sharp text-4xl text-gray-300 mb-3 block">person_search</span>
+                                <x-heroicon name="magnifying-glass" class="w-10 h-10 text-gray-300 mb-3 block" />
                                 <p class="text-sm text-gray-500 mb-2">ID Number not found in Master List</p>
                                 <p class="text-xs text-gray-400">
                                     Your ID number ({{ $userIdNumber }}) is not registered in the master list.
@@ -603,7 +821,7 @@
                         @elseif(!$userIdNumber)
                             <!-- No ID number set -->
                             <div class="text-center py-8">
-                                <span class="material-symbols-sharp text-4xl text-gray-300 mb-3 block">badge</span>
+                                <x-heroicon name="identification" class="w-10 h-10 text-gray-300 mb-3 block" />
                                 <p class="text-sm text-gray-500 mb-2">No ID Number Set</p>
                                 <p class="text-xs text-gray-400">
                                     Please contact your administrator to set up your ID number.
@@ -613,7 +831,7 @@
                         @else
                             <!-- No assets assigned -->
                             <div class="text-center py-8">
-                                <span class="material-symbols-sharp text-4xl text-gray-300 mb-3 block">inventory_2</span>
+                                <x-heroicon name="archive-box" class="w-10 h-10 text-gray-300 mb-3 block" />
                                 <p class="text-sm text-gray-500 mb-2">No Assets Assigned</p>
                                 <p class="text-xs text-gray-400">
                                     You currently have no accountable assets assigned to you.
@@ -625,7 +843,7 @@
                         <div class="mt-4 pt-4 border-t border-gray-200">
                             <button type="button" class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
                                 <span class="flex items-center justify-center">
-                                    <span class="material-symbols-sharp text-sm mr-2">support_agent</span>
+                                    <x-heroicon name="lifebuoy" class="w-4 h-4 mr-2" />
                                     Report Asset Issue
                                 </span>
                             </button>

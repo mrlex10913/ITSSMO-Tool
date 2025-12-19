@@ -38,3 +38,12 @@
         MasterList
     </x-end-user-nav-link>
 </li>
+
+<li>
+    <x-end-user-nav-link
+        href="{{ route('pamo.helpdesk') }}{{ request()->get('dept') ? '?dept=' . request()->get('dept') : '' }}"
+        :active="request()->routeIs('pamo.helpdesk')"
+        icon="support_agent">
+        Helpdesk
+    </x-end-user-nav-link>
+    </li>

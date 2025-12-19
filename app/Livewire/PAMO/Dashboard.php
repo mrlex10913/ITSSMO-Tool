@@ -4,24 +4,21 @@ namespace App\Livewire\PAMO;
 
 use App\Models\PAMO\PamoAssetMovement;
 use App\Models\PAMO\PamoAssets;
-use App\Models\PAMO\PamoCategory;
-use App\Models\PAMO\MasterList;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-
 
 #[Layout('layouts.enduser')]
 class Dashboard extends Component
 {
     // Date Range Filter
     public $timePeriod = 'last_30_days';
-    public $startDate;
-    public $endDate;
 
+    public $startDate;
+
+    public $endDate;
 
     // Dashboard Data
     // public $assetCounts;
@@ -37,29 +34,35 @@ class Dashboard extends Component
         'maintenance' => 0,
         'maintenance_percent' => 0,
     ];
+
     public $categoryDistribution = [
         'labels' => [],
         'data' => [],
         'counts' => [],
-        'categories' => []
+        'categories' => [],
     ];
+
     public $statusDistribution = [
         'labels' => [],
         'data' => [],
         'counts' => [],
-        'statuses' => []
+        'statuses' => [],
     ];
+
     public $departmentDistribution = [
         'labels' => [],
         'data' => [],
-        'departments' => []
+        'departments' => [],
     ];
+
     public $recentMovements = [];
+
     public $acquisitionTrend = [
         'labels' => [],
         'data' => [],
-        'months' => []
+        'months' => [],
     ];
+
     public $transferStats = [
         'last30Days' => 0,
         'monthlyAverage' => 0,
@@ -67,16 +70,18 @@ class Dashboard extends Component
         'byCategory' => [],
         'weekly' => [
             'labels' => [],
-            'data' => []
-        ]
+            'data' => [],
+        ],
     ];
+
     public $maintenanceStats = [
         'total' => 0,
         'monthly' => [
             'labels' => [],
-            'data' => []
-        ]
+            'data' => [],
+        ],
     ];
+
     public $valueData = [
         'totalValue' => 0,
         'currentValue' => 0,
@@ -86,19 +91,14 @@ class Dashboard extends Component
             'labels' => [],
             'purchaseValues' => [],
             'bookValues' => [],
-            'depreciations' => []
-        ]
+            'depreciations' => [],
+        ],
     ];
-
 
     public function mount()
     {
-
-       // Check for developer role access
-         $role = strtolower(auth()->user()->role);
-        if (!in_array($role, ['pamo', 'administrator', 'developer'])) {
-            abort(404);
-        }
+        // Access is enforced by route middleware ('role:pamo,administrator,developer').
+        // No additional abort here to avoid false 404s.
         $this->setDateRange('last_30_days');
         $this->loadDashboardData();
 
@@ -141,7 +141,7 @@ class Dashboard extends Component
         $this->loadDashboardData();
         $this->dispatch('notify', [
             'type' => 'success',
-            'message' => 'Dashboard data refreshed'
+            'message' => 'Dashboard data refreshed',
         ]);
 
         // Explicitly dispatch chart update event
@@ -166,7 +166,8 @@ class Dashboard extends Component
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Error loading dashboard data: ' . $e->getMessage());
+            Log::error('Error loading dashboard data: '.$e->getMessage());
+
             return false;
         }
     }
@@ -198,6 +199,7 @@ class Dashboard extends Component
             'maintenance_percent' => $totalAssets > 0 ? round(($maintenanceAssets / $totalAssets) * 100, 1) : 0,
         ];
     }
+
     private function loadStatusDistribution()
     {
         $statuses = PamoAssets::select('status')
@@ -207,11 +209,11 @@ class Dashboard extends Component
 
         $totalAssets = PamoAssets::count() ?: 1; // Avoid division by zero
 
-        $formattedStatuses = $statuses->map(function($item) use ($totalAssets) {
+        $formattedStatuses = $statuses->map(function ($item) use ($totalAssets) {
             return [
                 'name' => ucfirst($item->status),
                 'count' => $item->count,
-                'percentage' => round(($item->count / $totalAssets) * 100, 1)
+                'percentage' => round(($item->count / $totalAssets) * 100, 1),
             ];
         });
 
@@ -219,7 +221,7 @@ class Dashboard extends Component
             'labels' => $formattedStatuses->pluck('name')->toArray(),
             'data' => $formattedStatuses->pluck('percentage')->toArray(),
             'counts' => $formattedStatuses->pluck('count')->toArray(),
-            'statuses' => $formattedStatuses->toArray()
+            'statuses' => $formattedStatuses->toArray(),
         ];
     }
 
@@ -234,11 +236,11 @@ class Dashboard extends Component
 
         $totalAssets = PamoAssets::count() ?: 1; // Avoid division by zero
 
-        $formattedCategories = $categories->map(function($item) use ($totalAssets) {
+        $formattedCategories = $categories->map(function ($item) use ($totalAssets) {
             return [
                 'name' => $item->name,
                 'count' => $item->count,
-                'percentage' => round(($item->count / $totalAssets) * 100, 1)
+                'percentage' => round(($item->count / $totalAssets) * 100, 1),
             ];
         });
 
@@ -246,7 +248,7 @@ class Dashboard extends Component
             'labels' => $formattedCategories->pluck('name')->toArray(),
             'data' => $formattedCategories->pluck('percentage')->toArray(),
             'counts' => $formattedCategories->pluck('count')->toArray(),
-            'categories' => $formattedCategories->toArray()
+            'categories' => $formattedCategories->toArray(),
         ];
     }
 
@@ -263,7 +265,7 @@ class Dashboard extends Component
         $this->departmentDistribution = [
             'labels' => $departments->pluck('department')->toArray(),
             'data' => $departments->pluck('count')->toArray(),
-            'departments' => $departments->toArray()
+            'departments' => $departments->toArray(),
         ];
     }
 
@@ -274,17 +276,18 @@ class Dashboard extends Component
             'fromLocation',             // Load from location
             'toLocation',               // Load to location
             'assignedBy',               // Load user who performed action
-            'assignedEmployee'          // Load assigned employee from master list
+            'assignedEmployee',          // Load assigned employee from master list
         ])
-        ->orderByDesc('movement_date')
-        ->take(5)
-        ->get();
+            ->orderByDesc('movement_date')
+            ->take(5)
+            ->get();
     }
 
     private function loadAcquisitionTrend()
     {
-        $months = collect(range(0, 11))->map(function($month) {
+        $months = collect(range(0, 11))->map(function ($month) {
             $date = Carbon::now()->subMonths($month);
+
             return [
                 'month' => $date->format('M'),
                 'month_year' => $date->format('M Y'),
@@ -303,14 +306,14 @@ class Dashboard extends Component
             $acquisitionData[] = [
                 'month' => $month['month'],
                 'count' => $count,
-                'month_year' => $month['month_year']
+                'month_year' => $month['month_year'],
             ];
         }
 
         $this->acquisitionTrend = [
             'labels' => collect($acquisitionData)->pluck('month')->toArray(),
             'data' => collect($acquisitionData)->pluck('count')->toArray(),
-            'months' => $acquisitionData
+            'months' => $acquisitionData,
         ];
     }
 
@@ -340,16 +343,16 @@ class Dashboard extends Component
             ->get();
 
         $totalTransfers = $transfersByCategory->sum('count') ?: 1;
-        $transfersByCategory = $transfersByCategory->map(function($item) use ($totalTransfers) {
+        $transfersByCategory = $transfersByCategory->map(function ($item) use ($totalTransfers) {
             return [
                 'name' => $item->name,
                 'count' => $item->count,
-                'percentage' => round(($item->count / $totalTransfers) * 100, 1)
+                'percentage' => round(($item->count / $totalTransfers) * 100, 1),
             ];
         });
 
         // Get weekly transfers for last 4 weeks
-        $weekly = collect(range(0, 3))->map(function($week) {
+        $weekly = collect(range(0, 3))->map(function ($week) {
             $startDate = Carbon::now()->subWeeks($week)->startOfWeek();
             $endDate = Carbon::now()->subWeeks($week)->endOfWeek();
 
@@ -358,8 +361,8 @@ class Dashboard extends Component
                 ->count();
 
             return [
-                'week' => 'Week ' . (4 - $week),
-                'count' => $count
+                'week' => 'Week '.(4 - $week),
+                'count' => $count,
             ];
         })->reverse()->values();
 
@@ -370,8 +373,8 @@ class Dashboard extends Component
             'byCategory' => $transfersByCategory->toArray(),
             'weekly' => [
                 'labels' => $weekly->pluck('week')->toArray(),
-                'data' => $weekly->pluck('count')->toArray()
-            ]
+                'data' => $weekly->pluck('count')->toArray(),
+            ],
         ];
     }
 
@@ -383,7 +386,7 @@ class Dashboard extends Component
             ->count();
 
         // Get monthly maintenance data
-        $months = collect(range(0, 5))->map(function($month) {
+        $months = collect(range(0, 5))->map(function ($month) {
             $date = Carbon::now()->subMonths($month);
 
             $count = PamoAssetMovement::where('movement_type', 'maintenance')
@@ -393,7 +396,7 @@ class Dashboard extends Component
 
             return [
                 'month' => $date->format('M'),
-                'count' => $count
+                'count' => $count,
             ];
         })->reverse()->values();
 
@@ -401,8 +404,8 @@ class Dashboard extends Component
             'total' => $totalMaintenance,
             'monthly' => [
                 'labels' => $months->pluck('month')->toArray(),
-                'data' => $months->pluck('count')->toArray()
-            ]
+                'data' => $months->pluck('count')->toArray(),
+            ],
         ];
     }
 
@@ -413,7 +416,7 @@ class Dashboard extends Component
 
         // Calculate current book value using getCurrentValue() method
         $assets = PamoAssets::all();
-        $currentValue = $assets->sum(function($asset) {
+        $currentValue = $assets->sum(function ($asset) {
             return $asset->getCurrentValue();
         });
 
@@ -421,19 +424,20 @@ class Dashboard extends Component
         $totalDepreciation = $totalValue - $currentValue;
 
         // Get yearly value data
-        $years = collect(range(-2, 3))->map(function($yearOffset) {
+        $years = collect(range(-2, 3))->map(function ($yearOffset) {
             $year = Carbon::now()->addYears($yearOffset)->year;
 
             // Assets that existed in that year (purchased before or during that year)
             $yearAssets = PamoAssets::whereYear('purchase_date', '<=', $year)->get();
 
             $purchaseValue = $yearAssets->sum('purchase_value');
-            $bookValue = $yearAssets->sum(function($asset) use ($year) {
+            $bookValue = $yearAssets->sum(function ($asset) use ($year) {
                 $assetYear = Carbon::parse($asset->purchase_date)->year;
                 $age = max(0, $year - $assetYear);
                 $depRate = 0.2; // 20% per year
                 $maxDep = 0.8; // Max 80% depreciation
                 $dep = min($age * $depRate, $maxDep);
+
                 return $asset->purchase_value * (1 - $dep);
             });
 
@@ -441,7 +445,7 @@ class Dashboard extends Component
                 'year' => $year,
                 'purchaseValue' => $purchaseValue,
                 'bookValue' => $bookValue,
-                'depreciation' => $purchaseValue - $bookValue
+                'depreciation' => $purchaseValue - $bookValue,
             ];
         });
 
@@ -454,11 +458,10 @@ class Dashboard extends Component
                 'labels' => $years->pluck('year')->toArray(),
                 'purchaseValues' => $years->pluck('purchaseValue')->toArray(),
                 'bookValues' => $years->pluck('bookValue')->toArray(),
-                'depreciations' => $years->pluck('depreciation')->toArray()
-            ]
+                'depreciations' => $years->pluck('depreciation')->toArray(),
+            ],
         ];
     }
-
 
     public function render()
     {

@@ -22,3 +22,12 @@
         Cheque List
     </x-end-user-nav-link>
 </li> --}}
+
+<li>
+    <x-end-user-nav-link
+        href="{{ route('bfo.helpdesk') }}{{ request()->get('dept') ? '?dept=' . request()->get('dept') : '' }}"
+        :active="request()->routeIs('bfo.helpdesk')"
+        icon="support_agent">
+        Helpdesk
+    </x-end-user-nav-link>
+</li>

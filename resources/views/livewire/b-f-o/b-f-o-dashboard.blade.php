@@ -114,7 +114,8 @@
                             Check for Updates
                         </button>
 
-                        @if(in_array(strtolower(Auth::user()->role), ['administrator', 'developer']))
+                        @php($roleSlug = strtolower(optional(Auth::user()->role)->slug ?? ''))
+                        @if(in_array($roleSlug, ['administrator', 'developer']))
                             <a href="{{ route('dashboard') }}"
                                class="px-8 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 border-2 border-gray-300 hover:border-gray-400">
                                 <i class="fas fa-arrow-left mr-2"></i>

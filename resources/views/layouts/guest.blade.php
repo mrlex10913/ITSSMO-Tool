@@ -18,20 +18,38 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" integrity="sha512-vKMx8UnXk60zUwyUnUPM3HbQo8QfmNx7+ltw8Pm5zLusl1XIfwcxo8DbWCqMGKaWeNxWA8yrx5v3SaVpMvR3CA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
         <!-- Scripts -->
+        <script>
+            // Early theme init to prevent FOUC
+            (function() {
+                try {
+                    var t = localStorage.getItem('theme');
+                    if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                } catch (e) {}
+            })();
+        </script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <!-- Styles -->
         @livewireStyles
     </head>
-    <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300 overflow-hidden">
+    <body class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300 overflow-x-hidden">
         {{-- <x-banner /> --}}
 
+        <!-- Theme toggle -->
+        <div x-data="{ dark: document.documentElement.classList.contains('dark') }" class="fixed top-3 right-3 z-50">
+            <button type="button" @click="dark = !dark; document.documentElement.classList.toggle('dark', dark); try{ localStorage.setItem('theme', dark ? 'dark' : 'light') }catch(e){}"
+                class="inline-flex items-center gap-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm shadow hover:bg-gray-50 dark:hover:bg-gray-700">
+                <span class="material-symbols-sharp text-gray-700 dark:text-gray-200" x-show="!dark">dark_mode</span>
+                <span class="material-symbols-sharp text-gray-700 dark:text-gray-200" x-show="dark">light_mode</span>
+                <span class="text-gray-700 dark:text-gray-200" x-text="dark ? 'Light' : 'Dark'"></span>
+            </button>
+        </div>
 
-
-
-
-
-                <main class="flex-1 p-4 overflow-y-auto">
+                <main class="p-4">
                     {{ $slot }}
                 </main>
 
@@ -50,9 +68,15 @@
                 }
             });
 
-            window.addEventListener('success', event => {
-                toastr.success(event.detail.message);
-            });
+            if (!window.__toastrHandlersBoundGuest) {
+                window.__toastrHandlersBoundGuest = true;
+                window.addEventListener('success', event => {
+                    toastr.success(event.detail.message);
+                });
+                window.addEventListener('error', event => {
+                    toastr.error(event.detail.message || 'An error occurred');
+                });
+            }
         </script>
         @stack('scripts')
         @livewireScripts

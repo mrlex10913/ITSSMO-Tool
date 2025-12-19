@@ -8,8 +8,10 @@ use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Models\Roles;
 use App\Models\User;
+use App\Services\Menu\MenuBuilder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -24,20 +26,21 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->instance(LoginResponse::class, new class implements LoginResponse {
+        $this->app->instance(LoginResponse::class, new class implements LoginResponse
+        {
             public function toResponse($request)
             {
                 // Get authenticated user with role relationship
-                $user = auth()->user();
+                $user = Auth::user();
 
                 // Get role directly from database
-                if (!$user->role_id) {
+                if (! $user->role_id) {
                     abort(403, 'No role assigned to user');
                 }
 
                 $roleRecord = Roles::find($user->role_id);
 
-                if (!$roleRecord) {
+                if (! $roleRecord) {
                     abort(403, 'Invalid role assigned to user');
                 }
 
@@ -74,7 +77,7 @@ class FortifyServiceProvider extends ServiceProvider
                         } catch (\Exception $e) {
                             return redirect('/');
                         }
-                     case 'itss':
+                    case 'itss':
                         try {
                             return redirect()->route('itss.dashboard');
                         } catch (\Exception $e) {
@@ -82,7 +85,14 @@ class FortifyServiceProvider extends ServiceProvider
                         }
 
                     default:
-                        abort(403, 'Unauthorized role: ' . $roleRecord->name);
+                        // Fallback to MenuBuilder home route for any new/unknown roles
+                        $builder = app(MenuBuilder::class);
+                        $routeName = $builder->getHomeRouteFor($user);
+                        try {
+                            return redirect()->route($routeName);
+                        } catch (\Exception $e) {
+                            return redirect('/dashboard/generic');
+                        }
                 }
             }
         });
@@ -108,11 +118,11 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
 
-        Fortify::authenticateUsing(function (Request $request){
+        Fortify::authenticateUsing(function (Request $request) {
             $user = User::where('email', $request->email)->first();
 
-            if($user && Hash::check($request->password, $user->password)){
-                if($user->temporary_password === $request->password){
+            if ($user && Hash::check($request->password, $user->password)) {
+                if ($user->temporary_password === $request->password) {
                     return $user;
                 }
 

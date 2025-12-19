@@ -5,6 +5,83 @@
             <p class="text-gray-600">Monitor and manage company assets assigned to employees</p>
         </div>
 
+        <!-- Sample Menu (similar to Helpdesk sidebar) -->
+        <div class="bg-white rounded-lg shadow p-0 mb-6">
+            <div class="p-4 border-b border-gray-200 flex items-center">
+                <i class="fas fa-sitemap text-blue-600 mr-2"></i>
+                <h3 class="font-semibold text-gray-800">Asset Menu</h3>
+            </div>
+            <div class="p-2">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                    <!-- Inventory (reset all filters) -->
+                    <button
+                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
+                        x-data
+                        @click="$wire.set('search',''); $wire.set('categoryId',''); $wire.set('department',''); $wire.set('locationId',''); $wire.set('status','')">
+                        <i class="fas fa-boxes-stacked text-sky-600"></i>
+                        Inventory
+                    </button>
+
+                    <!-- Assigned -->
+                    <button
+                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 {{ ($status ?? '')==='assigned' ? 'ring-1 ring-blue-500' : '' }}"
+                        wire:click="$set('status','assigned')">
+                        <i class="fas fa-user-check text-emerald-600"></i>
+                        Assigned
+                    </button>
+
+                    <!-- Available -->
+                    <button
+                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 {{ ($status ?? '')==='available' ? 'ring-1 ring-blue-500' : '' }}"
+                        wire:click="$set('status','available')">
+                        <i class="fas fa-cube text-gray-700"></i>
+                        Available
+                    </button>
+
+                    <!-- In Transfer -->
+                    <button
+                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 {{ in_array(($status ?? ''), ['in_transfer','in-transfer']) ? 'ring-1 ring-blue-500' : '' }}"
+                        x-data
+                        @click="$wire.set('status','in-transfer')">
+                        <i class="fas fa-exchange-alt text-amber-600"></i>
+                        In Transfer
+                    </button>
+
+                    <!-- Maintenance -->
+                    <button
+                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 {{ ($status ?? '')==='maintenance' ? 'ring-1 ring-blue-500' : '' }}"
+                        wire:click="$set('status','maintenance')">
+                        <i class="fas fa-screwdriver-wrench text-rose-600"></i>
+                        Maintenance
+                    </button>
+
+                    <!-- Reports (Export Modal) -->
+                    <button
+                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
+                        wire:click="openExportModal">
+                        <i class="fas fa-file-export text-purple-600"></i>
+                        Reports
+                    </button>
+
+                    <!-- Scan Asset -->
+                    <button
+                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
+                        wire:click="openScanModal">
+                        <i class="fas fa-qrcode text-yellow-600"></i>
+                        Scan Asset
+                    </button>
+
+                    <!-- Record Transfer -->
+                    <button
+                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
+                        wire:click="openTransferModal">
+                        <i class="fas fa-truck-moving text-green-600"></i>
+                        Record Transfer
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Quick Actions -->
         <div class="bg-white rounded-lg shadow p-4 mb-6">
             <div class="p-4 border-b border-gray-200">
@@ -405,7 +482,7 @@
                                                 </div>
                                                 <div>
                                                     <div class="text-sm text-gray-900">{{ $movement->assignedBy->name }}</div>
-                                                    <div class="text-xs text-gray-500">{{ $movement->assignedBy->role ?? 'User' }}</div>
+                                                    <div class="text-xs text-gray-500">{{ optional($movement->assignedBy->role)->name ?? 'User' }}</div>
                                                 </div>
                                             </div>
                                         @else
