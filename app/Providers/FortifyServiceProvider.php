@@ -71,12 +71,6 @@ class FortifyServiceProvider extends ServiceProvider
                             return redirect('/bfo/dashboard');
                         }
 
-                    case 'user':
-                        try {
-                            return redirect()->route('dashboard');
-                        } catch (\Exception $e) {
-                            return redirect('/');
-                        }
                     case 'itss':
                         try {
                             return redirect()->route('itss.dashboard');
@@ -85,7 +79,7 @@ class FortifyServiceProvider extends ServiceProvider
                         }
 
                     default:
-                        // Fallback to MenuBuilder home route for any new/unknown roles
+                        // Fallback to MenuBuilder home route for any role (including 'user')
                         $builder = app(MenuBuilder::class);
                         $routeName = $builder->getHomeRouteFor($user);
                         try {

@@ -31,7 +31,10 @@ class ChangePassword extends Component
         $user->is_temporary_password_used = true;
         $user->save();
 
+        // Clear the force password change session flag
+        session()->forget('force_password_change');
         session()->flash('status', 'Password change successfully');
+
         // Redirect based on role/home route, falling back to generic dashboard for unknown roles
         try {
             /** @var MenuBuilder $builder */

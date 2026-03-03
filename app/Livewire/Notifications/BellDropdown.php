@@ -2,11 +2,11 @@
 
 namespace App\Livewire\Notifications;
 
+use App\Models\DocumentLibrary\MasterFile;
 use App\Models\Helpdesk\TicketActivityLog;
-use App\Models\MasterFiles\MasterFile;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
@@ -17,6 +17,7 @@ class BellDropdown extends Component
     public array $items = [];
 
     public int $count = 0;
+
     public int $unread = 0;
 
     public function mount(): void
@@ -61,7 +62,7 @@ class BellDropdown extends Component
         }
 
         // Only include "new tickets created"
-    $ticketCreates = (clone $query)
+        $ticketCreates = (clone $query)
             ->where('action', 'created')
             ->limit(10)
             ->get()
@@ -69,6 +70,7 @@ class BellDropdown extends Component
                 $ticketNo = optional($log->ticket)->ticket_no;
                 $actor = optional($log->user)->name
                     ?: (optional($log->ticket)->requester->name ?? (optional($log->ticket)->requester_name ?: 'Guest'));
+
                 return [
                     'type' => 'ticket',
                     'message' => sprintf('Ticket #%s created by %s', (string) $ticketNo, (string) $actor),
@@ -89,6 +91,7 @@ class BellDropdown extends Component
                 ->get()
                 ->map(function (MasterFile $f): array {
                     $actor = optional($f->uploader)->name ?: 'Unknown';
+
                     return [
                         'type' => 'asset',
                         'message' => sprintf('Asset uploaded: %s by %s', (string) $f->title, (string) $actor),
@@ -109,6 +112,7 @@ class BellDropdown extends Component
         $this->items = $merged->map(function (array $row): array {
             // Normalize when text based on created_at to keep it fresh
             $row['when'] = ($row['created_at'] instanceof Carbon) ? $row['created_at']->diffForHumans() : (string) ($row['when'] ?? '');
+
             return $row;
         })->all();
 

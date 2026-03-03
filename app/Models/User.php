@@ -103,6 +103,24 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if the user is a department head
+     * A department head can be identified by specific roles
+     */
+    public function isDepartmentHead(): bool
+    {
+        // Check for various department head role variations
+        $headRoles = ['department_head', 'department-head', 'head', 'chief', 'supervisor', 'manager', 'director'];
+
+        foreach ($headRoles as $role) {
+            if ($this->hasRole($role)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Menus explicitly assigned to this user (overrides role menus when present).
      */
     public function menus()

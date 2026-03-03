@@ -103,9 +103,9 @@ class ForcePasswordChange extends Component
         // Get the role through the relationship
         $userRole = $user->role; // This calls the role() method
 
-        // If no role is found, return fallback
+        // If no role is found, return generic dashboard
         if (! $userRole) {
-            return '/';
+            return '/dashboard/generic';
         }
 
         // Use role slug for comparison
@@ -126,7 +126,16 @@ class ForcePasswordChange extends Component
                 return '/itss/dashboard';
 
             default:
-                return '/';
+                // Use role's home_route if set, otherwise generic dashboard
+                if ($userRole->home_route) {
+                    try {
+                        return route($userRole->home_route, [], false);
+                    } catch (\Exception $e) {
+                        return '/dashboard/generic';
+                    }
+                }
+
+                return '/dashboard/generic';
         }
     }
 

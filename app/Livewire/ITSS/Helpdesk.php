@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Helpdesk\AssignmentResolver;
 use App\Services\Helpdesk\SlaResolver;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -236,7 +237,22 @@ class Helpdesk extends Component
 
     public function createTicket(): void
     {
+        // Rate limiting: max 5 tickets per user per 10 minutes
+        $userId = Auth::id();
+        $rateLimitKey = 'ticket-creation:'.$userId;
+
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            $minutes = ceil($seconds / 60);
+            session()->flash('error', "You're creating tickets too quickly. Please wait {$minutes} minute(s) before creating another ticket.");
+
+            return;
+        }
+
         $this->validate();
+
+        // Increment rate limiter on successful validation
+        RateLimiter::hit($rateLimitKey, 600); // 10 minutes decay
 
         $user = Auth::user();
         $ticketNo = 'HD-'.now()->format('Y').'-'.str_pad((string) (Ticket::max('id') + 1), 5, '0', STR_PAD_LEFT);

@@ -99,50 +99,52 @@
             </x-nav-link>
         </li>
         @endif
-        <!-- Master File Archive Dropdown -->
+        <!-- Document Library Dropdown -->
         <li class="mb-2">
-            <div x-data="{ open: {{ request()->routeIs('master-file.*') ? 'true' : 'false' }} }" class="relative p-2 rounded">
+            <div x-data="{ open: {{ request()->routeIs('document-library.*') ? 'true' : 'false' }} }" class="relative p-2 rounded">
                 <a href="" @click.prevent="open = !open" :class="{'rounded bg-gray-300 dark:bg-gray-700': open}">
                     <div class="flex gap-3 items-center">
                         <x-heroicon name="folder" class="w-5 h-5" />
-                        <h3>Master File Archive</h3>
+                        <h3>Document Library</h3>
                         <span x-bind:class="{'rotate-180': open}" class="transform transition-transform duration-300">
                             <x-heroicon name="chevron-down" class="w-5 h-5" />
                         </span>
                     </div>
                 </a>
                 <div x-show="open" x-collapse class="flex flex-col space-y-2 pl-10 mt-2">
-                    <x-nav-link wire:navigate href="{{ route('master-file.dashboard') }}" :active="request()->routeIs('master-file.dashboard')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                    <x-nav-link wire:navigate href="{{ route('document-library.dashboard') }}" :active="request()->routeIs('document-library.dashboard')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                         <div class="flex gap-2 items-center">
                             <x-heroicon name="chart-bar" class="w-4 h-4" />
                             <span class="text-sm">Dashboard</span>
                         </div>
                     </x-nav-link>
-                    <x-nav-link wire:navigate href="{{ route('master-file.categories') }}" :active="request()->routeIs('master-file.categories')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                    @if(auth()->user()->hasRole(['administrator', 'developer']))
+                    <x-nav-link wire:navigate href="{{ route('document-library.categories') }}" :active="request()->routeIs('document-library.categories')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                         <div class="flex gap-2 items-center">
                             <x-heroicon name="squares-2x2" class="w-4 h-4" />
                             <span class="text-sm">Categories</span>
                         </div>
                     </x-nav-link>
-                    <x-nav-link wire:navigate href="{{ route('master-file.upload') }}" :active="request()->routeIs('master-file.upload')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                    @endif
+                    <x-nav-link wire:navigate href="{{ route('document-library.upload') }}" :active="request()->routeIs('document-library.upload')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                         <div class="flex gap-2 items-center">
                             <x-heroicon name="arrow-up-tray" class="w-4 h-4" />
                             <span class="text-sm">Upload Document</span>
                         </div>
                     </x-nav-link>
-                    <x-nav-link wire:navigate href="{{ route('master-file.search') }}" :active="request()->routeIs('master-file.search')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                    <x-nav-link wire:navigate href="{{ route('document-library.search') }}" :active="request()->routeIs('document-library.search')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                         <div class="flex gap-2 items-center">
                             <x-heroicon name="magnifying-glass" class="w-4 h-4" />
-                            <span class="text-sm">Search Archive</span>
+                            <span class="text-sm">Search Documents</span>
                         </div>
                     </x-nav-link>
-                    <x-nav-link wire:navigate href="{{ route('master-file.versions') }}" :active="request()->routeIs('master-file.versions')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                    <x-nav-link wire:navigate href="{{ route('document-library.versions') }}" :active="request()->routeIs('document-library.versions')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                         <div class="flex gap-2 items-center">
                             <x-heroicon name="arrow-path" class="w-4 h-4" />
                             <span class="text-sm">Version Control</span>
                         </div>
                     </x-nav-link>
-                    <x-nav-link wire:navigate href="{{ route('master-file.analytics') }}" :active="request()->routeIs('master-file.analytics')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
+                    <x-nav-link wire:navigate href="{{ route('document-library.analytics') }}" :active="request()->routeIs('document-library.analytics')" class="block p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700">
                         <div class="flex gap-2 items-center">
                             <x-heroicon name="chart-bar" class="w-4 h-4" />
                             <span class="text-sm">Analytics</span>

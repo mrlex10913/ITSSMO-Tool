@@ -26,11 +26,11 @@ use App\Livewire\ControlPanel\RolesControl;
 use App\Livewire\ControlPanel\UsersControl;
 use App\Livewire\Dashboard\Generic as GenericDashboard;
 use App\Livewire\Dashboard\ItssIntroduction;
+use App\Livewire\DocumentLibrary\Dashboard as DocumentLibraryDashboard;
 use App\Livewire\Examination\Admin\Questions;
 use App\Livewire\Examination\Admin\Subject;
 use App\Livewire\Examination\Coordinator\Codegenerator;
 use App\Livewire\Manuals\ITSSManual;
-use App\Livewire\MasterFiles\Dashboard as MasterFileDashboard;
 use App\Livewire\PAMO\AssetTracker;
 use App\Livewire\PAMO\BarcodeGenerator;
 use App\Livewire\PAMO\Dashboard;
@@ -154,18 +154,6 @@ Route::middleware([
 
             return response()->stream($callback, 200, $headers);
         })->name('controlPanel.reports.surveys.export');
-
-        Route::prefix('master-file')->name('master-file.')->group(function () {
-            Route::get('/dashboard', MasterFileDashboard::class)->name('dashboard');
-            Route::get('/categories', \App\Livewire\MasterFiles\Categories::class)->name('categories');
-            Route::get('/upload', \App\Livewire\MasterFiles\Upload::class)->name('upload');
-            Route::get('/upload/{parent_id}', \App\Livewire\MasterFiles\Upload::class)->name('upload-version');
-            Route::get('/search', \App\Livewire\MasterFiles\Search::class)->name('search');
-            Route::get('/versions', \App\Livewire\MasterFiles\Versions::class)->name('versions');
-            Route::get('/analytics', \App\Livewire\MasterFiles\Analytics::class)->name('analytics');
-            Route::get('/file/{file}', \App\Livewire\MasterFiles\Show::class)->name('show');
-            Route::get('/file/{file}/download', [MasterFileController::class, 'download'])->name('download');
-        });
     });
 
 });
@@ -174,6 +162,28 @@ Route::middleware([
 // Route::get('/desktop/borrowers', BorrowersDesktop::class)->name('desktop.borrowers');
 Route::middleware(['ip.filter'])->group(function () {
     Route::get('/desktop/borrowers', BorrowersDesktop::class)->name('desktop.borrowers');
+});
+
+// Document Library - accessible to all authenticated users (visibility controlled at component level)
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified',
+    'check.temporary.password',
+])->prefix('document-library')->name('document-library.')->group(function () {
+    Route::get('/dashboard', DocumentLibraryDashboard::class)->name('dashboard');
+    Route::get('/folders/{folderId?}', \App\Livewire\DocumentLibrary\FolderBrowser::class)->name('folders');
+    Route::get('/categories', \App\Livewire\DocumentLibrary\Categories::class)->name('categories');
+    Route::get('/upload', \App\Livewire\DocumentLibrary\Upload::class)->name('upload');
+    Route::get('/upload/{parent_id}', \App\Livewire\DocumentLibrary\Upload::class)->name('upload-version');
+    Route::get('/search', \App\Livewire\DocumentLibrary\Search::class)->name('search');
+    Route::get('/versions', \App\Livewire\DocumentLibrary\Versions::class)->name('versions');
+    Route::get('/analytics', \App\Livewire\DocumentLibrary\Analytics::class)->name('analytics');
+    Route::get('/file/{file}', \App\Livewire\DocumentLibrary\Show::class)->name('show');
+    Route::get('/file/{file}/download', [MasterFileController::class, 'download'])->name('download');
+    Route::get('/file/{file}/download-all', [MasterFileController::class, 'downloadAll'])->name('download-all');
+    Route::get('/file/{file}/preview', [MasterFileController::class, 'preview'])->name('preview');
+    Route::get('/attachment/{attachment}/download', [MasterFileController::class, 'downloadAttachment'])->name('download-attachment');
 });
 
 Route::middleware([
@@ -227,6 +237,7 @@ Route::middleware([
     Route::get('/assignment-rules', App\Livewire\ITSS\AssignmentRules::class)->name('assignment-rules');
     Route::get('/sla-escalations', App\Livewire\ITSS\SlaEscalations::class)->name('sla.escalations');
     Route::get('/reports/iso-audit', App\Livewire\ITSS\Reports\IsoAudit::class)->name('reports.iso-audit');
+    Route::get('/reports/helpdesk', App\Livewire\ITSS\Reports\HelpdeskReports::class)->name('reports.helpdesk');
 });
 
 Route::get('/password/change', ChangePassword::class)->name('password.change');

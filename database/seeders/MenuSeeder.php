@@ -24,6 +24,7 @@ class MenuSeeder extends Seeder
                 [
                     'icon' => $menuData['icon'] ?? 'menu',
                     'sort_order' => $menuData['sort_order'] ?? 10,
+                    'section' => $menuData['section'] ?? null,
                     'is_active' => true,
                 ]
             );
@@ -60,6 +61,11 @@ class MenuSeeder extends Seeder
         $attach(['label' => 'Assignment Rules', 'route' => 'itss.assignment-rules', 'icon' => 'rule', 'sort_order' => 15], ['itss', 'administrator', 'developer']);
         $attach(['label' => 'SLA Escalations', 'route' => 'itss.sla.escalations', 'icon' => 'escalator_warning', 'sort_order' => 16], ['itss', 'administrator', 'developer']);
         $attach(['label' => 'ISO Audit Report', 'route' => 'itss.reports.iso-audit', 'icon' => 'summarize', 'sort_order' => 17], ['itss', 'administrator', 'developer']);
+
+        // Document Library (available to all departments)
+        $attach(['label' => 'Document Library', 'route' => 'document-library.dashboard', 'icon' => 'folder_managed', 'sort_order' => 20, 'section' => 'Documents'], ['itss', 'pamo', 'bfo', 'administrator', 'developer']);
+        $attach(['label' => 'Upload Document', 'route' => 'document-library.upload', 'icon' => 'upload_file', 'sort_order' => 21, 'section' => 'Documents'], ['itss', 'pamo', 'bfo', 'administrator', 'developer']);
+        $attach(['label' => 'Search Documents', 'route' => 'document-library.search', 'icon' => 'search', 'sort_order' => 22, 'section' => 'Documents'], ['itss', 'pamo', 'bfo', 'administrator', 'developer']);
 
         // Admin panel
         $attach(['label' => 'Control Panel', 'route' => 'controlPanel.admin', 'icon' => 'admin_panel_settings', 'sort_order' => 50], ['administrator', 'developer']);

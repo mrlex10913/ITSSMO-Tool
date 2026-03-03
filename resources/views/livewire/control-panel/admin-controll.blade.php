@@ -71,19 +71,19 @@
                 </div>
             </x-nav-link>
 
-            <!-- Master Files Dashboard -->
-            <x-nav-link wire:navigate href="{{ route('master-file.dashboard') }}" class="group block rounded-lg border border-gray-200 dark:border-gray-700 p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-sm transition">
+            <!-- Document Library Dashboard -->
+            <x-nav-link wire:navigate href="{{ route('document-library.dashboard') }}" class="group block rounded-lg border border-gray-200 dark:border-gray-700 p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-sm transition">
                 <div class="flex items-center gap-4">
                     <span class="material-symbols-sharp text-cyan-600 dark:text-cyan-400">folder_managed</span>
                     <div>
-                        <h3 class="font-medium">Master Files</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Browse and manage files</p>
+                        <h3 class="font-medium">Document Library</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Browse and manage documents</p>
                     </div>
                 </div>
             </x-nav-link>
 
             <!-- Uploads -->
-            <x-nav-link wire:navigate href="{{ route('master-file.upload') }}" class="group block rounded-lg border border-gray-200 dark:border-gray-700 p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-sm transition">
+            <x-nav-link wire:navigate href="{{ route('document-library.upload') }}" class="group block rounded-lg border border-gray-200 dark:border-gray-700 p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-sm transition">
                 <div class="flex items-center gap-4">
                     <span class="material-symbols-sharp text-fuchsia-600 dark:text-fuchsia-400">upload_file</span>
                     <div>
@@ -94,7 +94,7 @@
             </x-nav-link>
 
             <!-- Analytics -->
-            <x-nav-link wire:navigate href="{{ route('master-file.analytics') }}" class="group block rounded-lg border border-gray-200 dark:border-gray-700 p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-sm transition">
+            <x-nav-link wire:navigate href="{{ route('document-library.analytics') }}" class="group block rounded-lg border border-gray-200 dark:border-gray-700 p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-sm transition">
                 <div class="flex items-center gap-4">
                     <span class="material-symbols-sharp text-rose-600 dark:text-rose-400">query_stats</span>
                     <div>

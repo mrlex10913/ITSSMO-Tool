@@ -13,10 +13,44 @@ class Ticket extends Model
 {
     use HasFactory;
 
+    /**
+     * Priority levels available for tickets.
+     */
+    public const PRIORITIES = ['low', 'medium', 'high', 'critical'];
+
+    /**
+     * Status workflow for tickets.
+     */
+    public const STATUSES = ['open', 'in_progress', 'resolved', 'closed'];
+
+    /**
+     * Ticket types.
+     */
+    public const TYPES = ['incident', 'request'];
+
+    /**
+     * ITIL Impact levels (currently unused, reserved for future priority matrix).
+     *
+     * @see https://wiki.en.it-processmaps.com/index.php/Checklist_Incident_Priority
+     */
+    public const IMPACTS = ['low', 'medium', 'high'];
+
+    /**
+     * ITIL Urgency levels (currently unused, reserved for future priority matrix).
+     * Future implementation: Priority = f(Impact, Urgency)
+     */
+    public const URGENCIES = ['low', 'medium', 'high'];
+
     protected $fillable = [
-        'ticket_no', 'subject', 'description', 'type', 'status', 'priority', 'impact', 'urgency',
+        // Core ticket fields
+        'ticket_no', 'subject', 'description', 'type', 'status', 'priority',
+        // ITIL fields (reserved for future priority matrix implementation)
+        'impact', 'urgency',
+        // Relationships
         'category_id', 'requester_id', 'assignee_id', 'asset_id', 'department',
+        // SLA tracking
         'due_at', 'acknowledged_at', 'responded_at', 'resolved_at', 'closed_at', 'sla_policy_id', 'sla_due_at',
+        // Verification
         'verification_status', 'verification_method', 'verified_by', 'verified_at',
         // Guest submitter fields (for unauthenticated portal)
         'requester_name', 'requester_email', 'requester_idno',
@@ -111,6 +145,94 @@ class Ticket extends Model
     public function audits(): HasMany
     {
         return $this->hasMany(TicketAuditLog::class, 'ticket_id');
+    }
+
+    /**
+     * Tags associated with this ticket.
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(TicketTag::class, 'ticket_tag_pivot')
+            ->withPivot('added_by')
+            ->withTimestamps();
+    }
+
+    /**
+     * Time entries logged against this ticket.
+     */
+    public function timeEntries(): HasMany
+    {
+        return $this->hasMany(TicketTimeEntry::class);
+    }
+
+    /**
+     * Get total logged time in minutes.
+     */
+    public function getTotalTimeMinutesAttribute(): int
+    {
+        return $this->timeEntries()->sum('duration_mins');
+    }
+
+    /**
+     * Get formatted total time.
+     */
+    public function getFormattedTotalTimeAttribute(): string
+    {
+        $minutes = $this->total_time_minutes;
+        $hours = intdiv($minutes, 60);
+        $mins = $minutes % 60;
+
+        if ($hours > 0 && $mins > 0) {
+            return "{$hours}h {$mins}m";
+        } elseif ($hours > 0) {
+            return "{$hours}h";
+        }
+
+        return "{$mins}m";
+    }
+
+    /**
+     * Links where this ticket is the source.
+     */
+    public function outgoingLinks(): HasMany
+    {
+        return $this->hasMany(TicketLink::class, 'ticket_id');
+    }
+
+    /**
+     * Links where this ticket is the target.
+     */
+    public function incomingLinks(): HasMany
+    {
+        return $this->hasMany(TicketLink::class, 'linked_ticket_id');
+    }
+
+    /**
+     * Get all linked tickets (both incoming and outgoing).
+     */
+    public function getLinkedTicketsAttribute(): \Illuminate\Support\Collection
+    {
+        $outgoing = $this->outgoingLinks()
+            ->with('linkedTicket:id,ticket_no,subject,status,priority')
+            ->get()
+            ->map(fn ($link) => [
+                'ticket' => $link->linkedTicket,
+                'link_type' => $link->link_type,
+                'link_label' => $link->link_type_label,
+                'link_id' => $link->id,
+            ]);
+
+        $incoming = $this->incomingLinks()
+            ->with('ticket:id,ticket_no,subject,status,priority')
+            ->get()
+            ->map(fn ($link) => [
+                'ticket' => $link->ticket,
+                'link_type' => TicketLink::getInverseLinkType($link->link_type),
+                'link_label' => TicketLink::LINK_TYPES[TicketLink::getInverseLinkType($link->link_type)] ?? $link->link_type,
+                'link_id' => $link->id,
+            ]);
+
+        return $outgoing->merge($incoming);
     }
 
     // Convenience for tests and internal updates

@@ -59,6 +59,12 @@
             </div>
         @endif
 
+        @if (session('error'))
+            <div class="mb-4 rounded bg-red-50 text-red-800 px-4 py-3">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <!-- Sidebar with Stats -->
             <div class="lg:col-span-1">

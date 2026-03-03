@@ -31,3 +31,29 @@
         Helpdesk
     </x-end-user-nav-link>
 </li>
+
+<li class="pt-2 border-t border-blue-500 mt-2 text-blue-200 text-xs px-3">Documents</li>
+<li>
+    <x-end-user-nav-link
+        href="{{ route('document-library.dashboard') }}{{ request()->get('dept') ? '?dept=' . request()->get('dept') : '' }}"
+        :active="request()->routeIs('document-library.dashboard')"
+        icon="folder_managed">
+        Document Library
+    </x-end-user-nav-link>
+</li>
+<li>
+    <x-end-user-nav-link
+        href="{{ route('document-library.upload') }}{{ request()->get('dept') ? '?dept=' . request()->get('dept') : '' }}"
+        :active="request()->routeIs('document-library.upload')"
+        icon="upload_file">
+        Upload Document
+    </x-end-user-nav-link>
+</li>
+<li>
+    <x-end-user-nav-link
+        href="{{ route('document-library.search') }}{{ request()->get('dept') ? '?dept=' . request()->get('dept') : '' }}"
+        :active="request()->routeIs('document-library.search')"
+        icon="search">
+        Search Documents
+    </x-end-user-nav-link>
+</li>

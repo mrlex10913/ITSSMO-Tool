@@ -334,6 +334,238 @@ class TicketShow extends Component
 
     // Watchers feature removed per requirements (kept underlying model for compatibility)
 
+    // ===== TAGS MANAGEMENT =====
+    public bool $showTagModal = false;
+
+    public array $selectedTagIds = [];
+
+    public string $newTagName = '';
+
+    public function openTagModal(): void
+    {
+        if (! $this->isAgent) {
+            return;
+        }
+        $this->selectedTagIds = $this->ticket->tags->pluck('id')->toArray();
+        $this->showTagModal = true;
+    }
+
+    public function saveTags(): void
+    {
+        if (! $this->isAgent) {
+            abort(403);
+        }
+
+        $this->ticket->tags()->sync(
+            collect($this->selectedTagIds)->mapWithKeys(fn ($id) => [
+                $id => ['added_by' => Auth::id()],
+            ])->toArray()
+        );
+
+        $this->ticket->load('tags');
+        $this->showTagModal = false;
+        session()->flash('success', 'Tags updated.');
+    }
+
+    public function createQuickTag(): void
+    {
+        if (! $this->isAgent || empty(trim($this->newTagName))) {
+            return;
+        }
+
+        $this->validate([
+            'newTagName' => 'required|string|min:2|max:50',
+        ]);
+
+        $tag = \App\Models\Helpdesk\TicketTag::create([
+            'name' => trim($this->newTagName),
+            'color' => '#6366f1', // Default indigo
+            'is_active' => true,
+            'created_by' => Auth::id(),
+        ]);
+
+        $this->selectedTagIds[] = $tag->id;
+        $this->newTagName = '';
+    }
+
+    public function removeTag(int $tagId): void
+    {
+        if (! $this->isAgent) {
+            return;
+        }
+
+        $this->ticket->tags()->detach($tagId);
+        $this->ticket->load('tags');
+        session()->flash('success', 'Tag removed.');
+    }
+
+    public function getAvailableTagsProperty()
+    {
+        return \App\Models\Helpdesk\TicketTag::active()->orderBy('name')->get();
+    }
+
+    // ===== TIME TRACKING =====
+    public bool $showTimeModal = false;
+
+    public int $timeEntryMinutes = 15;
+
+    public string $timeEntryDescription = '';
+
+    public ?string $timeEntryDate = null;
+
+    public bool $timeEntryBillable = false;
+
+    public function openTimeModal(): void
+    {
+        if (! $this->isAgent) {
+            return;
+        }
+        $this->timeEntryDate = now()->format('Y-m-d');
+        $this->timeEntryMinutes = 15;
+        $this->timeEntryDescription = '';
+        $this->timeEntryBillable = false;
+        $this->showTimeModal = true;
+    }
+
+    public function saveTimeEntry(): void
+    {
+        if (! $this->isAgent) {
+            abort(403);
+        }
+
+        $this->validate([
+            'timeEntryMinutes' => 'required|integer|min:1|max:1440',
+            'timeEntryDescription' => 'nullable|string|max:500',
+            'timeEntryDate' => 'required|date',
+            'timeEntryBillable' => 'boolean',
+        ]);
+
+        \App\Models\Helpdesk\TicketTimeEntry::create([
+            'ticket_id' => $this->ticket->id,
+            'user_id' => Auth::id(),
+            'duration_mins' => $this->timeEntryMinutes,
+            'description' => $this->timeEntryDescription ?: null,
+            'work_date' => $this->timeEntryDate,
+            'is_billable' => $this->timeEntryBillable,
+        ]);
+
+        $this->showTimeModal = false;
+        session()->flash('success', 'Time entry logged.');
+    }
+
+    public function deleteTimeEntry(int $entryId): void
+    {
+        if (! $this->isAgent) {
+            return;
+        }
+
+        \App\Models\Helpdesk\TicketTimeEntry::where('id', $entryId)
+            ->where('ticket_id', $this->ticket->id)
+            ->delete();
+
+        session()->flash('success', 'Time entry removed.');
+    }
+
+    public function getTimeEntriesProperty()
+    {
+        return $this->ticket->timeEntries()
+            ->with('user:id,name')
+            ->orderByDesc('work_date')
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    // ===== TICKET LINKING =====
+    public bool $showLinkModal = false;
+
+    public string $linkTicketNo = '';
+
+    public string $linkType = 'related';
+
+    public function openLinkModal(): void
+    {
+        if (! $this->isAgent) {
+            return;
+        }
+        $this->linkTicketNo = '';
+        $this->linkType = 'related';
+        $this->showLinkModal = true;
+    }
+
+    public function createLink(): void
+    {
+        if (! $this->isAgent) {
+            abort(403);
+        }
+
+        $this->validate([
+            'linkTicketNo' => 'required|string',
+            'linkType' => 'required|in:related,parent,child,duplicate,blocks,blocked_by',
+        ]);
+
+        $targetTicket = \App\Models\Helpdesk\Ticket::where('ticket_no', $this->linkTicketNo)->first();
+
+        if (! $targetTicket) {
+            $this->addError('linkTicketNo', 'Ticket not found.');
+
+            return;
+        }
+
+        if ($targetTicket->id === $this->ticket->id) {
+            $this->addError('linkTicketNo', 'Cannot link a ticket to itself.');
+
+            return;
+        }
+
+        // Check for existing link
+        $exists = \App\Models\Helpdesk\TicketLink::where('ticket_id', $this->ticket->id)
+            ->where('linked_ticket_id', $targetTicket->id)
+            ->where('link_type', $this->linkType)
+            ->exists();
+
+        if ($exists) {
+            $this->addError('linkTicketNo', 'This link already exists.');
+
+            return;
+        }
+
+        \App\Models\Helpdesk\TicketLink::create([
+            'ticket_id' => $this->ticket->id,
+            'linked_ticket_id' => $targetTicket->id,
+            'link_type' => $this->linkType,
+            'created_by' => Auth::id(),
+        ]);
+
+        $this->showLinkModal = false;
+        session()->flash('success', 'Ticket linked successfully.');
+    }
+
+    public function removeLink(int $linkId): void
+    {
+        if (! $this->isAgent) {
+            return;
+        }
+
+        \App\Models\Helpdesk\TicketLink::where('id', $linkId)
+            ->where(function ($q) {
+                $q->where('ticket_id', $this->ticket->id)
+                    ->orWhere('linked_ticket_id', $this->ticket->id);
+            })
+            ->delete();
+
+        session()->flash('success', 'Link removed.');
+    }
+
+    public function getLinkedTicketsProperty()
+    {
+        return $this->ticket->linked_tickets;
+    }
+
+    public function getLinkTypesProperty(): array
+    {
+        return \App\Models\Helpdesk\TicketLink::LINK_TYPES;
+    }
+
     public function getCommentsProperty()
     {
         return TicketComment::with('user:id,name')
@@ -348,6 +580,15 @@ class TicketShow extends Component
 
     public function render()
     {
+        // Pre-load canned responses and macros to avoid N+1 queries in view
+        $cannedResponses = $this->isAgent
+            ? \App\Models\Helpdesk\CannedResponse::orderBy('title')->get(['id', 'title', 'body'])
+            : collect();
+
+        $macros = $this->isAgent
+            ? \App\Models\Helpdesk\TicketMacro::where('is_active', true)->orderBy('name')->get(['id', 'name'])
+            : collect();
+
         return view('livewire.i-t-s-s.ticket-show', [
             'agents' => $this->agents,
             'comments' => $this->comments,
@@ -356,6 +597,15 @@ class TicketShow extends Component
             'escalation' => $this->escalationNotice,
             'activity' => $this->activity,
             'latestCsat' => $this->latestCsat,
+            'cannedResponses' => $cannedResponses,
+            'macros' => $macros,
+            // Phase 3: Tags, Time Tracking, Links
+            'tags' => $this->ticket->tags ?? collect(),
+            'availableTags' => $this->availableTags,
+            'timeEntries' => $this->timeEntries,
+            'totalTimeMinutes' => $this->ticket->total_time_minutes,
+            'linkedTickets' => $this->linkedTickets,
+            'linkTypes' => $this->linkTypes,
         ]);
     }
 

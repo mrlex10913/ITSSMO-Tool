@@ -116,7 +116,7 @@
                                 <label class="text-xs text-gray-500">Canned response</label>
                                 <select class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" x-data x-on:change="if ($event.target.value) { $wire.set('commentBody', $event.target.value) }">
                                     <option value="">— Select —</option>
-                                    @foreach(\App\Models\Helpdesk\CannedResponse::orderBy('title')->get(['id','title','body']) as $cr)
+                                    @foreach($cannedResponses as $cr)
                                         <option value="{{ $cr->body }}">{{ $cr->title }}</option>
                                     @endforeach
                                 </select>
@@ -125,7 +125,7 @@
                                 <label class="text-xs text-gray-500">Macros</label>
                                 <select class="w-40 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" x-data x-on:change="$wire.call('applyMacro', $event.target.value); $event.target.selectedIndex=0;">
                                     <option value="">Run macro…</option>
-                                    @foreach(\App\Models\Helpdesk\TicketMacro::where('is_active', true)->orderBy('name')->get(['id','name']) as $m)
+                                    @foreach($macros as $m)
                                         <option value="{{ $m->id }}">{{ $m->name }}</option>
                                     @endforeach
                                 </select>
@@ -430,6 +430,108 @@
                     </dl>
                 </div>
 
+                {{-- Tags Section --}}
+                @if($isAgent)
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-md font-medium text-gray-900">Tags</h3>
+                        <button wire:click="openTagModal" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <span class="material-symbols-sharp text-sm align-middle">add</span> Manage
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        @forelse($tags as $tag)
+                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium" style="background-color: {{ $tag->color }}20; color: {{ $tag->color }};">
+                                {{ $tag->name }}
+                                <button wire:click="removeTag({{ $tag->id }})" class="hover:opacity-70" title="Remove tag">
+                                    <span class="material-symbols-sharp text-xs">close</span>
+                                </button>
+                            </span>
+                        @empty
+                            <span class="text-sm text-gray-400">No tags</span>
+                        @endforelse
+                    </div>
+                </div>
+                @endif
+
+                {{-- Time Tracking Section --}}
+                @if($isAgent)
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-md font-medium text-gray-900">Time Tracked</h3>
+                        <button wire:click="openTimeModal" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <span class="material-symbols-sharp text-sm align-middle">add</span> Log Time
+                        </button>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-900 mb-3">
+                        @php
+                            $totalMins = $totalTimeMinutes ?? 0;
+                            $hours = intdiv($totalMins, 60);
+                            $mins = $totalMins % 60;
+                        @endphp
+                        {{ $hours > 0 ? $hours . 'h ' : '' }}{{ $mins }}m
+                    </div>
+                    @if(($timeEntries ?? collect())->isNotEmpty())
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                            @foreach($timeEntries as $entry)
+                                <div class="flex items-center justify-between text-sm border-b pb-2">
+                                    <div>
+                                        <div class="font-medium text-gray-800">{{ $entry->formatted_duration }}</div>
+                                        <div class="text-xs text-gray-500">
+                                            {{ $entry->user->name ?? 'Unknown' }} • {{ $entry->work_date?->format('M j') }}
+                                            @if($entry->is_billable) <span class="text-green-600">• Billable</span> @endif
+                                        </div>
+                                        @if($entry->description)
+                                            <div class="text-xs text-gray-600 mt-1">{{ Str::limit($entry->description, 50) }}</div>
+                                        @endif
+                                    </div>
+                                    <button wire:click="deleteTimeEntry({{ $entry->id }})" class="text-red-500 hover:text-red-700" title="Delete">
+                                        <span class="material-symbols-sharp text-sm">delete</span>
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-sm text-gray-400">No time logged yet</div>
+                    @endif
+                </div>
+                @endif
+
+                {{-- Linked Tickets Section --}}
+                @if($isAgent)
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-md font-medium text-gray-900">Linked Tickets</h3>
+                        <button wire:click="openLinkModal" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <span class="material-symbols-sharp text-sm align-middle">add</span> Link
+                        </button>
+                    </div>
+                    @if(($linkedTickets ?? collect())->isNotEmpty())
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                            @foreach($linkedTickets as $link)
+                                <div class="flex items-center justify-between text-sm border-b pb-2">
+                                    <div>
+                                        <a href="{{ route('itss.ticket.show', ['ticket' => $link['ticket']->id]) }}" class="text-blue-600 hover:underline font-medium">
+                                            {{ $link['ticket']->ticket_no }}
+                                        </a>
+                                        <span class="text-xs text-gray-500 ml-1">({{ $link['link_label'] }})</span>
+                                        <div class="text-xs text-gray-600">{{ Str::limit($link['ticket']->subject, 40) }}</div>
+                                        <span class="text-xs px-1.5 py-0.5 rounded {{ $link['ticket']->status === 'closed' ? 'bg-gray-100 text-gray-600' : ($link['ticket']->status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700') }}">
+                                            {{ ucfirst(str_replace('_', ' ', $link['ticket']->status)) }}
+                                        </span>
+                                    </div>
+                                    <button wire:click="removeLink({{ $link['link_id'] }})" class="text-red-500 hover:text-red-700" title="Remove link">
+                                        <span class="material-symbols-sharp text-sm">link_off</span>
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-sm text-gray-400">No linked tickets</div>
+                    @endif
+                </div>
+                @endif
+
                 @if($isAgent)
                 <div class="bg-white rounded-lg shadow p-6">
                     <h3 class="text-md font-medium text-gray-900 mb-4">Update</h3>
@@ -480,4 +582,134 @@
             </div>
         </div>
     </div>
+
+    {{-- Tag Management Modal --}}
+    @if($showTagModal)
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" wire:click.self="$set('showTagModal', false)">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Manage Tags</h3>
+                <button wire:click="$set('showTagModal', false)" class="text-gray-400 hover:text-gray-600">
+                    <span class="material-symbols-sharp">close</span>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                {{-- Quick Create Tag --}}
+                <div class="flex gap-2">
+                    <input type="text" wire:model.defer="newTagName" placeholder="Create new tag..." class="flex-1 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                    <button wire:click="createQuickTag" class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">Add</button>
+                </div>
+                @error('newTagName') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+
+                {{-- Available Tags --}}
+                <div class="border rounded-md p-3 max-h-48 overflow-y-auto">
+                    <div class="text-xs text-gray-500 mb-2">Select tags:</div>
+                    @forelse($availableTags as $tag)
+                        <label class="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 rounded px-1">
+                            <input type="checkbox" wire:model="selectedTagIds" value="{{ $tag->id }}" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: {{ $tag->color }}20; color: {{ $tag->color }};">
+                                {{ $tag->name }}
+                            </span>
+                        </label>
+                    @empty
+                        <div class="text-sm text-gray-400">No tags available. Create one above.</div>
+                    @endforelse
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button wire:click="$set('showTagModal', false)" class="px-4 py-2 text-gray-700 border rounded-md hover:bg-gray-50">Cancel</button>
+                    <button wire:click="saveTags" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save Tags</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Time Entry Modal --}}
+    @if($showTimeModal)
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" wire:click.self="$set('showTimeModal', false)">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Log Time</h3>
+                <button wire:click="$set('showTimeModal', false)" class="text-gray-400 hover:text-gray-600">
+                    <span class="material-symbols-sharp">close</span>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+                    <input type="number" wire:model.defer="timeEntryMinutes" min="1" max="1440" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" />
+                    <div class="text-xs text-gray-500 mt-1">Quick: 
+                        <button type="button" wire:click="$set('timeEntryMinutes', 15)" class="text-blue-600 hover:underline">15m</button> |
+                        <button type="button" wire:click="$set('timeEntryMinutes', 30)" class="text-blue-600 hover:underline">30m</button> |
+                        <button type="button" wire:click="$set('timeEntryMinutes', 60)" class="text-blue-600 hover:underline">1h</button> |
+                        <button type="button" wire:click="$set('timeEntryMinutes', 120)" class="text-blue-600 hover:underline">2h</button>
+                    </div>
+                    @error('timeEntryMinutes') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Work Date</label>
+                    <input type="date" wire:model.defer="timeEntryDate" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" />
+                    @error('timeEntryDate') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                    <textarea wire:model.defer="timeEntryDescription" rows="2" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="What did you work on?"></textarea>
+                    @error('timeEntryDescription') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" wire:model.defer="timeEntryBillable" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span class="text-sm text-gray-700">Billable time</span>
+                </label>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button wire:click="$set('showTimeModal', false)" class="px-4 py-2 text-gray-700 border rounded-md hover:bg-gray-50">Cancel</button>
+                    <button wire:click="saveTimeEntry" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Log Time</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Link Ticket Modal --}}
+    @if($showLinkModal)
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" wire:click.self="$set('showLinkModal', false)">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Link Ticket</h3>
+                <button wire:click="$set('showLinkModal', false)" class="text-gray-400 hover:text-gray-600">
+                    <span class="material-symbols-sharp">close</span>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ticket Number</label>
+                    <input type="text" wire:model.defer="linkTicketNo" placeholder="e.g., TKT-00001234" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" />
+                    @error('linkTicketNo') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
+                    <select wire:model.defer="linkType" class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        @foreach($linkTypes as $type => $label)
+                            <option value="{{ $type }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('linkType') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button wire:click="$set('showLinkModal', false)" class="px-4 py-2 text-gray-700 border rounded-md hover:bg-gray-50">Cancel</button>
+                    <button wire:click="createLink" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Link Ticket</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
