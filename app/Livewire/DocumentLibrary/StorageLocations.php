@@ -99,10 +99,10 @@ class StorageLocations extends Component
         $this->resetForm();
     }
 
-    public function edit(int $id): void
+    public function edit($id): void
     {
-        $location = StorageLocation::findOrFail($id);
-        $this->editingId = $id;
+        $location = StorageLocation::findOrFail((int) $id);
+        $this->editingId = (int) $id;
         $this->name = $location->name;
         $this->disk = $location->disk;
         $this->path_prefix = $location->path_prefix;
@@ -177,9 +177,9 @@ class StorageLocations extends Component
         $this->closeModal();
     }
 
-    public function delete(int $id): void
+    public function delete($id): void
     {
-        $location = StorageLocation::findOrFail($id);
+        $location = StorageLocation::findOrFail((int) $id);
 
         // Check if location has documents
         $documentCount = $location->documents()->count();
@@ -193,16 +193,16 @@ class StorageLocations extends Component
         session()->flash('success', 'Storage location deleted.');
     }
 
-    public function setDefault(int $id): void
+    public function setDefault($id): void
     {
-        $location = StorageLocation::findOrFail($id);
+        $location = StorageLocation::findOrFail((int) $id);
         $location->setAsDefault();
         session()->flash('success', "{$location->name} is now the default storage location.");
     }
 
-    public function recalculateSpace(int $id): void
+    public function recalculateSpace($id): void
     {
-        $location = StorageLocation::findOrFail($id);
+        $location = StorageLocation::findOrFail((int) $id);
         $newSize = $location->recalculateUsedSpace();
         session()->flash('success', "Recalculated: {$location->formatted_used_size} used.");
     }
@@ -211,9 +211,9 @@ class StorageLocations extends Component
     // MIGRATION METHODS
     // =========================================================================
 
-    public function openMigrationModal(?int $sourceId = null): void
+    public function openMigrationModal($sourceId = null): void
     {
-        $this->migrationSourceId = $sourceId;
+        $this->migrationSourceId = $sourceId ? (int) $sourceId : null;
         $this->migrationDestinationId = null;
         $this->migrationDocumentIds = [];
         $this->migrationResults = null;

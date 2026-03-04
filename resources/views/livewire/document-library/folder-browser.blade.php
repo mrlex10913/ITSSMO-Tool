@@ -196,7 +196,7 @@
                     <!-- Files -->
                     @foreach($files as $file)
                     <div class="group relative">
-                        <a href="{{ route('document-library.show', $file) }}"
+                        <a href="{{ route('document-library.show', $file) }}?from=folder{{ $currentFolderId ? '&folderId='.$currentFolderId : '' }}"
                             class="block p-4 rounded-xl border-2 border-transparent hover:border-indigo-200 hover:bg-indigo-50 transition-all">
                             <div class="flex flex-col items-center text-center">
                                 <div class="w-16 h-16 rounded-xl flex items-center justify-center mb-3
@@ -242,7 +242,7 @@
                                 </button>
                                 <div x-show="open" @click.away="open = false"
                                     class="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                                    <a href="{{ route('document-library.show', $file) }}"
+                                    <a href="{{ route('document-library.show', $file) }}?from=folder{{ $currentFolderId ? '&folderId='.$currentFolderId : '' }}"
                                         class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center">
                                         <span class="material-symbols-sharp text-sm mr-2">visibility</span>
                                         View
@@ -369,7 +369,7 @@
                             @foreach($files as $file)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <a href="{{ route('document-library.show', $file) }}" class="flex items-center">
+                                    <a href="{{ route('document-library.show', $file) }}?from=folder{{ $currentFolderId ? '&folderId='.$currentFolderId : '' }}" class="flex items-center">
                                         <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3
                                             @if(Str::contains($file->mime_type, 'pdf')) bg-red-100
                                             @elseif(Str::contains($file->mime_type, 'word')) bg-blue-100
@@ -413,7 +413,7 @@
                                         </button>
                                         <div x-show="open" @click.away="open = false"
                                             class="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                                            <a href="{{ route('document-library.show', $file) }}"
+                                            <a href="{{ route('document-library.show', $file) }}?from=folder{{ $currentFolderId ? '&folderId='.$currentFolderId : '' }}"
                                                 class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
                                                 <span class="material-symbols-sharp text-sm mr-2">visibility</span>
                                                 View

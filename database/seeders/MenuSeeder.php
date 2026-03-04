@@ -80,7 +80,7 @@ class MenuSeeder extends Seeder
         // DOCUMENT LIBRARY (Shared across departments)
         // ===================================================================
         $attach(['label' => 'Document Library', 'route' => 'document-library.dashboard', 'icon' => 'folder_managed', 'sort_order' => 20, 'section' => 'Documents'], ['itss', 'pamo', 'bfo', 'administrator', 'developer']);
-        $attach(['label' => 'Upload Document', 'route' => 'document-library.upload', 'icon' => 'upload_file', 'sort_order' => 21, 'section' => 'Documents'], ['itss', 'pamo', 'bfo', 'administrator', 'developer']);
+        // NOTE: Upload Document menu removed - upload is accessible via Dashboard and My Drive buttons
         $attach(['label' => 'Search Documents', 'route' => 'document-library.search', 'icon' => 'search', 'sort_order' => 22, 'section' => 'Documents'], ['itss', 'pamo', 'bfo', 'administrator', 'developer']);
         $attach(['label' => 'Storage Locations', 'route' => 'document-library.storage-locations', 'icon' => 'storage', 'sort_order' => 23, 'section' => 'Documents'], ['administrator', 'developer']);
 

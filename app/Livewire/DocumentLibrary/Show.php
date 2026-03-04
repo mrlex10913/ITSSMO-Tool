@@ -19,6 +19,13 @@ class Show extends Component
 
     public MasterFile $file;
 
+    // Navigation tracking - where to return when clicking back
+    public $from = 'search'; // 'search', 'folder', 'dashboard'
+
+    public $folderId = null;
+
+    protected $queryString = ['from', 'folderId'];
+
     // Edit modal properties
     public $showEditModal = false;
 

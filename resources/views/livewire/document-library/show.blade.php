@@ -48,7 +48,14 @@
     <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
         <div class="flex-1">
             <div class="flex items-center space-x-3 mb-2">
-                <a href="{{ route('document-library.search') }}" class="text-blue-600 hover:text-blue-800">
+                @php
+                    $backUrl = match($from) {
+                        'folder' => $folderId ? route('document-library.folders', $folderId) : route('document-library.folders'),
+                        'dashboard' => route('document-library.dashboard'),
+                        default => route('document-library.search'),
+                    };
+                @endphp
+                <a href="{{ $backUrl }}" class="text-blue-600 hover:text-blue-800">
                     <span class="material-symbols-sharp">arrow_back</span>
                 </a>
                 <div class="flex items-center space-x-2">

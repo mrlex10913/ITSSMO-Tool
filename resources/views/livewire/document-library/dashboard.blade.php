@@ -168,7 +168,7 @@
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="text-xs text-gray-500">{{ $file->created_at->diffForHumans() }}</span>
-                            <a href="{{ route('document-library.show', $file) }}" class="text-blue-600 hover:text-blue-800">
+                            <a href="{{ route('document-library.show', $file) }}?from=dashboard" class="text-blue-600 hover:text-blue-800">
                                 <span class="material-symbols-sharp text-sm">visibility</span>
                             </a>
                         </div>
