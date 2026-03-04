@@ -9,10 +9,67 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+/**
+ * MenusControl - Central Menu Management Component
+ *
+ * This component manages all navigation menus across departments.
+ * Menus are assigned to roles (departments) and displayed in the sidebar.
+ *
+ * ============================================================================
+ * DEPARTMENT SECTIONS (Filter by 'section' field in database)
+ * ============================================================================
+ *
+ * DASHBOARD    - Main entry points for each department
+ *                - Main Dashboard (administrator, developer)
+ *                - ITSS Dashboard (itss)
+ *                - PAMO Dashboard (pamo)
+ *                - BFO Dashboard (bfo)
+ *
+ * PAMO         - Property and Asset Management Office
+ *                - Inventory
+ *                - Barcode Generator
+ *                - Transactions
+ *                - Assets Tracker
+ *                - Master List
+ *
+ * BFO          - Budget and Finance Office
+ *                - Cheque Management
+ *                - Cheque List
+ *
+ * ITSS         - IT Services and Solutions
+ *                - SLA Policies
+ *                - SLA Insights
+ *                - Escalations
+ *                - Canned Responses
+ *                - Macros
+ *                - Assignment Rules
+ *                - SLA Escalations
+ *                - ISO Audit Report
+ *
+ * DOCUMENTS    - Document Library (shared across all departments)
+ *                - Document Library Dashboard
+ *                - Upload Document
+ *                - Search Documents
+ *
+ * ADMIN        - Administrator & Developer only
+ *                - Control Panel
+ *                - Menu Controller
+ *                - Roles
+ *
+ * ============================================================================
+ * USAGE NOTES
+ * ============================================================================
+ * - Use 'departmentFilter' property to filter by role slug (pamo, bfo, itss)
+ * - Use 'groupByRole' to view menus organized by department
+ * - Each menu can be assigned to multiple roles/departments
+ */
 class MenusControl extends Component
 {
     use WithPagination;
 
+    // =========================================================================
+    // SEARCH & PAGINATION PROPERTIES
+    // =========================================================================
     public string $search = '';
 
     public int $perPage = 10;
@@ -20,7 +77,9 @@ class MenusControl extends Component
     /** @var array<int> */
     public array $selected = [];
 
-    // Form fields
+    // =========================================================================
+    // MENU FORM FIELDS
+    // =========================================================================
     public ?int $menuId = null;
 
     public string $label = '';
@@ -40,24 +99,39 @@ class MenusControl extends Component
     /** @var array<int> */
     public array $role_ids = [];
 
+    // =========================================================================
+    // MODAL STATE
+    // =========================================================================
     public bool $showCreate = false;
 
     public bool $showEdit = false;
 
+    // =========================================================================
+    // BULK OPERATIONS
+    // =========================================================================
     /** @var array<int> */
     public array $bulk_role_ids = [];
 
     /** @var array<int> */
     public array $bulk_user_ids = [];
 
-    public ?string $departmentFilter = null; // 'pamo','bfo','itss', etc.
+    // =========================================================================
+    // FILTERING & GROUPING
+    // =========================================================================
+    /** Filter by department/role slug: 'pamo', 'bfo', 'itss', etc. */
+    public ?string $departmentFilter = null;
 
-    public bool $groupByRole = false; // toggle grouped view
+    /** Toggle grouped view by role */
+    public bool $groupByRole = false;
 
     public function mount(): void
     {
         $this->ensureAuthorized();
     }
+
+    // =========================================================================
+    // VALIDATION RULES
+    // =========================================================================
 
     protected function rules(): array
     {
@@ -79,6 +153,10 @@ class MenusControl extends Component
     {
         // no-op: keep explicit
     }
+
+    // =========================================================================
+    // CRUD OPERATIONS (Create, Read, Update, Delete)
+    // =========================================================================
 
     public function openCreate(): void
     {
@@ -174,6 +252,10 @@ class MenusControl extends Component
         $this->clearMenuCachesForRoleIds($roleIds);
     }
 
+    // =========================================================================
+    // BULK OPERATIONS (Multiple menu actions)
+    // =========================================================================
+
     public function bulkSetActive(bool $state): void
     {
         $this->ensureAuthorized();
@@ -252,6 +334,10 @@ class MenusControl extends Component
         $this->dispatch('success', message: 'Users removed.');
     }
 
+    // =========================================================================
+    // SORTING & REORDERING
+    // =========================================================================
+
     public function setIcon(string $icon): void
     {
         $this->icon = $icon;
@@ -276,6 +362,10 @@ class MenusControl extends Component
         $this->dispatch('success', message: 'Order updated');
     }
 
+    // =========================================================================
+    // FORM & STATE RESET
+    // =========================================================================
+
     protected function resetForm(): void
     {
         $this->menuId = null;
@@ -289,6 +379,10 @@ class MenusControl extends Component
         $this->role_ids = [];
         $this->selected = [];
     }
+
+    // =========================================================================
+    // CACHE MANAGEMENT (Clears menu caches when items change)
+    // =========================================================================
 
     protected function clearMenuCachesForMenuId(int $menuId): void
     {
@@ -325,6 +419,10 @@ class MenusControl extends Component
         }
     }
 
+    // =========================================================================
+    // AUTHORIZATION (Restricts access to admin, developer, itss, pamo, bfo)
+    // =========================================================================
+
     protected function ensureAuthorized(): void
     {
         $user = Auth::user();
@@ -338,7 +436,9 @@ class MenusControl extends Component
         }
     }
 
-    // Selection helpers
+    // =========================================================================
+    // SELECTION HELPERS (For bulk operations)
+    // =========================================================================
     public function getAreAllPageSelectedProperty(): bool
     {
         $pageIds = $this->menus->pluck('id')->map(fn ($i) => (int) $i)->all();
@@ -371,11 +471,23 @@ class MenusControl extends Component
         $this->selected = [];
     }
 
+    // =========================================================================
+    // RENDER
+    // =========================================================================
+
     public function render()
     {
         return view('livewire.control-panel.menus-control');
     }
 
+    // =========================================================================
+    // COMPUTED PROPERTIES (Data for views)
+    // =========================================================================
+
+    /**
+     * Get paginated list of menus with optional filtering.
+     * Use 'departmentFilter' to filter by department (pamo, bfo, itss, etc.)
+     */
     public function getMenusProperty()
     {
         $query = Menu::query()
@@ -401,6 +513,13 @@ class MenusControl extends Component
         return $query->paginate($this->perPage);
     }
 
+    /**
+     * Get menus grouped by department/role and section.
+     * Useful for viewing the menu structure organized by department:
+     * - PAMO: Inventory, Barcode, Transactions, etc.
+     * - BFO: Cheque Management, Cheque List, etc.
+     * - ITSS: SLA tools, Helpdesk tools, etc.
+     */
     public function getGroupedMenusByRoleProperty(): array
     {
         // Build a non-paginated list filtered the same way, then group by role slug and section
@@ -455,17 +574,22 @@ class MenusControl extends Component
         return $groups;
     }
 
+    /** Get all available roles/departments for assignment */
     public function getRolesProperty()
     {
         return Roles::orderBy('name')->get(['id', 'name']);
     }
 
+    /** Get users for bulk user assignment */
     public function getUsersProperty()
     {
         return \App\Models\User::orderBy('name')->limit(100)->get(['id', 'name', 'email']);
     }
 
-    // Reset pagination when filters change
+    // =========================================================================
+    // PAGINATION HOOKS (Reset page when filters change)
+    // =========================================================================
+
     public function updatedSearch(): void
     {
         $this->resetPage();

@@ -12,7 +12,7 @@ class MasterFile extends Model
     protected $table = 'documents';
 
     protected $fillable = [
-        'category_id', 'folder_id', 'title', 'description', 'document_code',
+        'category_id', 'folder_id', 'storage_location_id', 'title', 'description', 'document_code',
         'file_path', 'original_filename', 'file_size', 'mime_type',
         'version', 'parent_file_id', 'status', 'effective_date',
         'expiry_date', 'review_date', 'tags', 'revision_notes',
@@ -41,6 +41,11 @@ class MasterFile extends Model
     public function folder()
     {
         return $this->belongsTo(DocumentFolder::class, 'folder_id');
+    }
+
+    public function storageLocation()
+    {
+        return $this->belongsTo(StorageLocation::class, 'storage_location_id');
     }
 
     public function uploader()
@@ -113,9 +118,69 @@ class MasterFile extends Model
         return $this->hasMany(MasterFileAccessLog::class, 'file_id');
     }
 
+    // =========================================================================
+    // STORAGE LOCATION HELPERS
+    // =========================================================================
+
+    /**
+     * Get the Storage disk for this file
+     */
+    public function getStorageDisk()
+    {
+        if ($this->storageLocation) {
+            return $this->storageLocation->disk();
+        }
+
+        // Fallback to public disk for legacy files
+        return Storage::disk('public');
+    }
+
+    /**
+     * Get the disk name for this file
+     */
+    public function getStorageDiskName(): string
+    {
+        if ($this->storageLocation) {
+            return $this->storageLocation->disk;
+        }
+
+        return 'public';
+    }
+
     public function getFileUrlAttribute(): string
     {
-        return Storage::url($this->file_path);
+        $disk = $this->getStorageDisk();
+
+        return $disk->url($this->file_path);
+    }
+
+    /**
+     * Check if the physical file exists
+     */
+    public function fileExists(): bool
+    {
+        return $this->getStorageDisk()->exists($this->file_path);
+    }
+
+    /**
+     * Get the full file path
+     */
+    public function getFullPath(): string
+    {
+        return $this->getStorageDisk()->path($this->file_path);
+    }
+
+    /**
+     * Get file contents
+     */
+    public function getFileContents(): ?string
+    {
+        $disk = $this->getStorageDisk();
+        if ($disk->exists($this->file_path)) {
+            return $disk->get($this->file_path);
+        }
+
+        return null;
     }
 
     public function getFormattedFileSizeAttribute(): string

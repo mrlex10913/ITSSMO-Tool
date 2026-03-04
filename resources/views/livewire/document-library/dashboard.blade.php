@@ -209,6 +209,10 @@
                         <span class="material-symbols-sharp text-sm mr-2">category</span>
                         Manage Categories
                     </a>
+                    <a href="{{ route('document-library.storage-locations') }}" class="w-full inline-flex items-center justify-center px-4 py-2 border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors">
+                        <span class="material-symbols-sharp text-sm mr-2">storage</span>
+                        Storage Locations
+                    </a>
                     @endif
                     <a href="{{ route('document-library.search') }}" class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                         <span class="material-symbols-sharp text-sm mr-2">search</span>

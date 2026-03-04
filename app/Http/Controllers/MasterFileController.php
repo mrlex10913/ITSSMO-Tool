@@ -27,8 +27,11 @@ class MasterFileController extends Controller
         // Increment download count
         $file->increment('download_count');
 
+        // Get the appropriate storage disk for this file
+        $disk = $file->getStorageDisk();
+
         // Return file download
-        return Storage::disk('public')->download($file->file_path, $file->original_filename);
+        return $disk->download($file->file_path, $file->original_filename);
     }
 
     public function preview(MasterFile $file)
@@ -43,8 +46,8 @@ class MasterFileController extends Controller
         // Log the preview as a view action
         $file->logAccess('view');
 
-        // Get the file path
-        $path = Storage::disk('public')->path($file->file_path);
+        // Get the file path using the document's storage location
+        $path = $file->getFullPath();
 
         if (! file_exists($path)) {
             abort(404, 'File not found.');
@@ -115,8 +118,8 @@ class MasterFileController extends Controller
             abort(500, 'Could not create ZIP file.');
         }
 
-        // Add the main document file
-        $mainFilePath = Storage::disk('public')->path($file->file_path);
+        // Add the main document file using its storage location
+        $mainFilePath = $file->getFullPath();
         if (file_exists($mainFilePath)) {
             $zip->addFile($mainFilePath, $file->original_filename);
         }
@@ -125,6 +128,7 @@ class MasterFileController extends Controller
         if ($attachments->isNotEmpty()) {
             $zip->addEmptyDir('Attachments');
             foreach ($attachments as $attachment) {
+                // Attachments still use public disk for now
                 $attachmentPath = Storage::disk('public')->path($attachment->file_path);
                 if (file_exists($attachmentPath)) {
                     $zip->addFile($attachmentPath, 'Attachments/'.$attachment->original_filename);

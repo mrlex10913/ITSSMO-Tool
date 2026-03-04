@@ -174,6 +174,7 @@ Route::middleware([
     Route::get('/dashboard', DocumentLibraryDashboard::class)->name('dashboard');
     Route::get('/folders/{folderId?}', \App\Livewire\DocumentLibrary\FolderBrowser::class)->name('folders');
     Route::get('/categories', \App\Livewire\DocumentLibrary\Categories::class)->name('categories');
+    Route::get('/storage-locations', \App\Livewire\DocumentLibrary\StorageLocations::class)->name('storage-locations');
     Route::get('/upload', \App\Livewire\DocumentLibrary\Upload::class)->name('upload');
     Route::get('/upload/{parent_id}', \App\Livewire\DocumentLibrary\Upload::class)->name('upload-version');
     Route::get('/search', \App\Livewire\DocumentLibrary\Search::class)->name('search');

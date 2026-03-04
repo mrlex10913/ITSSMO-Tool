@@ -5,6 +5,7 @@ namespace App\Livewire\DocumentLibrary;
 use App\Models\DocumentLibrary\DocumentFolder;
 use App\Models\DocumentLibrary\MasterFile;
 use App\Models\DocumentLibrary\MasterFileCategory;
+use App\Models\DocumentLibrary\StorageLocation;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -313,19 +314,36 @@ class Upload extends Component
         $this->validate();
 
         try {
-            // Store file
-            $filePath = $this->file->store('master-files/'.date('Y/m'), 'public');
+            // Get file size for storage location selection
+            $fileSize = $this->file->getSize();
+
+            // Get the appropriate storage location (with enough space)
+            $storageLocation = StorageLocation::getAvailableForSize($fileSize);
+
+            // Store file in the appropriate location
+            if ($storageLocation) {
+                $filePath = $storageLocation->storeFile($this->file, 'master-files/'.date('Y/m'));
+                $storageLocationId = $storageLocation->id;
+
+                // Update storage usage
+                $storageLocation->addUsedSpace($fileSize);
+            } else {
+                // Fallback to public disk if no storage location configured
+                $filePath = $this->file->store('master-files/'.date('Y/m'), 'public');
+                $storageLocationId = null;
+            }
 
             // Process tags
             $tags = $this->tags ? array_map('trim', explode(',', $this->tags)) : [];
 
             $data = [
                 'category_id' => $this->category_id,
+                'storage_location_id' => $storageLocationId,
                 'title' => $this->title,
                 'description' => $this->description,
                 'file_path' => $filePath,
                 'original_filename' => $this->file->getClientOriginalName(),
-                'file_size' => $this->file->getSize(),
+                'file_size' => $fileSize,
                 'mime_type' => $this->file->getMimeType(),
                 'status' => 'active',
                 'effective_date' => $this->effective_date ?: null,
