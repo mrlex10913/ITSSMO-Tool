@@ -440,9 +440,17 @@ class Helpdesk extends Component
             }));
         }
 
+        // Fetch categories with open ticket counts for sidebar
+        $categories = TicketCategory::where('is_active', true)
+            ->withCount(['tickets as open_count' => function ($q) {
+                $q->whereIn('status', ['open', 'in_progress']);
+            }])
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return view('livewire.i-t-s-s.helpdesk', [
             'tickets' => $tickets,
-            'categories' => TicketCategory::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'categories' => $categories,
             'stats' => $this->stats,
             'escalationsByPolicy' => $escalationsByPolicy,
             'agents' => User::whereHas('role', function ($q) {
