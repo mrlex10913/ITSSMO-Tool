@@ -1,4 +1,42 @@
-<div wire:poll.5s="refreshData" x-data x-init="window.addEventListener('helpdesk-comment-created', (e) => { try { $wire.refreshData() } catch(_) {} })">
+<div wire:poll.5s="refreshData"
+    x-data="{
+        showCountdown: false,
+        countdown: 5,
+        startCountdown() {
+            this.showCountdown = true;
+            this.countdown = 5;
+            const timer = setInterval(() => {
+                this.countdown--;
+                if (this.countdown <= 0) {
+                    clearInterval(timer);
+                    window.location.href = '{{ route('itss.helpdesk') }}';
+                }
+            }, 1000);
+        }
+    }"
+    x-init="window.addEventListener('helpdesk-comment-created', (e) => { try { $wire.refreshData() } catch(_) {} })"
+    @ticket-closed.window="startCountdown()">
+
+    {{-- Ticket Closed Countdown Modal --}}
+    <div x-show="showCountdown" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-8">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <x-heroicon name="check-circle" class="w-10 h-10 text-emerald-600" />
+                </div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-2">Ticket Closed</h3>
+                <p class="text-sm text-slate-600 mb-6">This ticket has been closed successfully.</p>
+                <div class="text-4xl font-bold text-blue-600 mb-4" x-text="countdown"></div>
+                <p class="text-xs text-slate-500">Redirecting to helpdesk...</p>
+                <a href="{{ route('itss.helpdesk') }}" class="mt-4 inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    <x-heroicon name="arrow-left" class="w-4 h-4" />
+                    Go now
+                </a>
+            </div>
+        </div>
+    </div>
+
     <div class="px-4 sm:px-6 lg:px-8 py-6">
         {{-- Page Header --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -717,16 +755,26 @@
                             </select>
                             @error('newAssigneeId') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                         </div>
-                        <button wire:click="updateDetails" wire:loading.attr="disabled" wire:loading.class="opacity-75" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                            <span wire:loading.remove wire:target="updateDetails">Save Changes</span>
-                            <span wire:loading wire:target="updateDetails" class="inline-flex items-center gap-2">
-                                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Saving...
-                            </span>
-                        </button>
+
+                        @php $canSave = $ticket->verification_status === 'approved'; @endphp
+                        <div class="relative" @if(!$canSave) title="Ticket must be approved before making changes" @endif>
+                            <button wire:click="updateDetails" wire:loading.attr="disabled" wire:loading.class="opacity-75" {{ !$canSave ? 'disabled' : '' }} class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600">
+                                <span wire:loading.remove wire:target="updateDetails">Save Changes</span>
+                                <span wire:loading wire:target="updateDetails" class="inline-flex items-center gap-2">
+                                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Saving...
+                                </span>
+                            </button>
+                            @if(!$canSave)
+                                <p class="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                                    <x-heroicon name="exclamation-triangle" class="w-3.5 h-3.5" />
+                                    Approve the ticket first to enable updates
+                                </p>
+                            @endif
+                        </div>
 
                         @if($isAgent)
                             <div class="pt-4 border-t border-slate-100 mt-4">

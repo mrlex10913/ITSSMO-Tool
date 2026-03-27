@@ -173,7 +173,7 @@ class TicketShow extends Component
         $this->ticket->verified_at = now();
         $this->ticket->save();
         $this->ticket->load(['verifiedBy:id,name']);
-        session()->flash('success', 'Verification approved.');
+        flash()->success('Verification approved.');
     }
 
     public function rejectVerification(): void
@@ -186,7 +186,7 @@ class TicketShow extends Component
         $this->ticket->verified_at = now();
         $this->ticket->save();
         $this->ticket->load(['verifiedBy:id,name']);
-        session()->flash('success', 'Verification rejected.');
+        flash()->success('Verification rejected.');
     }
 
     public function updateDetails(): void
@@ -194,6 +194,14 @@ class TicketShow extends Component
         if (! $this->isAgent) {
             abort(403);
         }
+
+        // Prevent updates if ticket is not approved
+        if ($this->ticket->verification_status !== 'approved') {
+            flash()->error('Ticket must be approved before making changes.');
+
+            return;
+        }
+
         if (app()->runningUnitTests()) {
             Log::info('updateDetails called', [
                 'newStatus_before_validation' => $this->newStatus,
@@ -238,7 +246,12 @@ class TicketShow extends Component
             $this->ticket->save();
         }
         $this->ticket->load(['requester:id,name', 'assignee:id,name', 'category:id,name', 'attachments', 'departmentRef:id,name,slug']);
-        session()->flash('success', 'Ticket updated.');
+        flash()->success('Ticket updated.');
+
+        // If status changed to closed, trigger redirect countdown
+        if ($this->newStatus === 'closed') {
+            $this->dispatch('ticket-closed');
+        }
 
         // Broadcast change for admin tickets list
         try {

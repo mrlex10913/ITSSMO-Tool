@@ -260,7 +260,7 @@ class Helpdesk extends Component
         $verificationStatus = $this->requiresVerification() ? 'pending' : 'verified';
         $verificationMethod = null;
 
-        // Default type: incident (admins can change later if needed)
+        // Default to 'incident' - agent will classify as incident/request when reviewing
         $type = 'incident';
         $policy = SlaResolver::pickPolicy($type, $this->priority_new);
         $dueAt = SlaResolver::computeDueAt($policy?->resolve_mins);

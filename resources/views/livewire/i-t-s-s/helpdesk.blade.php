@@ -585,10 +585,10 @@
                             <select id="priority_new"
                                     wire:model.defer="priority_new"
                                     class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all">
-                                <option value="low">🟢 Low</option>
-                                <option value="medium">🟡 Medium</option>
-                                <option value="high">🟠 High</option>
-                                <option value="critical">🔴 Critical</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
                             </select>
                             @error('priority_new') <p class="text-sm text-red-600 mt-1.5 flex items-center gap-1"><x-heroicon name="exclamation-circle" class="w-4 h-4" />{{ $message }}</p> @enderror
                         </div>
