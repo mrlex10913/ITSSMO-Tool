@@ -49,6 +49,7 @@
                         <h1 class="text-xl font-semibold text-slate-800">{{ $ticket->ticket_no }}</h1>
                         @php
                             $statusColors = [
+                                'scheduled' => 'bg-purple-100 text-purple-700 ring-purple-600/20',
                                 'open' => 'bg-blue-100 text-blue-700 ring-blue-600/20',
                                 'in_progress' => 'bg-amber-100 text-amber-700 ring-amber-600/20',
                                 'resolved' => 'bg-emerald-100 text-emerald-700 ring-emerald-600/20',
@@ -257,6 +258,101 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Linked Equipment Section --}}
+                @if($isAgentCached)
+                <div class="bg-white rounded-xl border border-slate-200" x-data="{ open: true }">
+                    <div class="flex items-center justify-between p-5 pb-0" :class="{ 'pb-5': !open }">
+                        <button @click="open = !open" class="flex items-center gap-2 text-left">
+                            <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                <x-heroicon name="cube" class="w-4 h-4 text-slate-400" />
+                                Linked Equipment
+                                @if($ticket->borrowedItems->count() > 0)
+                                    <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full {{ $ticket->borrowedItems->where('status', 'Borrowed')->count() > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                        {{ $ticket->borrowedItems->count() }}
+                                    </span>
+                                @endif
+                            </h3>
+                            <x-heroicon name="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
+                        </button>
+                        <button wire:click="openReserveModal" class="text-emerald-600 hover:text-emerald-700 text-xs font-medium flex items-center gap-1">
+                            <x-heroicon name="plus" class="w-3.5 h-3.5" /> Add Borrow Item
+                        </button>
+                    </div>
+                    <div class="px-5 pb-5 pt-3" x-show="open" x-collapse>
+                    @if($ticket->borrowedItems->count() > 0)
+                        <div class="space-y-3 max-h-64 overflow-y-auto">
+                            @foreach($ticket->borrowedItems as $borrow)
+                                <div class="border border-slate-100 rounded-lg p-3 bg-slate-50/50">
+                                    {{-- Borrow Header --}}
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div>
+                                            <a href="{{ route('borrowers.logs') }}" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                                {{ $borrow->doc_tracker }}
+                                                <x-heroicon name="arrow-top-right-on-square" class="w-3 h-3" />
+                                            </a>
+                                            <div class="text-xs text-slate-500 mt-0.5">{{ $borrow->name }}</div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full {{ $borrow->status === 'Return' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                                @if($borrow->status === 'Return')
+                                                    <x-heroicon name="check-circle" class="w-3 h-3 mr-1" /> Returned
+                                                @else
+                                                    <x-heroicon name="clock" class="w-3 h-3 mr-1" /> Borrowed
+                                                @endif
+                                            </span>
+                                            @if($borrow->status !== 'Return')
+                                                <button wire:click="openReturnModal({{ $borrow->id }})" class="px-2 py-0.5 text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded transition-colors">
+                                                    Return
+                                                </button>
+                                            @endif
+                                            <button wire:click="unlinkEquipment({{ $borrow->id }})" class="p-1 text-slate-400 hover:text-red-500 rounded transition-colors" title="Unlink equipment">
+                                                <x-heroicon name="x-mark" class="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {{-- Items List --}}
+                                    @if($borrow->itemBorrow->count() > 0)
+                                        <div class="space-y-1.5 mt-2 pt-2 border-t border-slate-200">
+                                            @foreach($borrow->itemBorrow as $item)
+                                                <div class="flex items-center gap-2 text-xs">
+                                                    <x-heroicon name="cube" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                                                    <span class="text-slate-700">
+                                                        {{ $item->assetCategory?->name ?? $item->brand ?? 'Unknown Item' }}
+                                                        @if($item->serial)
+                                                            <span class="text-slate-400">({{ $item->serial }})</span>
+                                                        @endif
+                                                        @if($item->quantity && $item->quantity > 1)
+                                                            <span class="text-slate-500">× {{ $item->quantity }}</span>
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    {{-- Dates --}}
+                                    <div class="flex items-center gap-3 mt-2 pt-2 border-t border-slate-200 text-xs text-slate-500">
+                                        <span class="flex items-center gap-1">
+                                            <x-heroicon name="calendar" class="w-3.5 h-3.5" />
+                                            {{ $borrow->date_to_borrow ?? 'N/A' }}
+                                        </span>
+                                        <span class="text-slate-300">→</span>
+                                        <span class="flex items-center gap-1">
+                                            <x-heroicon name="calendar" class="w-3.5 h-3.5" />
+                                            {{ $borrow->date_to_return ?? 'N/A' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-sm text-slate-400 text-center py-2">No equipment linked to this ticket</div>
+                    @endif
+                    </div>
+                </div>
+                @endif
 
                 {{-- Activity Card --}}
                 <div class="bg-white rounded-xl border border-slate-200" x-data="{ open: false }">
@@ -474,6 +570,123 @@
 
             {{-- Sidebar --}}
             <div class="space-y-5">
+                {{-- Update Section (moved to top for visibility) --}}
+                @if($isAgent)
+                <div class="bg-white rounded-xl border border-slate-200 p-5">
+                    <h3 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                        <x-heroicon name="pencil-square" class="w-4 h-4 text-slate-400" />
+                        Update Ticket
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-slate-700 mb-1.5">Status</label>
+                            <select id="status" class="w-full text-sm border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" wire:model.defer="newStatus">
+                                @foreach($statuses as $s)
+                                    <option value="{{ $s }}">{{ \Illuminate\Support\Str::of($s)->replace('_',' ')->title() }}</option>
+                                @endforeach
+                            </select>
+                            @error('newStatus') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="type" class="block text-sm font-medium text-slate-700 mb-1.5">Type</label>
+                            <select id="type" class="w-full text-sm border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" wire:model.defer="newType">
+                                <option value="incident">Incident</option>
+                                <option value="request">Request</option>
+                            </select>
+                            @error('newType') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="assignee" class="block text-sm font-medium text-slate-700 mb-1.5">Assignee</label>
+                            <select id="assignee" class="w-full text-sm border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" wire:model.defer="newAssigneeId">
+                                <option value="">Unassigned</option>
+                                @foreach($agents as $a)
+                                    <option value="{{ $a->id }}">{{ $a->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('newAssigneeId') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- Scheduling Section --}}
+                        <div class="pt-3 border-t border-slate-100" x-data="{ showSchedule: {{ $ticket->scheduled_at ? 'true' : 'false' }} }">
+                            <button type="button" @click="showSchedule = !showSchedule"
+                                class="w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all duration-200"
+                                :class="showSchedule
+                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600'">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 rounded-lg" :class="showSchedule ? 'bg-indigo-100' : 'bg-slate-100'">
+                                        <x-heroicon name="calendar-days" class="w-5 h-5" />
+                                    </div>
+                                    <div class="text-left">
+                                        <span class="text-sm font-medium" x-text="showSchedule ? 'Schedule Details' : 'Add Schedule'"></span>
+                                        @if($ticket->scheduled_at)
+                                            <p class="text-xs text-indigo-500 mt-0.5">{{ $ticket->scheduled_at->format('M j, Y g:i A') }}</p>
+                                        @else
+                                            <p class="text-xs opacity-60" x-show="!showSchedule">Set date, time & location</p>
+                                        @endif
+                                    </div>
+                                </div>
+                                <x-heroicon name="chevron-down" class="w-4 h-4 transition-transform duration-200" ::class="{ 'rotate-180': showSchedule }" />
+                            </button>
+                            <div x-show="showSchedule" x-collapse class="mt-3 space-y-3 pl-1">
+                                <div>
+                                    <label for="scheduled_at" class="text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
+                                        <x-heroicon name="clock" class="w-4 h-4 text-slate-400" />
+                                        Scheduled Start
+                                    </label>
+                                    <input type="datetime-local" id="scheduled_at" wire:model.defer="scheduled_at" class="w-full text-sm border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20" />
+                                    @error('scheduled_at') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label for="scheduled_until" class="text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
+                                        <x-heroicon name="clock" class="w-4 h-4 text-slate-400" />
+                                        Scheduled End <span class="text-slate-400 font-normal">(optional)</span>
+                                    </label>
+                                    <input type="datetime-local" id="scheduled_until" wire:model.defer="scheduled_until" class="w-full text-sm border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20" />
+                                    @error('scheduled_until') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label for="location" class="text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
+                                        <x-heroicon name="map-pin" class="w-4 h-4 text-slate-400" />
+                                        Location
+                                    </label>
+                                    <input type="text" id="location" wire:model.defer="location" placeholder="e.g., Admin Building Room 201" class="w-full text-sm border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20" />
+                                    @error('location') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        @php $canSave = $ticket->verification_status === 'approved'; @endphp
+                        <div class="relative" @if(!$canSave) title="Ticket must be approved before making changes" @endif>
+                            <button wire:click="updateDetails" wire:loading.attr="disabled" wire:loading.class="opacity-75" {{ !$canSave ? 'disabled' : '' }} class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600">
+                                <span wire:loading.remove wire:target="updateDetails">Save Changes</span>
+                                <span wire:loading wire:target="updateDetails" class="inline-flex items-center gap-2">
+                                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Saving...
+                                </span>
+                            </button>
+                            @if(!$canSave)
+                                <p class="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                                    <x-heroicon name="exclamation-triangle" class="w-3.5 h-3.5" />
+                                    Approve the ticket first to enable updates
+                                </p>
+                            @endif
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 mt-4">
+                            <h4 class="text-sm font-medium text-slate-700 mb-3">Verification Actions</h4>
+                            <div class="flex gap-2">
+                                <button wire:click="approveVerification" {{ $ticket->verification_status === 'approved' ? 'disabled' : '' }} class="flex-1 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Approve</button>
+                                <button wire:click="rejectVerification" {{ $ticket->verification_status === 'rejected' ? 'disabled' : '' }} class="flex-1 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Reject</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 {{-- Details Card --}}
                 <div class="bg-white rounded-xl border border-slate-200" x-data="{ open: false }">
                     <button @click="open = !open" class="w-full p-5 flex items-center justify-between text-left">
@@ -486,6 +699,7 @@
                     <dl class="text-sm space-y-3 px-5 pb-5" x-show="open" x-collapse>
                         @php
                             $detailStatusColors = [
+                                'scheduled' => 'bg-purple-100 text-purple-700',
                                 'open' => 'bg-blue-100 text-blue-700',
                                 'in_progress' => 'bg-amber-100 text-amber-700',
                                 'resolved' => 'bg-emerald-100 text-emerald-700',
@@ -593,6 +807,25 @@
                                 @endif
                             </dd>
                         </div>
+                        @if($ticket->scheduled_at)
+                        <div class="flex justify-between items-start py-2 border-t border-slate-100">
+                            <dt class="text-slate-500">Scheduled</dt>
+                            <dd class="text-right">
+                                <div class="font-medium text-slate-700">
+                                    {{ $ticket->scheduled_at->format('M j, Y g:i A') }}
+                                    @if($ticket->scheduled_until)
+                                        <span class="text-slate-400">→</span> {{ $ticket->scheduled_until->format('M j, Y g:i A') }}
+                                    @endif
+                                </div>
+                                @if($ticket->location)
+                                    <div class="text-xs text-slate-500 flex items-center gap-1 justify-end mt-0.5">
+                                        <x-heroicon name="map-pin" class="w-3 h-3" />
+                                        {{ $ticket->location }}
+                                    </div>
+                                @endif
+                            </dd>
+                        </div>
+                        @endif
                     </dl>
                 </div>
 
@@ -716,75 +949,6 @@
                     @else
                         <div class="text-sm text-slate-400">No linked tickets</div>
                     @endif
-                    </div>
-                </div>
-                @endif
-
-                {{-- Update Section --}}
-                @if($isAgent)
-                <div class="bg-white rounded-xl border border-slate-200 p-5">
-                    <h3 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                        <x-heroicon name="pencil-square" class="w-4 h-4 text-slate-400" />
-                        Update Ticket
-                    </h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-slate-700 mb-1.5">Status</label>
-                            <select id="status" class="w-full text-sm border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" wire:model.defer="newStatus">
-                                @foreach($statuses as $s)
-                                    <option value="{{ $s }}">{{ \Illuminate\Support\Str::of($s)->replace('_',' ')->title() }}</option>
-                                @endforeach
-                            </select>
-                            @error('newStatus') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="type" class="block text-sm font-medium text-slate-700 mb-1.5">Type</label>
-                            <select id="type" class="w-full text-sm border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" wire:model.defer="newType">
-                                <option value="incident">Incident</option>
-                                <option value="request">Request</option>
-                            </select>
-                            @error('newType') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="assignee" class="block text-sm font-medium text-slate-700 mb-1.5">Assignee</label>
-                            <select id="assignee" class="w-full text-sm border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" wire:model.defer="newAssigneeId">
-                                <option value="">Unassigned</option>
-                                @foreach($agents as $a)
-                                    <option value="{{ $a->id }}">{{ $a->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('newAssigneeId') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-                        </div>
-
-                        @php $canSave = $ticket->verification_status === 'approved'; @endphp
-                        <div class="relative" @if(!$canSave) title="Ticket must be approved before making changes" @endif>
-                            <button wire:click="updateDetails" wire:loading.attr="disabled" wire:loading.class="opacity-75" {{ !$canSave ? 'disabled' : '' }} class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600">
-                                <span wire:loading.remove wire:target="updateDetails">Save Changes</span>
-                                <span wire:loading wire:target="updateDetails" class="inline-flex items-center gap-2">
-                                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Saving...
-                                </span>
-                            </button>
-                            @if(!$canSave)
-                                <p class="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                                    <x-heroicon name="exclamation-triangle" class="w-3.5 h-3.5" />
-                                    Approve the ticket first to enable updates
-                                </p>
-                            @endif
-                        </div>
-
-                        @if($isAgent)
-                            <div class="pt-4 border-t border-slate-100 mt-4">
-                                <h4 class="text-sm font-medium text-slate-700 mb-3">Verification Actions</h4>
-                                <div class="flex gap-2">
-                                    <button wire:click="approveVerification" {{ $ticket->verification_status === 'approved' ? 'disabled' : '' }} class="flex-1 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Approve</button>
-                                    <button wire:click="rejectVerification" {{ $ticket->verification_status === 'rejected' ? 'disabled' : '' }} class="flex-1 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Reject</button>
-                                </div>
-                            </div>
-                        @endif
                     </div>
                 </div>
                 @endif
@@ -925,6 +1089,334 @@
                 <div class="flex justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
                     <button wire:click="$set('showLinkModal', false)" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
                     <button wire:click="createLink" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Link Ticket</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Unreturned Equipment Warning Modal --}}
+    @if($showUnreturnedWarning)
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm" wire:click="cancelCloseWithUnreturned"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                {{-- Header --}}
+                <div class="flex items-center gap-3 p-5 border-b border-slate-100">
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-amber-100">
+                        <x-heroicon name="exclamation-triangle" class="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800">Unreturned Equipment</h3>
+                        <p class="text-sm text-slate-500">This ticket has borrowed equipment that hasn't been returned yet.</p>
+                    </div>
+                </div>
+
+                {{-- Content --}}
+                <div class="p-5">
+                    @php
+                        $unreturnedItems = $ticket->borrowedItems->where('status', 'Borrowed');
+                    @endphp
+
+                    <div class="space-y-3 max-h-48 overflow-y-auto">
+                        @foreach($unreturnedItems as $borrow)
+                            <div class="flex items-start gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                                <x-heroicon name="cube" class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium text-sm text-slate-800">{{ $borrow->doc_tracker }}</div>
+                                    <div class="text-xs text-slate-500">{{ $borrow->name }}</div>
+                                    @if($borrow->itemBorrow->count() > 0)
+                                        <div class="text-xs text-amber-700 mt-1">
+                                            {{ $borrow->itemBorrow->count() }} item(s):
+                                            {{ $borrow->itemBorrow->take(3)->map(fn($i) => $i->assetCategory?->name ?? $i->brand ?? 'Unknown')->join(', ') }}
+                                            @if($borrow->itemBorrow->count() > 3)
+                                                <span class="text-slate-500">+{{ $borrow->itemBorrow->count() - 3 }} more</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                    <div class="text-xs text-slate-400 mt-1">
+                                        Return due: {{ $borrow->date_to_return ?? 'Not specified' }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <p class="text-sm text-slate-600">
+                            <strong>Note:</strong> Closing this ticket will not affect the borrowed equipment tracking.
+                            Items will remain in the borrowing system until returned.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Footer --}}
+                <div class="flex justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
+                    <button wire:click="cancelCloseWithUnreturned" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button wire:click="confirmCloseWithUnreturned" class="px-4 py-2.5 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors flex items-center gap-2">
+                        <x-heroicon name="check" class="w-4 h-4" />
+                        {{ $newStatus === 'closed' ? 'Close Anyway' : 'Resolve Anyway' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Add Borrow Item Modal --}}
+    @if($showReserveModal)
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm" wire:click="$set('showReserveModal', false)"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                {{-- Header --}}
+                <div class="flex items-center justify-between p-5 border-b border-slate-100 flex-shrink-0">
+                    <h3 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                        <x-heroicon name="clipboard-document-list" class="w-5 h-5 text-emerald-500" />
+                        Add Borrow Item
+                    </h3>
+                    <button wire:click="$set('showReserveModal', false)" class="p-2 -m-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+                        <x-heroicon name="x-mark" class="w-5 h-5" />
+                    </button>
+                </div>
+
+                {{-- Form Content --}}
+                <div class="p-5 overflow-y-auto flex-1">
+                    <div class="space-y-4">
+                        {{-- Borrower Info --}}
+                        <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                            <h4 class="text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
+                                <x-heroicon name="user" class="w-4 h-4 text-slate-400" />
+                                Borrower Information
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Name <span class="text-red-500">*</span></label>
+                                    <input type="text" wire:model.defer="reserveBorrowerName" class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                    @error('reserveBorrowerName') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Contact</label>
+                                    <input type="text" wire:model.defer="reserveContact" class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Department</label>
+                                    <input type="text" wire:model.defer="reserveDepartment" class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Schedule & Location --}}
+                        <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                            <h4 class="text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
+                                <x-heroicon name="calendar" class="w-4 h-4 text-slate-400" />
+                                Schedule & Location
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Borrow Date <span class="text-red-500">*</span></label>
+                                    <input type="date" wire:model.defer="reserveDateBorrow" class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                    @error('reserveDateBorrow') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Return Date</label>
+                                    <input type="date" wire:model.defer="reserveDateReturn" class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                    @error('reserveDateReturn') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Location</label>
+                                    <input type="text" wire:model.defer="reserveLocation" placeholder="e.g., AVR, Gym" class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Event/Purpose</label>
+                                    <input type="text" wire:model.defer="reserveEvent" placeholder="e.g., Faculty Meeting" class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Equipment Items --}}
+                        <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                    <x-heroicon name="cube" class="w-4 h-4 text-slate-400" />
+                                    Equipment Items <span class="text-red-500">*</span>
+                                </h4>
+                                <button type="button" wire:click="addReserveItem" class="text-emerald-600 hover:text-emerald-700 text-xs font-medium flex items-center gap-1">
+                                    <x-heroicon name="plus" class="w-3.5 h-3.5" /> Add Item
+                                </button>
+                            </div>
+
+                            @error('reserveItems') <p class="text-xs text-red-600 mb-2">{{ $message }}</p> @enderror
+
+                            <div class="space-y-3">
+                                @foreach($reserveItems as $index => $item)
+                                    <div class="bg-white rounded-lg p-3 border border-slate-200 relative">
+                                        @if(count($reserveItems) > 1)
+                                            <button type="button" wire:click="removeReserveItem({{ $index }})" class="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 rounded transition-colors">
+                                                <x-heroicon name="x-mark" class="w-4 h-4" />
+                                            </button>
+                                        @endif
+                                        <div class="grid grid-cols-1 sm:grid-cols-6 gap-3">
+                                            {{-- Category --}}
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-xs font-medium text-slate-600 mb-1">Category <span class="text-red-500">*</span></label>
+                                                <select wire:model.live="reserveItems.{{ $index }}.category_id" class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20">
+                                                    <option value="">Select equipment...</option>
+                                                    @foreach($this->assetCategories as $cat)
+                                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @error("reserveItems.{$index}.category_id") <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                                            </div>
+
+                                            {{-- Serial with autocomplete --}}
+                                            <div class="sm:col-span-2 relative" x-data="{ showSuggestions: false }">
+                                                <label class="block text-xs font-medium text-slate-600 mb-1">Serial No.</label>
+                                                <input
+                                                    type="text"
+                                                    wire:model.live.debounce.300ms="reserveItems.{{ $index }}.serial"
+                                                    wire:keyup="searchSerial({{ $index }}, $event.target.value)"
+                                                    @focus="showSuggestions = true"
+                                                    @click.away="showSuggestions = false; $wire.clearSerialSuggestions()"
+                                                    placeholder="Search by serial..."
+                                                    class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                                                />
+                                                {{-- Suggestions dropdown --}}
+                                                @if($activeSerialIndex === $index && count($serialSuggestions) > 0)
+                                                    <div class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto" x-show="showSuggestions">
+                                                        @foreach($serialSuggestions as $suggestion)
+                                                            <button
+                                                                type="button"
+                                                                wire:click="selectSerial({{ $index }}, '{{ $suggestion['serial'] }}', '{{ addslashes($suggestion['brand']) }}')"
+                                                                @click="showSuggestions = false"
+                                                                class="w-full px-3 py-2 text-left text-sm hover:bg-emerald-50 hover:text-emerald-700 border-b border-slate-100 last:border-0"
+                                                            >
+                                                                <div class="font-medium">{{ $suggestion['serial'] }}</div>
+                                                                <div class="text-xs text-slate-500">{{ $suggestion['brand'] }} @if($suggestion['model']) ({{ $suggestion['model'] }}) @endif</div>
+                                                            </button>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            {{-- Brand --}}
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-xs font-medium text-slate-600 mb-1">Brand/Name</label>
+                                                <input type="text" wire:model.defer="reserveItems.{{ $index }}.brand" placeholder="e.g., Dell, HP..." class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                            </div>
+
+                                            {{-- Quantity --}}
+                                            <div>
+                                                <label class="block text-xs font-medium text-slate-600 mb-1">Qty</label>
+                                                <input type="number" wire:model.defer="reserveItems.{{ $index }}.quantity" min="1" max="99" class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                            </div>
+
+                                            {{-- Remarks --}}
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-xs font-medium text-slate-600 mb-1">Remarks</label>
+                                                <input type="text" wire:model.defer="reserveItems.{{ $index }}.remarks" placeholder="Additional notes..." class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                            </div>
+
+                                            {{-- Testing/Working Note --}}
+                                            <div class="sm:col-span-3">
+                                                <label class="block text-xs font-medium text-slate-600 mb-1">
+                                                    <span class="flex items-center gap-1">
+                                                        <x-heroicon name="check-circle" class="w-3.5 h-3.5 text-emerald-500" />
+                                                        Testing / Working Status
+                                                    </span>
+                                                </label>
+                                                <input type="text" wire:model.defer="reserveItems.{{ $index }}.note" placeholder="e.g., Tested and working, Ready for release..." class="w-full text-sm border-slate-200 rounded-lg bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Footer --}}
+                <div class="flex justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl flex-shrink-0">
+                    <button wire:click="$set('showReserveModal', false)" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button wire:click="saveReservation" wire:loading.attr="disabled" class="px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2">
+                        <span wire:loading.remove wire:target="saveReservation">
+                            <x-heroicon name="check" class="w-4 h-4" />
+                        </span>
+                        <span wire:loading wire:target="saveReservation">
+                            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Return Equipment Modal --}}
+    @if($showReturnModal)
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm" wire:click="$set('showReturnModal', false)"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                {{-- Header --}}
+                <div class="flex items-center justify-between p-5 border-b border-slate-100">
+                    <h3 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                        <x-heroicon name="check-circle" class="w-5 h-5 text-emerald-500" />
+                        Mark Equipment as Returned
+                    </h3>
+                    <button wire:click="$set('showReturnModal', false)" class="p-2 -m-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+                        <x-heroicon name="x-mark" class="w-5 h-5" />
+                    </button>
+                </div>
+
+                {{-- Content --}}
+                <div class="p-5 space-y-4">
+                    {{-- Received/Checked By --}}
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Received/Checked By <span class="text-red-500">*</span></label>
+                        <input type="text" wire:model="returnReceivedBy" class="w-full text-sm border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" placeholder="Staff who checked the items" />
+                        @error('returnReceivedBy') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Returned By --}}
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Returned By <span class="text-red-500">*</span></label>
+                        <input type="text" wire:model="returnReturnedBy" class="w-full text-sm border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" placeholder="Person who returned the items" />
+                        @error('returnReturnedBy') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Remarks --}}
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Return Remarks</label>
+                        <textarea wire:model="returnRemarks" rows="3" class="w-full text-sm border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" placeholder="Any notes about the returned items (optional)"></textarea>
+                    </div>
+                </div>
+
+                {{-- Footer --}}
+                <div class="flex justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+                    <button wire:click="$set('showReturnModal', false)" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button wire:click="confirmReturn" wire:loading.attr="disabled" class="px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2">
+                        <span wire:loading.remove wire:target="confirmReturn">
+                            <x-heroicon name="check" class="w-4 h-4" />
+                        </span>
+                        <span wire:loading wire:target="confirmReturn">
+                            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                        Confirm Return
+                    </button>
                 </div>
             </div>
         </div>

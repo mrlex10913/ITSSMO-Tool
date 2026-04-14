@@ -75,6 +75,7 @@ class MenuSeeder extends Seeder
         $attach(['label' => 'Assignment Rules', 'route' => 'itss.assignment-rules', 'icon' => 'rule', 'sort_order' => 15, 'section' => 'ITSS'], ['itss', 'administrator', 'developer']);
         $attach(['label' => 'SLA Escalations', 'route' => 'itss.sla.escalations', 'icon' => 'escalator_warning', 'sort_order' => 16, 'section' => 'ITSS'], ['itss', 'administrator', 'developer']);
         $attach(['label' => 'ISO Audit Report', 'route' => 'itss.reports.iso-audit', 'icon' => 'summarize', 'sort_order' => 17, 'section' => 'ITSS'], ['itss', 'administrator', 'developer']);
+        $attach(['label' => 'Assets Dashboard', 'route' => 'itss.assets.dashboard', 'icon' => 'devices', 'sort_order' => 18, 'section' => 'ITSS'], ['itss', 'administrator', 'developer']);
 
         // ===================================================================
         // DOCUMENT LIBRARY (Shared across departments)

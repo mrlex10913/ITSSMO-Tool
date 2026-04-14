@@ -21,7 +21,7 @@ class Ticket extends Model
     /**
      * Status workflow for tickets.
      */
-    public const STATUSES = ['open', 'in_progress', 'resolved', 'closed'];
+    public const STATUSES = ['scheduled', 'open', 'in_progress', 'resolved', 'closed'];
 
     /**
      * Ticket types.
@@ -50,6 +50,8 @@ class Ticket extends Model
         'category_id', 'requester_id', 'assignee_id', 'asset_id', 'department',
         // SLA tracking
         'due_at', 'acknowledged_at', 'responded_at', 'resolved_at', 'closed_at', 'sla_policy_id', 'sla_due_at',
+        // Scheduling
+        'scheduled_at', 'scheduled_until', 'location',
         // Verification
         'verification_status', 'verification_method', 'verified_by', 'verified_at',
         // Guest submitter fields (for unauthenticated portal)
@@ -63,6 +65,8 @@ class Ticket extends Model
         'resolved_at' => 'datetime',
         'closed_at' => 'datetime',
         'sla_due_at' => 'datetime',
+        'scheduled_at' => 'datetime',
+        'scheduled_until' => 'datetime',
         'verified_at' => 'datetime',
     ];
 
@@ -233,6 +237,30 @@ class Ticket extends Model
             ]);
 
         return $outgoing->merge($incoming);
+    }
+
+    /**
+     * Borrowed item records linked to this ticket.
+     */
+    public function borrowedItems(): HasMany
+    {
+        return $this->hasMany(\App\Models\Borrowers\BorrowerDetails::class);
+    }
+
+    /**
+     * Check if this ticket has any unreturned borrowed items.
+     */
+    public function hasUnreturnedItems(): bool
+    {
+        return $this->borrowedItems()->where('status', 'Borrowed')->exists();
+    }
+
+    /**
+     * Get count of unreturned borrowed items.
+     */
+    public function getUnreturnedItemsCountAttribute(): int
+    {
+        return $this->borrowedItems()->where('status', 'Borrowed')->count();
     }
 
     // Convenience for tests and internal updates

@@ -2,6 +2,7 @@
 
 use App\Jobs\CheckSlaBreaches;
 use App\Jobs\CheckSlaEscalations;
+use App\Jobs\OpenScheduledTickets;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -14,3 +15,5 @@ Artisan::command('inspire', function () {
 Schedule::job(new CheckSlaBreaches)->everyMinute();
 // SLA escalation notifier - runs every minute
 Schedule::job(new CheckSlaEscalations)->everyMinute();
+// Open scheduled tickets when their time arrives - runs every minute
+Schedule::job(new OpenScheduledTickets)->everyMinute();

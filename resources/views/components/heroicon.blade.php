@@ -406,6 +406,15 @@
         </svg>
     @break
 
+    {{-- receipt-refund (return/refund) --}}
+    @case('receipt-refund')
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="{{ $class }}">
+            <path d="M4.5 5.5a2 2 0 012-2h11a2 2 0 012 2v15l-3-1.5-3 1.5-3-1.5-3 1.5v-15z"/>
+            <path d="M14.5 8.5l-5 5"/>
+            <path d="M9.5 8.5l5 5"/>
+        </svg>
+    @break
+
     {{-- Default: simple dot to avoid breakage --}}
     @default
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="{{ $class }}">

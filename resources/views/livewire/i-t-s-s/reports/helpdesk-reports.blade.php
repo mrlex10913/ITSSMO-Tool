@@ -144,7 +144,7 @@
                         $priorityTotal = array_sum($summary['by_priority'] ?? []);
                     @endphp
                     @foreach(['critical', 'high', 'medium', 'low'] as $priority)
-                        @php 
+                        @php
                             $count = $summary['by_priority'][$priority] ?? 0;
                             $pct = $priorityTotal > 0 ? round(($count / $priorityTotal) * 100, 1) : 0;
                         @endphp

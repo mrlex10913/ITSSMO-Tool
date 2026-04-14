@@ -227,6 +227,7 @@ Route::middleware([
     'check.temporary.password',
 ])->prefix('itss')->name('itss.')->group(function () {
     Route::get('/dashboard', App\Livewire\ITSS\Dashboard::class)->name('dashboard');
+    Route::get('/assets-dashboard', App\Livewire\Assets\Dashboard::class)->name('assets.dashboard');
     Route::get('/id-production', App\Livewire\ITSS\IDProduction::class)->name('id-production');
     Route::get('/helpdesk', App\Livewire\ITSS\Helpdesk::class)->name('helpdesk');
     Route::get('/tickets/{ticket}', App\Livewire\ITSS\TicketShow::class)->name('ticket.show');

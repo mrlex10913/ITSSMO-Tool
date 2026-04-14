@@ -132,14 +132,76 @@
                         </button>
                         @endif
                         @if($breachedOpen > 0)
-                        <div class="flex items-center gap-3 p-3 rounded-lg bg-red-50 border border-red-200">
+                        <button wire:click="$set('breachedOnly', true)" class="w-full flex items-center gap-3 p-3 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 transition-colors">
                             <x-heroicon name="exclamation-triangle" class="w-5 h-5 text-red-600 shrink-0" />
-                            <div class="flex-1">
+                            <div class="flex-1 text-left">
                                 <div class="text-sm font-medium text-red-800">Breached</div>
                                 <div class="text-xs text-red-600">{{ $breachedOpen }} {{ Str::plural('ticket', $breachedOpen) }}</div>
                             </div>
-                        </div>
+                        </button>
                         @endif
+                    </div>
+                </div>
+                @endif
+
+                {{-- Scheduled Work --}}
+                @php
+                    $scheduledToday = \App\Models\Helpdesk\Ticket::query()
+                        ->whereIn('status', ['open','in_progress'])
+                        ->whereNotNull('scheduled_at')
+                        ->whereBetween('scheduled_at', [now()->startOfDay(), now()->endOfDay()])
+                        ->count();
+                    $scheduledUpcoming = \App\Models\Helpdesk\Ticket::query()
+                        ->whereIn('status', ['open','in_progress'])
+                        ->whereNotNull('scheduled_at')
+                        ->where('scheduled_at', '>', now()->endOfDay())
+                        ->where('scheduled_at', '<=', now()->addWeek())
+                        ->count();
+                @endphp
+                @if($scheduledToday > 0 || $scheduledUpcoming > 0)
+                <div class="bg-white rounded-xl border border-slate-200 p-4">
+                    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Scheduled Work</h2>
+                    <div class="space-y-2">
+                        @if($scheduledToday > 0)
+                        <button wire:click="$set('scheduledOnly', 'today')" class="w-full flex items-center gap-3 p-3 rounded-lg {{ $scheduledOnly === 'today' ? 'bg-indigo-100 border border-indigo-300' : 'bg-indigo-50 border border-indigo-200 hover:bg-indigo-100' }} transition-colors">
+                            <x-heroicon name="calendar" class="w-5 h-5 text-indigo-600 shrink-0" />
+                            <div class="flex-1 text-left">
+                                <div class="text-sm font-medium text-indigo-800">Today</div>
+                                <div class="text-xs text-indigo-600">{{ $scheduledToday }} {{ Str::plural('ticket', $scheduledToday) }}</div>
+                            </div>
+                        </button>
+                        @endif
+                        @if($scheduledUpcoming > 0)
+                        <button wire:click="$set('scheduledOnly', 'week')" class="w-full flex items-center gap-3 p-3 rounded-lg {{ $scheduledOnly === 'week' ? 'bg-violet-100 border border-violet-300' : 'bg-violet-50 border border-violet-200 hover:bg-violet-100' }} transition-colors">
+                            <x-heroicon name="calendar-days" class="w-5 h-5 text-violet-600 shrink-0" />
+                            <div class="flex-1 text-left">
+                                <div class="text-sm font-medium text-violet-800">This Week</div>
+                                <div class="text-xs text-violet-600">{{ $scheduledUpcoming }} {{ Str::plural('ticket', $scheduledUpcoming) }}</div>
+                            </div>
+                        </button>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
+                {{-- Pending Equipment Returns --}}
+                @php
+                    $pendingReturnsCount = \App\Models\Helpdesk\Ticket::query()
+                        ->whereIn('status', ['resolved', 'closed'])
+                        ->whereHas('borrowedItems', fn($q) => $q->where('status', 'Borrowed'))
+                        ->count();
+                @endphp
+                @if($pendingReturnsCount > 0)
+                <div class="bg-white rounded-xl border border-slate-200 p-4">
+                    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Equipment Returns</h2>
+                    <div class="space-y-2">
+                        <button wire:click="$set('pendingReturns', true)" class="w-full flex items-center gap-3 p-3 rounded-lg {{ $pendingReturns ? 'bg-orange-100 border border-orange-300' : 'bg-orange-50 border border-orange-200 hover:bg-orange-100' }} transition-colors">
+                            <x-heroicon name="cube" class="w-5 h-5 text-orange-600 shrink-0" />
+                            <div class="flex-1 text-left">
+                                <div class="text-sm font-medium text-orange-800">Pending Returns</div>
+                                <div class="text-xs text-orange-600">{{ $pendingReturnsCount }} closed {{ Str::plural('ticket', $pendingReturnsCount) }} with unreturned items</div>
+                            </div>
+                        </button>
                     </div>
                 </div>
                 @endif
@@ -227,7 +289,7 @@
                                     Filters
                                     <x-heroicon name="chevron-down" class="w-3 h-3 transition-transform" ::class="showFilters && 'rotate-180'" />
                                 </button>
-                                <button wire:click="$set('search',''); $set('status',''); $set('type',''); $set('priority',''); $set('category', null); $set('assignee', null); $set('mine', false); $set('unassigned', false); $set('escalationsOnly', false)"
+                                <button wire:click="$set('search',''); $set('status',''); $set('type',''); $set('priority',''); $set('category', null); $set('assignee', null); $set('mine', false); $set('unassigned', false); $set('escalationsOnly', false); $set('breachedOnly', false); $set('scheduledOnly', null); $set('pendingReturns', false)"
                                         class="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors" title="Reset all filters">
                                     <x-heroicon name="arrow-path" class="w-4 h-4" />
                                 </button>
@@ -277,7 +339,7 @@
 
                         {{-- Active Filter Chips --}}
                         @php
-                            $hasFilters = !empty($search) || !empty($type) || !empty($priority) || !empty($category) || !empty($assignee) || $mine || $unassigned || $escalationsOnly;
+                            $hasFilters = !empty($search) || !empty($type) || !empty($priority) || !empty($category) || !empty($assignee) || $mine || $unassigned || $escalationsOnly || $breachedOnly || $scheduledOnly || $pendingReturns;
                         @endphp
                         @if($hasFilters)
                         <div class="flex flex-wrap gap-2 mt-3">
@@ -327,6 +389,24 @@
                                 <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-xs">
                                     Escalations
                                     <button wire:click="$set('escalationsOnly', false)" class="hover:text-orange-900">&times;</button>
+                                </span>
+                            @endif
+                            @if($breachedOnly)
+                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs">
+                                    Breached
+                                    <button wire:click="$set('breachedOnly', false)" class="hover:text-red-900">&times;</button>
+                                </span>
+                            @endif
+                            @if($scheduledOnly)
+                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs">
+                                    Scheduled: {{ $scheduledOnly === 'today' ? 'Today' : 'This Week' }}
+                                    <button wire:click="$set('scheduledOnly', null)" class="hover:text-indigo-900">&times;</button>
+                                </span>
+                            @endif
+                            @if($pendingReturns)
+                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-xs">
+                                    Pending Returns
+                                    <button wire:click="$set('pendingReturns', false)" class="hover:text-orange-900">&times;</button>
                                 </span>
                             @endif
                         </div>
@@ -385,6 +465,12 @@
                                                     @if($t->type === 'request')
                                                         <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Request</span>
                                                     @endif
+                                                    @if($t->borrowed_items_count > 0)
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded {{ $t->unreturned_borrowed_count > 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600' }}" title="{{ $t->borrowed_items_count }} item(s){{ $t->unreturned_borrowed_count > 0 ? ', '.$t->unreturned_borrowed_count.' unreturned' : '' }}">
+                                                            <x-heroicon name="archive-box" class="w-3 h-3" />
+                                                            {{ $t->borrowed_items_count }}
+                                                        </span>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>
@@ -393,6 +479,7 @@
                                         <td class="px-4 py-3">
                                             <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium
                                                 {{ match($t->status) {
+                                                    'scheduled' => 'bg-purple-100 text-purple-700',
                                                     'open' => 'bg-blue-100 text-blue-700',
                                                     'in_progress' => 'bg-amber-100 text-amber-700',
                                                     'resolved' => 'bg-emerald-100 text-emerald-700',
@@ -400,6 +487,7 @@
                                                     default => 'bg-slate-100 text-slate-600'
                                                 } }}">
                                                 <span class="w-1.5 h-1.5 rounded-full {{ match($t->status) {
+                                                    'scheduled' => 'bg-purple-500',
                                                     'open' => 'bg-blue-500',
                                                     'in_progress' => 'bg-amber-500',
                                                     'resolved' => 'bg-emerald-500',

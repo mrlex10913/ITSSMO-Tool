@@ -58,6 +58,15 @@ class Helpdesk extends Component
     // Filters: show only tickets within any escalation threshold window
     public bool $escalationsOnly = false;
 
+    // Filters: show only breached tickets (past SLA due date)
+    public bool $breachedOnly = false;
+
+    // Filters: show only scheduled tickets ('today' or 'week')
+    public ?string $scheduledOnly = null;
+
+    // Filters: show only closed/resolved tickets with unreturned equipment
+    public bool $pendingReturns = false;
+
     public string $subject = '';
 
     public string $description = '';
@@ -86,11 +95,14 @@ class Helpdesk extends Component
         'mine' => ['except' => false],
         'unassigned' => ['except' => false],
         'escalationsOnly' => ['except' => false],
+        'breachedOnly' => ['except' => false],
+        'scheduledOnly' => ['except' => null],
+        'pendingReturns' => ['except' => false],
     ];
 
     public function updating($name, $value)
     {
-        if (in_array($name, ['search', 'status', 'priority', 'type', 'category', 'assignee', 'mine', 'unassigned', 'escalationsOnly'])) {
+        if (in_array($name, ['search', 'status', 'priority', 'type', 'category', 'assignee', 'mine', 'unassigned', 'escalationsOnly', 'breachedOnly', 'scheduledOnly', 'pendingReturns'])) {
             $this->resetPage();
         }
         // Ensure mutually exclusive toggles for mine vs unassigned
@@ -371,6 +383,11 @@ class Helpdesk extends Component
                 }
             })
             ->when($this->unassigned, fn ($q) => $q->whereNull('assignee_id'))
+            ->when($this->breachedOnly, fn ($q) => $q->whereIn('status', ['open', 'in_progress'])->whereNotNull('sla_due_at')->where('sla_due_at', '<', now()))
+            ->when($this->scheduledOnly === 'today', fn ($q) => $q->whereIn('status', ['open', 'in_progress'])->whereNotNull('scheduled_at')->whereBetween('scheduled_at', [now()->startOfDay(), now()->endOfDay()]))
+            ->when($this->scheduledOnly === 'week', fn ($q) => $q->whereIn('status', ['open', 'in_progress'])->whereNotNull('scheduled_at')->where('scheduled_at', '>', now()->endOfDay())->where('scheduled_at', '<=', now()->addWeek()))
+            ->when($this->pendingReturns, fn ($q) => $q->whereIn('status', ['resolved', 'closed'])
+                ->whereHas('borrowedItems', fn ($bq) => $bq->where('status', 'Borrowed')))
             ->with([
                 'requester:id,name',
                 'assignee:id,name',
@@ -385,6 +402,7 @@ class Helpdesk extends Component
                     );
                 },
             ])
+            ->withCount(['borrowedItems', 'borrowedItems as unreturned_borrowed_count' => fn ($q) => $q->where('status', 'Borrowed')])
             ->latest()
             ->paginate(10);
     }
