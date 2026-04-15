@@ -207,6 +207,7 @@ class Helpdesk extends Component
         $base = Ticket::query();
 
         return [
+            'scheduled' => (clone $base)->where('status', 'scheduled')->count(),
             'open' => (clone $base)->where('status', 'open')->count(),
             'in_progress' => (clone $base)->where('status', 'in_progress')->count(),
             'resolved' => (clone $base)->where('status', 'resolved')->count(),

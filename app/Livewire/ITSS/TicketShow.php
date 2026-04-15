@@ -527,11 +527,13 @@ class TicketShow extends Component
                 $item->save();
             }
 
-            // If item has a serial, check if there's a matching asset and set it to Available
+            // If item has a serial, update the asset status and location
             if ($item->serial) {
                 $asset = \App\Models\Assets\AssetList::where('item_serial_itss', $item->serial)->first();
                 if ($asset) {
                     $asset->status = 'Available';
+                    $asset->location = 'ITSS Office';
+                    $asset->assigned_to = 'ITSS';
                     $asset->save();
                 }
             }
@@ -747,11 +749,13 @@ class TicketShow extends Component
                 'item_condition' => $item['note'] ?? '',
             ]);
 
-            // If serial is provided, mark the asset as Deployed
+            // If serial is provided, update the asset status and location
             if (! empty($item['serial'])) {
                 $asset = \App\Models\Assets\AssetList::where('item_serial_itss', $item['serial'])->first();
                 if ($asset) {
                     $asset->status = 'Deployed';
+                    $asset->location = $this->reserveLocation ?: ($this->reserveEvent ?: 'On Loan');
+                    $asset->assigned_to = $this->reserveBorrowerName;
                     $asset->save();
                 }
             }

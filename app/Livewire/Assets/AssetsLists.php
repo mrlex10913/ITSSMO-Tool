@@ -6,20 +6,28 @@ use App\Models\Assets\AssetCategory;
 use App\Models\Assets\AssetList;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Livewire\Component;
 use Livewire\Attributes\Validate;
+use Livewire\Component;
 use Livewire\WithPagination;
-use Picqer\Barcode\BarcodeGeneratorPNG;
 
 class AssetsLists extends Component
 {
     use WithPagination;
 
     public $NewAssets = false;
+
     public $editMode = false;
+
     public $editAsset;
+
     public $deleteAsset = false;
+
     public $assetToDelete;
+
+    // History modal
+    public bool $showHistoryModal = false;
+
+    public ?AssetList $selectedAsset = null;
 
     public $generatedBarcodeImage;
 
@@ -27,32 +35,43 @@ class AssetsLists extends Component
     public $category;
 
     public $item_brand;
+
     #[Validate('required|string')]
     public $item_barcode;
+
     public $item_model;
+
     #[Validate('required|string')]
     public $itss_serial;
 
     public $purch_serial;
+
     #[Validate('required|string')]
     public $location;
+
     #[Validate('required|string')]
     public $status;
+
     #[Validate('required|string')]
     public $assign_to;
 
     public $specification;
+
     public $search = '';
 
-
-    public function mount(){
+    public function mount()
+    {
         $this->assign_to = Auth::user()->name;
     }
-    public function createNewAssets(){
+
+    public function createNewAssets()
+    {
         $this->NewAssets = true;
         $this->resetField();
     }
-    public function resetField(){
+
+    public function resetField()
+    {
         $this->category = '';
         $this->item_brand = '';
         $this->item_model = '';
@@ -62,8 +81,10 @@ class AssetsLists extends Component
         $this->location = '';
         $this->status = '';
     }
-    public function saveAsset(){
-        try{
+
+    public function saveAsset()
+    {
+        try {
             $this->validate();
             AssetList::create([
                 'asset_categories_id' => $this->category,
@@ -75,19 +96,20 @@ class AssetsLists extends Component
                 'assigned_to' => $this->assign_to,
                 'location' => $this->location,
                 'status' => $this->status,
-                'specification' => $this->specification
+                'specification' => $this->specification,
             ]);
             flash()->success('New Asset created');
-            $this->reset(['category', 'item_brand', 'item_model', 'itss_serial','purch_serial', 'location', 'status', 'specification', 'item_barcode']);
+            $this->reset(['category', 'item_brand', 'item_model', 'itss_serial', 'purch_serial', 'location', 'status', 'specification', 'item_barcode']);
             $this->NewAssets = false;
-        }catch(ValidationException $e){
+        } catch (ValidationException $e) {
             flash()->error('Ooops! Something went wrong');
             throw $e;
         }
 
     }
 
-    public function updateAssetId($assetId){
+    public function updateAssetId($assetId)
+    {
         $this->NewAssets = true;
         $this->editMode = true;
         $this->editAsset = $assetId;
@@ -104,8 +126,10 @@ class AssetsLists extends Component
         $this->specification = $assetsFind->specification;
 
     }
-    public function updateAsset(){
-        try{
+
+    public function updateAsset()
+    {
+        try {
             // $this->validate();
             $assets = AssetList::find($this->editAsset);
             // dd($assets);
@@ -122,39 +146,50 @@ class AssetsLists extends Component
             $assets->save();
             flash()->success('Assets updated');
             $this->NewAssets = false;
-        }catch(ValidationException $e){
+        } catch (ValidationException $e) {
             flash()->error('Oops! Something went wrong');
             throw $e;
         }
     }
 
-    public function deleteAssetId($assetId){
+    public function deleteAssetId($assetId)
+    {
         $this->assetToDelete = $assetId;
         $this->deleteAsset = true;
     }
-    public function deleteToAsset(){
-        try{
+
+    public function deleteToAsset()
+    {
+        try {
             $assets = AssetList::find($this->assetToDelete);
             $assets->delete();
             $this->deleteAsset = false;
             $this->assetToDelete = null;
             flash()->warning('Asset has been deleted!');
-        }catch(ValidationException $e){
+        } catch (ValidationException $e) {
             flash()->error('Oops! Something went wrong');
             throw $e;
         }
     }
+
+    public function showHistory(int $assetId): void
+    {
+        $this->selectedAsset = AssetList::with(['borrowHistory.borrower.ticket', 'borrowHistory.assetCategory', 'category'])
+            ->find($assetId);
+        $this->showHistoryModal = true;
+    }
+
     public function render()
     {
 
-        $assets = AssetList::when($this->search, function($query) {
-            $query->where('item_barcode', 'like', '%' . $this->search . '%')
-            ->orWhere('item_name', 'like', '%' . $this->search . '%');
+        $assets = AssetList::when($this->search, function ($query) {
+            $query->where('item_barcode', 'like', '%'.$this->search.'%')
+                ->orWhere('item_name', 'like', '%'.$this->search.'%');
         })
-        ->orderBy('created_at', 'desc')
-        ->where('asset_categories_id', '!=', 9)
-        ->orWhere('asset_categories_id', '!=', 12)
-        ->paginate(10);
+            ->orderBy('created_at', 'desc')
+            ->where('asset_categories_id', '!=', 9)
+            ->orWhere('asset_categories_id', '!=', 12)
+            ->paginate(10);
         // $assets = AssetList::with('assetList')->orderBy('created_at', 'desc')
         // ->where('asset_categories_id', '!=', 21)
         // ->paginate(10);
@@ -166,6 +201,7 @@ class AssetsLists extends Component
         // ->get();
 
         $categoryOption = AssetCategory::all();
-        return view('livewire.assets.assets-lists', compact('categoryOption','assets'));
+
+        return view('livewire.assets.assets-lists', compact('categoryOption', 'assets'));
     }
 }

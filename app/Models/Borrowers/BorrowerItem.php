@@ -3,6 +3,7 @@
 namespace App\Models\Borrowers;
 
 use App\Models\Assets\AssetCategory;
+use App\Models\Assets\AssetList;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,13 +12,24 @@ class BorrowerItem extends Model
     use HasFactory;
 
     protected $table = 'borrowed_item';
+
     protected $guarded = [];
 
-    public function borrower(){
+    public function borrower()
+    {
         return $this->belongsTo(BorrowerDetails::class, 'borrower_id', 'id');
     }
+
     public function assetCategory()
     {
         return $this->belongsTo(AssetCategory::class, 'asset_category_id', 'id');
+    }
+
+    /**
+     * Get the actual asset (matched by serial number)
+     */
+    public function asset()
+    {
+        return $this->belongsTo(AssetList::class, 'serial', 'item_serial_itss');
     }
 }

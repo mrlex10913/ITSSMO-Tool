@@ -82,6 +82,13 @@
                 <div class="bg-white rounded-xl border border-slate-200 p-4">
                     <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Overview</h2>
                     <div class="grid grid-cols-2 xl:grid-cols-1 gap-3">
+                        <button wire:click="$set('status', 'scheduled')" class="group flex items-center justify-between p-3 rounded-lg transition-colors {{ ($status ?? '') === 'scheduled' ? 'bg-purple-50 ring-1 ring-purple-200' : 'hover:bg-slate-50' }}">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                                <span class="text-sm text-slate-700">Scheduled</span>
+                            </div>
+                            <span class="text-lg font-semibold text-slate-800">{{ $stats['scheduled'] ?? 0 }}</span>
+                        </button>
                         <button wire:click="$set('status', 'open')" class="group flex items-center justify-between p-3 rounded-lg transition-colors {{ ($status ?? '') === 'open' ? 'bg-blue-50 ring-1 ring-blue-200' : 'hover:bg-slate-50' }}">
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-blue-500"></span>

@@ -31,6 +31,15 @@
                 @foreach ($assets as $asset)
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button data-tooltip-target="tooltip-history({{$asset->id}})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-2" wire:click="showHistory({{$asset->id}})">
+                            <span class="material-symbols-sharp">
+                                history
+                            </span>
+                        </button>
+                        <div id="tooltip-history({{$asset->id}})" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                            View History
+                            <div class="tooltip-arrow" data-popper-arrow></div>
+                        </div>
                         <button data-tooltip-target="tooltip-asset({{$asset->id}})" class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300" wire:click="deleteAssetId({{$asset->id}})" alt="Asset Transfer">
                             <span class="material-symbols-sharp">
                                 move_up
@@ -218,6 +227,123 @@
             <x-danger-button class="ms-3" wire:click="deleteToAsset" wire:loading.attr="disabled">
                 {{ __('Delete Assets') }}
             </x-danger-button>
+        </x-slot>
+    </x-dialog-modal>
+
+    {{-- Asset Deployment History Modal --}}
+    <x-dialog-modal wire:model="showHistoryModal" maxWidth="3xl">
+        <x-slot name="title">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-sharp text-blue-600">history</span>
+                Asset Deployment History
+            </div>
+        </x-slot>
+
+        <x-slot name="content">
+            @if($selectedAsset)
+                {{-- Asset Info --}}
+                <div class="bg-slate-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-slate-500 dark:text-gray-400">Category:</span>
+                            <span class="font-medium text-slate-800 dark:text-white">{{ $selectedAsset->category?->name ?? $selectedAsset->assetList?->name ?? 'N/A' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 dark:text-gray-400">Serial:</span>
+                            <span class="font-medium text-slate-800 dark:text-white">{{ $selectedAsset->item_serial_itss }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 dark:text-gray-400">Brand/Name:</span>
+                            <span class="font-medium text-slate-800 dark:text-white">{{ $selectedAsset->item_name }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 dark:text-gray-400">Model:</span>
+                            <span class="font-medium text-slate-800 dark:text-white">{{ $selectedAsset->item_model }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 dark:text-gray-400">Current Location:</span>
+                            <span class="font-medium text-slate-800 dark:text-white">{{ $selectedAsset->location }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 dark:text-gray-400">Status:</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                {{ $selectedAsset->status === 'Available' ? 'bg-green-100 text-green-800' : '' }}
+                                {{ $selectedAsset->status === 'Deployed' ? 'bg-blue-100 text-blue-800' : '' }}
+                                {{ $selectedAsset->status === 'Borrowed' ? 'bg-amber-100 text-amber-800' : '' }}
+                                {{ $selectedAsset->status === 'Defective' ? 'bg-red-100 text-red-800' : '' }}
+                                {{ !in_array($selectedAsset->status, ['Available', 'Deployed', 'Borrowed', 'Defective']) ? 'bg-slate-100 text-slate-800' : '' }}
+                            ">{{ $selectedAsset->status }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 dark:text-gray-400">Assigned To:</span>
+                            <span class="font-medium text-slate-800 dark:text-white">{{ $selectedAsset->assigned_to }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Borrow History --}}
+                <h4 class="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3">Borrow / Deployment History</h4>
+                @if($selectedAsset->borrowHistory && $selectedAsset->borrowHistory->count() > 0)
+                    <div class="space-y-3 max-h-80 overflow-y-auto">
+                        @foreach($selectedAsset->borrowHistory->sortByDesc('created_at') as $borrow)
+                            @php
+                                $borrower = $borrow->borrower;
+                                $ticket = $borrower?->ticket;
+                            @endphp
+                            <div class="border border-slate-200 dark:border-gray-600 rounded-lg p-3 {{ $borrower?->status === 'Borrowed' ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-white dark:bg-gray-800' }}">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $borrower?->status === 'Borrowed' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800' }}">
+                                            {{ $borrower?->status ?? 'Unknown' }}
+                                        </span>
+                                        @if($ticket)
+                                            <a href="{{ route('helpdesk.ticket', $ticket->id) }}" class="text-xs text-blue-600 hover:underline">
+                                                Ticket #{{ $ticket->id }}
+                                            </a>
+                                        @endif
+                                    </div>
+                                    <span class="text-xs text-slate-500 dark:text-gray-400">{{ $borrow->created_at?->format('M d, Y H:i') }}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-sm">
+                                    <div>
+                                        <span class="text-slate-500 dark:text-gray-400">Borrower:</span>
+                                        <span class="text-slate-800 dark:text-white">{{ $borrower?->name ?? 'N/A' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-500 dark:text-gray-400">Location:</span>
+                                        <span class="text-slate-800 dark:text-white">{{ $borrower?->location ?? 'N/A' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-500 dark:text-gray-400">Borrow Date:</span>
+                                        <span class="text-slate-800 dark:text-white">{{ $borrower?->date_to_borrow ? \Carbon\Carbon::parse($borrower->date_to_borrow)->format('M d, Y') : 'N/A' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-500 dark:text-gray-400">Return Date:</span>
+                                        <span class="text-slate-800 dark:text-white">{{ $borrower?->date_to_return ? \Carbon\Carbon::parse($borrower->date_to_return)->format('M d, Y') : 'N/A' }}</span>
+                                    </div>
+                                    @if($borrow->return_remarks)
+                                        <div class="col-span-2">
+                                            <span class="text-slate-500 dark:text-gray-400">Return Remarks:</span>
+                                            <span class="text-slate-800 dark:text-white">{{ $borrow->return_remarks }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8 text-slate-500 dark:text-gray-400">
+                        <span class="material-symbols-sharp text-4xl mb-2 block">inventory_2</span>
+                        <p>No borrow history found for this asset.</p>
+                    </div>
+                @endif
+            @endif
+        </x-slot>
+
+        <x-slot name="footer">
+            <x-secondary-button wire:click="$set('showHistoryModal', false)">
+                {{ __('Close') }}
+            </x-secondary-button>
         </x-slot>
     </x-dialog-modal>
 </div>
