@@ -113,7 +113,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
             <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-sm font-semibold text-gray-700 mb-4">Ticket Volume Trends</h3>
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Technical Assistance Volume</h3>
                 <div class="h-64"
                      wire:key="volume-{{ $period }}"
                      x-data="volumeChart(@js($volumeTrends))"
@@ -383,53 +383,46 @@ function watchLabels(component, overrides = {}) {
     component.$cleanup(() => window.removeEventListener('report-labels', handler));
 }
 
-// ─── Volume line chart (Created vs Resolved) ─────────────────────────────────
+// ─── Technical Assistance bar chart ──────────────────────────────────────────
 function volumeChart(data) {
     return {
         chart: null,
         init() {
             this.chart = new Chart(this.$refs.chart.getContext('2d'), {
-                type: 'line',
+                type: 'bar',
                 data: {
                     labels: data.map(d => d.label),
                     datasets: [
                         {
-                            label: 'Created',
+                            label: 'Technical Assistance',
                             data: data.map(d => d.created),
+                            backgroundColor: 'rgba(59,130,246,0.75)',
                             borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59,130,246,0.1)',
-                            tension: 0.3,
-                            fill: true,
-                            pointRadius: 3,
-                        },
-                        {
-                            label: 'Resolved',
-                            data: data.map(d => d.resolved),
-                            borderColor: '#22c55e',
-                            backgroundColor: 'rgba(34,197,94,0.1)',
-                            tension: 0.3,
-                            fill: true,
-                            pointRadius: 3,
+                            borderWidth: 1,
+                            borderRadius: 5,
                         },
                     ],
                 },
                 options: {
                     ...chartDefaults,
+                    layout: { padding: { top: 24 } },
                     plugins: {
-                        ...chartDefaults.plugins,
+                        legend: { display: false },
                         datalabels: {
-                            display: false,
-                            align: 'top',
+                            display: true,
                             anchor: 'end',
-                            font: { size: 10, weight: 'bold' },
+                            align: 'end',
+                            offset: 4,
+                            font: { size: 11, weight: 'bold' },
+                            color: '#1d4ed8',
                             formatter: v => v > 0 ? v : null,
-                            color: ctx => ctx.dataset.borderColor,
                         },
                     },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    },
                 },
             });
-            watchLabels(this, { align: 'top', anchor: 'end', font: { size: 10, weight: 'bold' }, formatter: v => v > 0 ? v : null, color: ctx => ctx.dataset.borderColor });
         },
     };
 }
