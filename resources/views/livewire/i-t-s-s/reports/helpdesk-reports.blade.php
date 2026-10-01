@@ -64,6 +64,10 @@
         </div>
     </div>
 
+    @php
+        $chartKey = $useCustomRange ? "custom-{$dateFrom}-{$dateTo}" : $period;
+    @endphp
+
     {{-- Summary Cards (6) --}}
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
 
@@ -145,7 +149,7 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Technical Assistance Volume</h3>
                 <div class="h-64"
-                     wire:key="volume-{{ $period }}"
+                     wire:key="volume-{{ $chartKey }}"
                      x-data="volumeChart(@js($volumeTrends))"
                      x-init="init()">
                     <canvas x-ref="chart"></canvas>
@@ -155,7 +159,7 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Status Distribution</h3>
                 <div class="h-64 flex items-center justify-center"
-                     wire:key="status-{{ $period }}"
+                     wire:key="status-{{ $chartKey }}"
                      x-data="statusChart(@js($summary['by_status'] ?? []))"
                      x-init="init()">
                     @if(empty($summary['by_status']))
@@ -174,7 +178,7 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">By Priority</h3>
                 <div class="h-64"
-                     wire:key="priority-{{ $period }}"
+                     wire:key="priority-{{ $chartKey }}"
                      x-data="priorityChart(@js($summary['by_priority'] ?? []))"
                      x-init="init()">
                     <canvas x-ref="chart"></canvas>
@@ -184,7 +188,7 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Top Categories</h3>
                 <div class="h-64"
-                     wire:key="category-{{ $period }}"
+                     wire:key="category-{{ $chartKey }}"
                      x-data="categoryChart(@js($topCategories))"
                      x-init="init()">
                     @if($topCategories->isEmpty())
@@ -203,7 +207,7 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Incident vs Service Request</h3>
                 <div class="h-64 flex items-center justify-center"
-                     wire:key="type-{{ $period }}"
+                     wire:key="type-{{ $chartKey }}"
                      x-data="typeChart(@js($summary['by_type'] ?? []))"
                      x-init="init()">
                     @if(empty($summary['by_type']))
@@ -360,7 +364,7 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">SLA Compliance Trend</h3>
                 <div class="h-64"
-                     wire:key="sla-trend-{{ $period }}"
+                     wire:key="sla-trend-{{ $chartKey }}"
                      x-data="slaTrendChart(@js($slaCompliance['trend'] ?? []))"
                      x-init="init()">
                     <canvas x-ref="chart"></canvas>
@@ -370,7 +374,7 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">SLA Compliance by Priority</h3>
                 <div class="h-64"
-                     wire:key="sla-priority-{{ $period }}"
+                     wire:key="sla-priority-{{ $chartKey }}"
                      x-data="slaPriorityChart(@js($slaCompliance['by_priority'] ?? []))"
                      x-init="init()">
                     <canvas x-ref="chart"></canvas>
