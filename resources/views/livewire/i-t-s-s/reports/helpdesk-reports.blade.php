@@ -7,15 +7,30 @@
             <p class="text-sm text-gray-500">Analytics and performance metrics for helpdesk operations</p>
         </div>
 
-        {{-- Period switcher --}}
-        <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
-            @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $p => $label)
-                <button wire:click="setPeriod('{{ $p }}')"
-                    class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors
-                        {{ $period === $p ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700' }}">
-                    {{ $label }}
+        <div class="flex items-center gap-3">
+            {{-- Labels toggle --}}
+            <div x-data="{ on: false }">
+                <button @click="on = !on; window.dispatchEvent(new CustomEvent('report-labels', { detail: on }))"
+                    :class="on ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'"
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                    <span x-text="on ? 'Labels: On' : 'Labels: Off'"></span>
                 </button>
-            @endforeach
+            </div>
+
+            {{-- Period switcher --}}
+            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $p => $label)
+                    <button wire:click="setPeriod('{{ $p }}')"
+                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors
+                            {{ $period === $p ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700' }}">
+                        {{ $label }}
+                    </button>
+                @endforeach
+            </div>
         </div>
     </div>
 
@@ -340,13 +355,33 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script>
-// ─── Shared defaults ─────────────────────────────────────────────────────────
+// Register datalabels plugin globally
+Chart.register(ChartDataLabels);
+
+// ─── Shared chart defaults ────────────────────────────────────────────────────
 const chartDefaults = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+    plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+        datalabels: { display: false },
+    },
 };
+
+// ─── Helper: listen for the global toggle event and update chart labels ───────
+function watchLabels(component, overrides = {}) {
+    const handler = (e) => {
+        if (!component.chart) return;
+        component.chart.options.plugins.datalabels.display = e.detail;
+        Object.assign(component.chart.options.plugins.datalabels, overrides);
+        component.chart.update('none');
+    };
+    window.addEventListener('report-labels', handler);
+    // Clean up when Alpine destroys the component (e.g. period/tab change)
+    component.$cleanup(() => window.removeEventListener('report-labels', handler));
+}
 
 // ─── Volume line chart (Created vs Resolved) ─────────────────────────────────
 function volumeChart(data) {
@@ -380,22 +415,28 @@ function volumeChart(data) {
                 },
                 options: {
                     ...chartDefaults,
+                    plugins: {
+                        ...chartDefaults.plugins,
+                        datalabels: {
+                            display: false,
+                            align: 'top',
+                            anchor: 'end',
+                            font: { size: 10, weight: 'bold' },
+                            formatter: v => v > 0 ? v : null,
+                            color: ctx => ctx.dataset.borderColor,
+                        },
+                    },
                     scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
                 },
             });
+            watchLabels(this, { align: 'top', anchor: 'end', font: { size: 10, weight: 'bold' }, formatter: v => v > 0 ? v : null, color: ctx => ctx.dataset.borderColor });
         },
     };
 }
 
 // ─── Status doughnut ─────────────────────────────────────────────────────────
 function statusChart(data) {
-    const colorMap = {
-        open: '#3b82f6',
-        in_progress: '#f59e0b',
-        resolved: '#22c55e',
-        closed: '#6b7280',
-        scheduled: '#8b5cf6',
-    };
+    const colorMap = { open: '#3b82f6', in_progress: '#f59e0b', resolved: '#22c55e', closed: '#6b7280', scheduled: '#8b5cf6' };
     return {
         chart: null,
         init() {
@@ -406,19 +447,26 @@ function statusChart(data) {
                 type: 'doughnut',
                 data: {
                     labels: keys.map(s => s.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())),
-                    datasets: [{
-                        data: values,
-                        backgroundColor: keys.map(s => colorMap[s] ?? '#94a3b8'),
-                        borderWidth: 2,
-                        borderColor: '#fff',
-                    }],
+                    datasets: [{ data: values, backgroundColor: keys.map(s => colorMap[s] ?? '#94a3b8'), borderWidth: 2, borderColor: '#fff' }],
                 },
                 options: {
                     ...chartDefaults,
                     cutout: '65%',
-                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } },
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+                        datalabels: {
+                            display: false,
+                            color: '#fff',
+                            font: { size: 11, weight: 'bold' },
+                            formatter: (v, ctx) => {
+                                const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                return total > 0 && v > 0 ? Math.round(v / total * 100) + '%' : null;
+                            },
+                        },
+                    },
                 },
             });
+            watchLabels(this, { color: '#fff', font: { size: 11, weight: 'bold' }, formatter: (v, ctx) => { const t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t>0&&v>0?Math.round(v/t*100)+'%':null; } });
         },
     };
 }
@@ -434,19 +482,18 @@ function priorityChart(data) {
                 type: 'bar',
                 data: {
                     labels: order.map(p => p.charAt(0).toUpperCase() + p.slice(1)),
-                    datasets: [{
-                        label: 'Tickets',
-                        data: order.map(p => data[p] ?? 0),
-                        backgroundColor: order.map(p => colors[p]),
-                        borderRadius: 4,
-                    }],
+                    datasets: [{ label: 'Tickets', data: order.map(p => data[p] ?? 0), backgroundColor: order.map(p => colors[p]), borderRadius: 4 }],
                 },
                 options: {
                     ...chartDefaults,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: { display: false, anchor: 'end', align: 'top', font: { size: 11, weight: 'bold' }, color: '#374151', formatter: v => v > 0 ? v : null },
+                    },
                     scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
                 },
             });
+            watchLabels(this, { anchor: 'end', align: 'top', font: { size: 11, weight: 'bold' }, color: '#374151', formatter: v => v > 0 ? v : null });
         },
     };
 }
@@ -462,22 +509,19 @@ function categoryChart(data) {
                 type: 'bar',
                 data: {
                     labels: arr.map(d => d.name),
-                    datasets: [{
-                        label: 'Tickets',
-                        data: arr.map(d => d.count),
-                        backgroundColor: 'rgba(99,102,241,0.75)',
-                        borderColor: '#6366f1',
-                        borderWidth: 1,
-                        borderRadius: 3,
-                    }],
+                    datasets: [{ label: 'Tickets', data: arr.map(d => d.count), backgroundColor: 'rgba(99,102,241,0.75)', borderColor: '#6366f1', borderWidth: 1, borderRadius: 3 }],
                 },
                 options: {
                     indexAxis: 'y',
                     ...chartDefaults,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: { display: false, anchor: 'end', align: 'right', font: { size: 11, weight: 'bold' }, color: '#374151', formatter: v => v > 0 ? v : null },
+                    },
                     scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
                 },
             });
+            watchLabels(this, { anchor: 'end', align: 'right', font: { size: 11, weight: 'bold' }, color: '#374151', formatter: v => v > 0 ? v : null });
         },
     };
 }
@@ -494,19 +538,26 @@ function typeChart(data) {
                 type: 'doughnut',
                 data: {
                     labels: ['Incident', 'Service Request'],
-                    datasets: [{
-                        data: [incident, request],
-                        backgroundColor: ['#ef4444', '#3b82f6'],
-                        borderWidth: 2,
-                        borderColor: '#fff',
-                    }],
+                    datasets: [{ data: [incident, request], backgroundColor: ['#ef4444', '#3b82f6'], borderWidth: 2, borderColor: '#fff' }],
                 },
                 options: {
                     ...chartDefaults,
                     cutout: '65%',
-                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } },
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+                        datalabels: {
+                            display: false,
+                            color: '#fff',
+                            font: { size: 11, weight: 'bold' },
+                            formatter: (v, ctx) => {
+                                const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                return total > 0 && v > 0 ? Math.round(v / total * 100) + '%' : null;
+                            },
+                        },
+                    },
                 },
             });
+            watchLabels(this, { color: '#fff', font: { size: 11, weight: 'bold' }, formatter: (v, ctx) => { const t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return t>0&&v>0?Math.round(v/t*100)+'%':null; } });
         },
     };
 }
@@ -522,34 +573,20 @@ function slaTrendChart(data) {
                 data: {
                     labels: arr.map(d => d.label),
                     datasets: [
-                        {
-                            label: 'Compliant',
-                            data: arr.map(d => d.compliant),
-                            backgroundColor: 'rgba(34,197,94,0.75)',
-                            borderColor: '#22c55e',
-                            borderWidth: 1,
-                            borderRadius: 3,
-                            stack: 'sla',
-                        },
-                        {
-                            label: 'Breached',
-                            data: arr.map(d => d.breached),
-                            backgroundColor: 'rgba(239,68,68,0.75)',
-                            borderColor: '#ef4444',
-                            borderWidth: 1,
-                            borderRadius: 3,
-                            stack: 'sla',
-                        },
+                        { label: 'Compliant', data: arr.map(d => d.compliant), backgroundColor: 'rgba(34,197,94,0.75)', borderColor: '#22c55e', borderWidth: 1, borderRadius: 3, stack: 'sla' },
+                        { label: 'Breached',  data: arr.map(d => d.breached),  backgroundColor: 'rgba(239,68,68,0.75)',  borderColor: '#ef4444', borderWidth: 1, borderRadius: 3, stack: 'sla' },
                     ],
                 },
                 options: {
                     ...chartDefaults,
-                    scales: {
-                        x: { stacked: true },
-                        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+                    plugins: {
+                        ...chartDefaults.plugins,
+                        datalabels: { display: false, color: '#fff', font: { size: 10, weight: 'bold' }, formatter: v => v > 0 ? v : null },
                     },
+                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } },
                 },
             });
+            watchLabels(this, { color: '#fff', font: { size: 10, weight: 'bold' }, formatter: v => v > 0 ? v : null });
         },
     };
 }
@@ -565,25 +602,20 @@ function slaPriorityChart(data) {
                 data: {
                     labels: arr.map(d => d.priority.charAt(0).toUpperCase() + d.priority.slice(1)),
                     datasets: [
-                        {
-                            label: 'Compliant',
-                            data: arr.map(d => d.compliant),
-                            backgroundColor: 'rgba(34,197,94,0.75)',
-                            borderRadius: 3,
-                        },
-                        {
-                            label: 'Breached',
-                            data: arr.map(d => d.breached),
-                            backgroundColor: 'rgba(239,68,68,0.75)',
-                            borderRadius: 3,
-                        },
+                        { label: 'Compliant', data: arr.map(d => d.compliant), backgroundColor: 'rgba(34,197,94,0.75)', borderRadius: 3 },
+                        { label: 'Breached',  data: arr.map(d => d.breached),  backgroundColor: 'rgba(239,68,68,0.75)', borderRadius: 3 },
                     ],
                 },
                 options: {
                     ...chartDefaults,
+                    plugins: {
+                        ...chartDefaults.plugins,
+                        datalabels: { display: false, anchor: 'end', align: 'top', font: { size: 11, weight: 'bold' }, color: '#374151', formatter: v => v > 0 ? v : null },
+                    },
                     scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
                 },
             });
+            watchLabels(this, { anchor: 'end', align: 'top', font: { size: 11, weight: 'bold' }, color: '#374151', formatter: v => v > 0 ? v : null });
         },
     };
 }
