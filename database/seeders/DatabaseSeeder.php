@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DefaultUserSeeder::class,
             MenuSeeder::class,
+            PrivilegedAccessMenuSeeder::class,
         ]);
 
         // User::factory(10)->create();

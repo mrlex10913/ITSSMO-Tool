@@ -12,349 +12,310 @@ use Illuminate\Support\Facades\DB;
 
 class HelpdeskReportingService
 {
-    /**
-     * Get ticket volume trends over a period.
-     *
-     * @return Collection<int, array{date: string, created: int, resolved: int, closed: int}>
-     */
-    public function getTicketVolumeTrends(int $days = 30): Collection
+    public function getDateRange(string $period): array
     {
-        $startDate = now()->subDays($days)->startOfDay();
+        return match ($period) {
+            'daily' => [
+                'start'     => now()->startOfDay(),
+                'end'       => now()->endOfDay(),
+                'prevStart' => now()->subDay()->startOfDay(),
+                'prevEnd'   => now()->subDay()->endOfDay(),
+            ],
+            'weekly' => [
+                'start'     => now()->startOfWeek(),
+                'end'       => now()->endOfWeek(),
+                'prevStart' => now()->subWeek()->startOfWeek(),
+                'prevEnd'   => now()->subWeek()->endOfWeek(),
+            ],
+            'yearly' => [
+                'start'     => now()->startOfYear(),
+                'end'       => now()->endOfYear(),
+                'prevStart' => now()->subYear()->startOfYear(),
+                'prevEnd'   => now()->subYear()->endOfYear(),
+            ],
+            default => [ // monthly
+                'start'     => now()->startOfMonth(),
+                'end'       => now()->endOfMonth(),
+                'prevStart' => now()->subMonth()->startOfMonth(),
+                'prevEnd'   => now()->subMonth()->endOfMonth(),
+            ],
+        };
+    }
 
-        // Use PHP-based grouping for database compatibility
-        $createdTickets = Ticket::where('created_at', '>=', $startDate)
-            ->get(['created_at'])
-            ->groupBy(fn ($t) => Carbon::parse($t->created_at)->format('Y-m-d'))
-            ->map(fn ($g) => $g->count());
+    /**
+     * Get ticket volume trends grouped by the period's natural unit.
+     *
+     * @return Collection<int, array{label: string, created: int, resolved: int, closed: int}>
+     */
+    public function getTicketVolumeTrends(string $period = 'monthly'): Collection
+    {
+        $range = $this->getDateRange($period);
+        $start = $range['start'];
+        $end   = $range['end'];
+        $data  = collect();
 
-        $resolvedTickets = Ticket::whereNotNull('resolved_at')
-            ->where('resolved_at', '>=', $startDate)
-            ->get(['resolved_at'])
-            ->groupBy(fn ($t) => Carbon::parse($t->resolved_at)->format('Y-m-d'))
-            ->map(fn ($g) => $g->count());
+        if ($period === 'daily') {
+            $created  = $this->fetchGrouped('created_at', $start, $end, 'H');
+            $resolved = $this->fetchGrouped('resolved_at', $start, $end, 'H');
+            $closed   = $this->fetchGrouped('closed_at', $start, $end, 'H');
 
-        $closedTickets = Ticket::whereNotNull('closed_at')
-            ->where('closed_at', '>=', $startDate)
-            ->get(['closed_at'])
-            ->groupBy(fn ($t) => Carbon::parse($t->closed_at)->format('Y-m-d'))
-            ->map(fn ($g) => $g->count());
+            for ($h = 0; $h <= 23; $h++) {
+                $key = str_pad($h, 2, '0', STR_PAD_LEFT);
+                $data->push([
+                    'label'    => $h . ':00',
+                    'created'  => $created[$key] ?? 0,
+                    'resolved' => $resolved[$key] ?? 0,
+                    'closed'   => $closed[$key] ?? 0,
+                ]);
+            }
+        } elseif ($period === 'yearly') {
+            $created  = $this->fetchGrouped('created_at', $start, $end, 'Y-m');
+            $resolved = $this->fetchGrouped('resolved_at', $start, $end, 'Y-m');
+            $closed   = $this->fetchGrouped('closed_at', $start, $end, 'Y-m');
 
-        // Build daily data
-        $data = collect();
-        for ($i = $days; $i >= 0; $i--) {
-            $date = now()->subDays($i)->format('Y-m-d');
-            $data->push([
-                'date' => $date,
-                'label' => Carbon::parse($date)->format('M j'),
-                'created' => $createdTickets[$date] ?? 0,
-                'resolved' => $resolvedTickets[$date] ?? 0,
-                'closed' => $closedTickets[$date] ?? 0,
-            ]);
+            for ($m = 1; $m <= 12; $m++) {
+                $key = $start->year . '-' . str_pad($m, 2, '0', STR_PAD_LEFT);
+                $data->push([
+                    'label'    => Carbon::createFromDate($start->year, $m, 1)->format('M'),
+                    'created'  => $created[$key] ?? 0,
+                    'resolved' => $resolved[$key] ?? 0,
+                    'closed'   => $closed[$key] ?? 0,
+                ]);
+            }
+        } else {
+            // weekly & monthly: group by calendar date
+            $created  = $this->fetchGrouped('created_at', $start, $end, 'Y-m-d');
+            $resolved = $this->fetchGrouped('resolved_at', $start, $end, 'Y-m-d');
+            $closed   = $this->fetchGrouped('closed_at', $start, $end, 'Y-m-d');
+
+            $current = $start->copy();
+            while ($current->lte($end)) {
+                $key = $current->format('Y-m-d');
+                $data->push([
+                    'label'    => $period === 'weekly' ? $current->format('D') : $current->format('M j'),
+                    'created'  => $created[$key] ?? 0,
+                    'resolved' => $resolved[$key] ?? 0,
+                    'closed'   => $closed[$key] ?? 0,
+                ]);
+                $current->addDay();
+            }
         }
 
         return $data;
     }
 
-    /**
-     * Get agent performance metrics.
-     *
-     * @return Collection<int, array>
-     */
-    public function getAgentPerformance(int $days = 30): Collection
+    /** @return Collection<int, array> */
+    public function getAgentPerformance(string $period = 'monthly'): Collection
     {
-        $startDate = now()->subDays($days)->startOfDay();
+        $range     = $this->getDateRange($period);
+        $startDate = $range['start'];
+        $endDate   = $range['end'];
 
-        // Get agents (users with ITSS/admin/developer roles)
-        $agents = User::whereHas('role', function ($q) {
-            $q->whereIn('slug', ['itss', 'administrator', 'developer']);
-        })->get(['id', 'name']);
+        $agents = User::whereHas('role', fn ($q) => $q->whereIn('slug', ['itss', 'administrator', 'developer']))
+            ->get(['id', 'name']);
 
-        return $agents->map(function ($agent) use ($startDate) {
-            // Tickets assigned
+        return $agents->map(function ($agent) use ($startDate, $endDate) {
             $assigned = Ticket::where('assignee_id', $agent->id)
-                ->where('created_at', '>=', $startDate)
+                ->whereBetween('created_at', [$startDate, $endDate])
                 ->count();
 
-            // Tickets resolved
             $resolved = Ticket::where('assignee_id', $agent->id)
                 ->whereNotNull('resolved_at')
-                ->where('resolved_at', '>=', $startDate)
+                ->whereBetween('resolved_at', [$startDate, $endDate])
                 ->count();
 
-            // Average resolution time (in hours) - PHP-based calculation
             $resolvedTickets = Ticket::where('assignee_id', $agent->id)
                 ->whereNotNull('resolved_at')
-                ->where('resolved_at', '>=', $startDate)
+                ->whereBetween('resolved_at', [$startDate, $endDate])
                 ->get(['created_at', 'resolved_at']);
 
             $avgResolutionTime = $resolvedTickets->isNotEmpty()
                 ? $resolvedTickets->avg(fn ($t) => Carbon::parse($t->created_at)->diffInMinutes(Carbon::parse($t->resolved_at)))
                 : null;
 
-            // First response time (average minutes) - PHP-based calculation
             $respondedTickets = Ticket::where('assignee_id', $agent->id)
                 ->whereNotNull('responded_at')
-                ->where('responded_at', '>=', $startDate)
+                ->whereBetween('responded_at', [$startDate, $endDate])
                 ->get(['created_at', 'responded_at']);
 
             $avgFrt = $respondedTickets->isNotEmpty()
                 ? $respondedTickets->avg(fn ($t) => Carbon::parse($t->created_at)->diffInMinutes(Carbon::parse($t->responded_at)))
                 : null;
 
-            // Comments made
             $comments = TicketComment::where('user_id', $agent->id)
-                ->where('created_at', '>=', $startDate)
+                ->whereBetween('created_at', [$startDate, $endDate])
                 ->count();
 
-            // SLA compliance (tickets resolved before SLA breach)
             $slaTotal = Ticket::where('assignee_id', $agent->id)
                 ->whereNotNull('sla_due_at')
                 ->whereNotNull('resolved_at')
-                ->where('resolved_at', '>=', $startDate)
+                ->whereBetween('resolved_at', [$startDate, $endDate])
                 ->count();
 
             $slaCompliant = Ticket::where('assignee_id', $agent->id)
                 ->whereNotNull('sla_due_at')
                 ->whereNotNull('resolved_at')
-                ->where('resolved_at', '>=', $startDate)
+                ->whereBetween('resolved_at', [$startDate, $endDate])
                 ->whereColumn('resolved_at', '<=', 'sla_due_at')
                 ->count();
 
-            // Time logged
             $timeLogged = TicketTimeEntry::where('user_id', $agent->id)
-                ->where('work_date', '>=', $startDate->format('Y-m-d'))
+                ->whereBetween('work_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->sum('duration_mins');
 
-            // CSAT scores - PHP-based calculation for compatibility
             $csatResponses = DB::table('csat_responses')
                 ->join('tickets', 'csat_responses.ticket_id', '=', 'tickets.id')
                 ->where('tickets.assignee_id', $agent->id)
                 ->whereNotNull('csat_responses.submitted_at')
-                ->where('csat_responses.submitted_at', '>=', $startDate)
+                ->whereBetween('csat_responses.submitted_at', [$startDate, $endDate])
                 ->get(['csat_responses.rating']);
 
             $csatTotal = $csatResponses->count();
-            $csatGood = $csatResponses->where('rating', 'good')->count();
-            $csatScore = $csatTotal > 0 ? round(($csatGood / $csatTotal) * 100, 1) : null;
+            $csatGood  = $csatResponses->where('rating', 'good')->count();
 
             return [
-                'id' => $agent->id,
-                'name' => $agent->name,
-                'assigned' => $assigned,
-                'resolved' => $resolved,
-                'resolution_rate' => $assigned > 0 ? round(($resolved / $assigned) * 100, 1) : 0,
+                'id'                   => $agent->id,
+                'name'                 => $agent->name,
+                'assigned'             => $assigned,
+                'resolved'             => $resolved,
+                'resolution_rate'      => $assigned > 0 ? round(($resolved / $assigned) * 100, 1) : 0,
                 'avg_resolution_hours' => $avgResolutionTime ? round($avgResolutionTime / 60, 1) : null,
-                'avg_frt_mins' => $avgFrt ? round($avgFrt, 0) : null,
-                'comments' => $comments,
-                'sla_compliance' => $slaTotal > 0 ? round(($slaCompliant / $slaTotal) * 100, 1) : null,
-                'time_logged_hours' => round($timeLogged / 60, 1),
-                'csat_score' => $csatScore,
-                'csat_total' => $csatTotal,
+                'avg_frt_mins'         => $avgFrt ? round($avgFrt, 0) : null,
+                'comments'             => $comments,
+                'sla_compliance'       => $slaTotal > 0 ? round(($slaCompliant / $slaTotal) * 100, 1) : null,
+                'time_logged_hours'    => round($timeLogged / 60, 1),
+                'csat_score'           => $csatTotal > 0 ? round(($csatGood / $csatTotal) * 100, 1) : null,
+                'csat_total'           => $csatTotal,
             ];
         })->sortByDesc('resolved')->values();
     }
 
-    /**
-     * Get SLA compliance metrics.
-     */
-    public function getSlaCompliance(int $days = 30): array
+    public function getSlaCompliance(string $period = 'monthly'): array
     {
-        $startDate = now()->subDays($days)->startOfDay();
+        $range     = $this->getDateRange($period);
+        $startDate = $range['start'];
+        $endDate   = $range['end'];
 
-        // Overall SLA stats
-        $total = Ticket::whereNotNull('sla_due_at')
-            ->where('created_at', '>=', $startDate)
-            ->count();
-
-        $breached = Ticket::whereNotNull('sla_due_at')
-            ->where('created_at', '>=', $startDate)
-            ->where(function ($q) {
-                // Breached if: resolved after due OR still open and past due
-                $q->where(function ($sub) {
-                    $sub->whereNotNull('resolved_at')
-                        ->whereColumn('resolved_at', '>', 'sla_due_at');
-                })->orWhere(function ($sub) {
-                    $sub->whereNull('resolved_at')
-                        ->where('sla_due_at', '<', now());
-                });
-            })
-            ->count();
-
+        $total   = $this->slaCount($startDate, $endDate);
+        $breached = $this->slaBreachedCount($startDate, $endDate);
         $compliant = $total - $breached;
 
-        // By priority
-        $byPriority = collect(Ticket::PRIORITIES)->map(function ($priority) use ($startDate) {
-            $priorityTotal = Ticket::whereNotNull('sla_due_at')
+        $byPriority = collect(Ticket::PRIORITIES)->map(function ($priority) use ($startDate, $endDate) {
+            $t = Ticket::whereNotNull('sla_due_at')
                 ->where('priority', $priority)
-                ->where('created_at', '>=', $startDate)
+                ->whereBetween('created_at', [$startDate, $endDate])
                 ->count();
 
-            $priorityBreached = Ticket::whereNotNull('sla_due_at')
+            $b = Ticket::whereNotNull('sla_due_at')
                 ->where('priority', $priority)
-                ->where('created_at', '>=', $startDate)
-                ->where(function ($q) {
-                    $q->where(function ($sub) {
-                        $sub->whereNotNull('resolved_at')
-                            ->whereColumn('resolved_at', '>', 'sla_due_at');
-                    })->orWhere(function ($sub) {
-                        $sub->whereNull('resolved_at')
-                            ->where('sla_due_at', '<', now());
-                    });
-                })
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where(fn ($q) => $this->applyBreachCondition($q))
                 ->count();
 
             return [
-                'priority' => $priority,
-                'total' => $priorityTotal,
-                'compliant' => $priorityTotal - $priorityBreached,
-                'breached' => $priorityBreached,
-                'compliance_rate' => $priorityTotal > 0
-                    ? round((($priorityTotal - $priorityBreached) / $priorityTotal) * 100, 1)
-                    : 100,
+                'priority'        => $priority,
+                'total'           => $t,
+                'compliant'       => $t - $b,
+                'breached'        => $b,
+                'compliance_rate' => $t > 0 ? round((($t - $b) / $t) * 100, 1) : 100,
             ];
         });
 
-        // Trend by week
-        $weeklyTrend = collect();
-        for ($i = 3; $i >= 0; $i--) {
-            $weekStart = now()->subWeeks($i)->startOfWeek();
-            $weekEnd = now()->subWeeks($i)->endOfWeek();
-
-            $weekTotal = Ticket::whereNotNull('sla_due_at')
-                ->whereBetween('created_at', [$weekStart, $weekEnd])
-                ->count();
-
-            $weekBreached = Ticket::whereNotNull('sla_due_at')
-                ->whereBetween('created_at', [$weekStart, $weekEnd])
-                ->where(function ($q) {
-                    $q->where(function ($sub) {
-                        $sub->whereNotNull('resolved_at')
-                            ->whereColumn('resolved_at', '>', 'sla_due_at');
-                    })->orWhere(function ($sub) {
-                        $sub->whereNull('resolved_at')
-                            ->where('sla_due_at', '<', now());
-                    });
-                })
-                ->count();
-
-            $weeklyTrend->push([
-                'week' => $weekStart->format('M j'),
-                'total' => $weekTotal,
-                'compliant' => $weekTotal - $weekBreached,
-                'breached' => $weekBreached,
-                'compliance_rate' => $weekTotal > 0
-                    ? round((($weekTotal - $weekBreached) / $weekTotal) * 100, 1)
-                    : 100,
-            ]);
-        }
-
         return [
-            'total' => $total,
-            'compliant' => $compliant,
-            'breached' => $breached,
+            'total'           => $total,
+            'compliant'       => $compliant,
+            'breached'        => $breached,
             'compliance_rate' => $total > 0 ? round(($compliant / $total) * 100, 1) : 100,
-            'by_priority' => $byPriority,
-            'weekly_trend' => $weeklyTrend,
+            'by_priority'     => $byPriority,
+            'trend'           => $this->buildSlaTrend($period, $startDate, $endDate),
         ];
     }
 
-    /**
-     * Get summary statistics for the dashboard.
-     */
-    public function getSummaryStats(int $days = 30): array
+    public function getSummaryStats(string $period = 'monthly'): array
     {
-        $startDate = now()->subDays($days)->startOfDay();
-        $prevStartDate = now()->subDays($days * 2)->startOfDay();
-        $prevEndDate = $startDate;
+        $range         = $this->getDateRange($period);
+        $startDate     = $range['start'];
+        $endDate       = $range['end'];
+        $prevStartDate = $range['prevStart'];
+        $prevEndDate   = $range['prevEnd'];
 
-        // Current period stats
-        $created = Ticket::where('created_at', '>=', $startDate)->count();
+        $created  = Ticket::whereBetween('created_at', [$startDate, $endDate])->count();
         $resolved = Ticket::whereNotNull('resolved_at')
-            ->where('resolved_at', '>=', $startDate)->count();
+            ->whereBetween('resolved_at', [$startDate, $endDate])->count();
         $open = Ticket::whereIn('status', ['open', 'in_progress'])->count();
 
-        // Previous period for comparison
-        $prevCreated = Ticket::whereBetween('created_at', [$prevStartDate, $prevEndDate])->count();
+        $prevCreated  = Ticket::whereBetween('created_at', [$prevStartDate, $prevEndDate])->count();
         $prevResolved = Ticket::whereNotNull('resolved_at')
             ->whereBetween('resolved_at', [$prevStartDate, $prevEndDate])->count();
 
-        // Average resolution time - PHP-based calculation
         $resolvedTickets = Ticket::whereNotNull('resolved_at')
-            ->where('resolved_at', '>=', $startDate)
+            ->whereBetween('resolved_at', [$startDate, $endDate])
             ->get(['created_at', 'resolved_at']);
 
         $avgResolution = $resolvedTickets->isNotEmpty()
             ? $resolvedTickets->avg(fn ($t) => Carbon::parse($t->created_at)->diffInHours(Carbon::parse($t->resolved_at)))
             : null;
 
-        // Average first response time - PHP-based calculation
         $respondedTickets = Ticket::whereNotNull('responded_at')
-            ->where('responded_at', '>=', $startDate)
+            ->whereBetween('responded_at', [$startDate, $endDate])
             ->get(['created_at', 'responded_at']);
 
         $avgFrt = $respondedTickets->isNotEmpty()
             ? $respondedTickets->avg(fn ($t) => Carbon::parse($t->created_at)->diffInMinutes(Carbon::parse($t->responded_at)))
             : null;
 
-        // CSAT average - PHP-based calculation
         $csatResponses = DB::table('csat_responses')
             ->whereNotNull('submitted_at')
-            ->where('submitted_at', '>=', $startDate)
+            ->whereBetween('submitted_at', [$startDate, $endDate])
             ->get(['rating']);
 
         $csatTotal = $csatResponses->count();
-        $csatGood = $csatResponses->where('rating', 'good')->count();
-        $csatScore = $csatTotal > 0 ? round(($csatGood / $csatTotal) * 100, 1) : null;
+        $csatGood  = $csatResponses->where('rating', 'good')->count();
 
-        // By status
-        $byStatus = Ticket::where('created_at', '>=', $startDate)
+        $slaTotal   = $this->slaCount($startDate, $endDate);
+        $slaBreached = $this->slaBreachedCount($startDate, $endDate);
+        $slaRate     = $slaTotal > 0 ? round((($slaTotal - $slaBreached) / $slaTotal) * 100, 1) : null;
+
+        $byStatus = Ticket::whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status')
             ->toArray();
 
-        // By type
-        $byType = Ticket::where('created_at', '>=', $startDate)
+        $byType = Ticket::whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('type, COUNT(*) as count')
             ->groupBy('type')
             ->pluck('count', 'type')
             ->toArray();
 
-        // By priority
-        $byPriority = Ticket::where('created_at', '>=', $startDate)
+        $byPriority = Ticket::whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('priority, COUNT(*) as count')
             ->groupBy('priority')
             ->pluck('count', 'priority')
             ->toArray();
 
         return [
-            'created' => $created,
-            'created_change' => $prevCreated > 0
-                ? round((($created - $prevCreated) / $prevCreated) * 100, 1)
-                : 0,
-            'resolved' => $resolved,
-            'resolved_change' => $prevResolved > 0
-                ? round((($resolved - $prevResolved) / $prevResolved) * 100, 1)
-                : 0,
-            'open' => $open,
+            'created'              => $created,
+            'created_change'       => $prevCreated > 0 ? round((($created - $prevCreated) / $prevCreated) * 100, 1) : 0,
+            'resolved'             => $resolved,
+            'resolved_change'      => $prevResolved > 0 ? round((($resolved - $prevResolved) / $prevResolved) * 100, 1) : 0,
+            'open'                 => $open,
             'avg_resolution_hours' => $avgResolution ? round($avgResolution, 1) : null,
-            'avg_frt_mins' => $avgFrt ? round($avgFrt, 0) : null,
-            'csat_score' => $csatScore,
-            'by_status' => $byStatus,
-            'by_type' => $byType,
-            'by_priority' => $byPriority,
+            'avg_frt_mins'         => $avgFrt ? round($avgFrt, 0) : null,
+            'csat_score'           => $csatTotal > 0 ? round(($csatGood / $csatTotal) * 100, 1) : null,
+            'sla_rate'             => $slaRate,
+            'by_status'            => $byStatus,
+            'by_type'              => $byType,
+            'by_priority'          => $byPriority,
         ];
     }
 
-    /**
-     * Get top categories by ticket volume.
-     */
-    public function getTopCategories(int $days = 30, int $limit = 10): Collection
+    public function getTopCategories(string $period = 'monthly', int $limit = 10): Collection
     {
-        $startDate = now()->subDays($days)->startOfDay();
+        $range = $this->getDateRange($period);
 
         return Ticket::with('category:id,name')
-            ->where('created_at', '>=', $startDate)
+            ->whereBetween('created_at', [$range['start'], $range['end']])
             ->whereNotNull('category_id')
             ->selectRaw('category_id, COUNT(*) as count')
             ->groupBy('category_id')
@@ -362,8 +323,99 @@ class HelpdeskReportingService
             ->limit($limit)
             ->get()
             ->map(fn ($row) => [
-                'name' => $row->category?->name ?? 'Uncategorized',
+                'name'  => $row->category?->name ?? 'Uncategorized',
                 'count' => $row->count,
             ]);
+    }
+
+    // ─── Private helpers ─────────────────────────────────────────────────────
+
+    private function fetchGrouped(string $column, Carbon $start, Carbon $end, string $format): Collection
+    {
+        return Ticket::whereNotNull($column)
+            ->whereBetween($column, [$start, $end])
+            ->get([$column])
+            ->groupBy(fn ($t) => Carbon::parse($t->{$column})->format($format))
+            ->map(fn ($g) => $g->count());
+    }
+
+    private function slaCount(Carbon $start, Carbon $end): int
+    {
+        return Ticket::whereNotNull('sla_due_at')
+            ->whereBetween('created_at', [$start, $end])
+            ->count();
+    }
+
+    private function slaBreachedCount(Carbon $start, Carbon $end): int
+    {
+        return Ticket::whereNotNull('sla_due_at')
+            ->whereBetween('created_at', [$start, $end])
+            ->where(fn ($q) => $this->applyBreachCondition($q))
+            ->count();
+    }
+
+    private function applyBreachCondition($query): void
+    {
+        $query->where(function ($sub) {
+            $sub->whereNotNull('resolved_at')
+                ->whereColumn('resolved_at', '>', 'sla_due_at');
+        })->orWhere(function ($sub) {
+            $sub->whereNull('resolved_at')
+                ->where('sla_due_at', '<', now());
+        });
+    }
+
+    private function buildSlaTrend(string $period, Carbon $start, Carbon $end): Collection
+    {
+        $trend = collect();
+
+        if ($period === 'daily') {
+            for ($h = 0; $h <= 23; $h++) {
+                $from = $start->copy()->setHour($h)->startOfHour();
+                $to   = $start->copy()->setHour($h)->endOfHour();
+                $this->pushSlaTrendEntry($trend, $from, $to, $h . ':00');
+            }
+        } elseif ($period === 'weekly') {
+            $current = $start->copy();
+            while ($current->lte($end)) {
+                $from = $current->copy()->startOfDay();
+                $to   = $current->copy()->endOfDay();
+                $this->pushSlaTrendEntry($trend, $from, $to, $current->format('D'));
+                $current->addDay();
+            }
+        } elseif ($period === 'monthly') {
+            $weekNum = 1;
+            $current = $start->copy()->startOfWeek();
+            while ($current->lte($end)) {
+                $from = $current->copy();
+                $to   = $current->copy()->endOfWeek()->min($end);
+                $this->pushSlaTrendEntry($trend, $from, $to, 'Wk ' . $weekNum);
+                $current->addWeek();
+                $weekNum++;
+            }
+        } else {
+            // yearly: monthly breakdown
+            for ($m = 1; $m <= 12; $m++) {
+                $from = Carbon::createFromDate($start->year, $m, 1)->startOfMonth();
+                $to   = $from->copy()->endOfMonth();
+                $this->pushSlaTrendEntry($trend, $from, $to, $from->format('M'));
+            }
+        }
+
+        return $trend;
+    }
+
+    private function pushSlaTrendEntry(Collection $trend, Carbon $from, Carbon $to, string $label): void
+    {
+        $t = $this->slaCount($from, $to);
+        $b = $this->slaBreachedCount($from, $to);
+
+        $trend->push([
+            'label'           => $label,
+            'total'           => $t,
+            'compliant'       => $t - $b,
+            'breached'        => $b,
+            'compliance_rate' => $t > 0 ? round((($t - $b) / $t) * 100, 1) : 100,
+        ]);
     }
 }

@@ -37,6 +37,7 @@ use App\Livewire\PAMO\Dashboard;
 use App\Livewire\PAMO\Inventory;
 use App\Livewire\PAMO\MasterList;
 use App\Livewire\PAMO\Transactions;
+use App\Livewire\Reports\PrivilegedAccessReport;
 use App\Livewire\Tickets\GuestHome;
 use App\Livewire\Tickets\GuestPortal;
 use App\Livewire\Tickets\GuestTrack;
@@ -99,6 +100,7 @@ Route::middleware([
         Route::get('/control-panel/roles', RolesControl::class)->name('controlPanel.roles');
         Route::get('/control-panel/menus', MenusControl::class)->name('controlPanel.menus');
         Route::get('/control-panel/departments', DepartmentsControl::class)->name('controlPanel.departments');
+        Route::get('/control-panel/reports/privileged-access', PrivilegedAccessReport::class)->name('controlPanel.reports.privilegedAccess');
         Route::get('/control-panel/reports/surveys', SurveyReport::class)->name('controlPanel.reports.surveys');
         Route::get('/control-panel/reports/surveys/export', function () {
             $dept = request('department');

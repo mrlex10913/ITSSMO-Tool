@@ -9,7 +9,7 @@ use Livewire\Component;
 #[Layout('layouts.enduser')]
 class HelpdeskReports extends Component
 {
-    public int $periodDays = 30;
+    public string $period = 'monthly';
 
     public string $activeTab = 'overview';
 
@@ -20,9 +20,11 @@ class HelpdeskReports extends Component
         $this->reportService = $reportService;
     }
 
-    public function setPeriod(int $days): void
+    public function setPeriod(string $period): void
     {
-        $this->periodDays = $days;
+        if (in_array($period, ['daily', 'weekly', 'monthly', 'yearly'])) {
+            $this->period = $period;
+        }
     }
 
     public function setTab(string $tab): void
@@ -32,18 +34,18 @@ class HelpdeskReports extends Component
 
     public function render()
     {
-        $summary = $this->reportService->getSummaryStats($this->periodDays);
-        $volumeTrends = $this->reportService->getTicketVolumeTrends($this->periodDays);
-        $agentPerformance = $this->reportService->getAgentPerformance($this->periodDays);
-        $slaCompliance = $this->reportService->getSlaCompliance($this->periodDays);
-        $topCategories = $this->reportService->getTopCategories($this->periodDays);
+        $summary          = $this->reportService->getSummaryStats($this->period);
+        $volumeTrends     = $this->reportService->getTicketVolumeTrends($this->period);
+        $agentPerformance = $this->reportService->getAgentPerformance($this->period);
+        $slaCompliance    = $this->reportService->getSlaCompliance($this->period);
+        $topCategories    = $this->reportService->getTopCategories($this->period);
 
         return view('livewire.i-t-s-s.reports.helpdesk-reports', [
-            'summary' => $summary,
-            'volumeTrends' => $volumeTrends,
+            'summary'          => $summary,
+            'volumeTrends'     => $volumeTrends,
             'agentPerformance' => $agentPerformance,
-            'slaCompliance' => $slaCompliance,
-            'topCategories' => $topCategories,
+            'slaCompliance'    => $slaCompliance,
+            'topCategories'    => $topCategories,
         ]);
     }
 }

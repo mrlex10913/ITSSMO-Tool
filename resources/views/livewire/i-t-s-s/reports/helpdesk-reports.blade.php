@@ -1,20 +1,81 @@
 <div class="p-6 max-w-7xl mx-auto">
+
     {{-- Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Helpdesk Reports</h1>
             <p class="text-sm text-gray-500">Analytics and performance metrics for helpdesk operations</p>
         </div>
-        <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-500">Period:</span>
-            <select wire:model.live="periodDays" class="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                <option value="7">Last 7 days</option>
-                <option value="14">Last 14 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="60">Last 60 days</option>
-                <option value="90">Last 90 days</option>
-            </select>
+
+        {{-- Period switcher --}}
+        <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+            @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $p => $label)
+                <button wire:click="setPeriod('{{ $p }}')"
+                    class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors
+                        {{ $period === $p ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700' }}">
+                    {{ $label }}
+                </button>
+            @endforeach
         </div>
+    </div>
+
+    {{-- Summary Cards (6) --}}
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Created</span>
+                @if(($summary['created_change'] ?? 0) != 0)
+                    <span class="text-xs px-1.5 py-0.5 rounded
+                        {{ $summary['created_change'] > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
+                        {{ $summary['created_change'] > 0 ? '+' : '' }}{{ $summary['created_change'] }}%
+                    </span>
+                @endif
+            </div>
+            <div class="text-2xl font-bold text-gray-900 mt-1">{{ number_format($summary['created'] ?? 0) }}</div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Resolved</span>
+                @if(($summary['resolved_change'] ?? 0) != 0)
+                    <span class="text-xs px-1.5 py-0.5 rounded
+                        {{ $summary['resolved_change'] > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                        {{ $summary['resolved_change'] > 0 ? '+' : '' }}{{ $summary['resolved_change'] }}%
+                    </span>
+                @endif
+            </div>
+            <div class="text-2xl font-bold text-gray-900 mt-1">{{ number_format($summary['resolved'] ?? 0) }}</div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <span class="text-xs text-gray-500">Open Now</span>
+            <div class="text-2xl font-bold text-blue-600 mt-1">{{ number_format($summary['open'] ?? 0) }}</div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <span class="text-xs text-gray-500">CSAT Score</span>
+            <div class="text-2xl font-bold mt-1
+                {{ ($summary['csat_score'] ?? 0) >= 80 ? 'text-green-600' : (($summary['csat_score'] ?? 0) >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
+                {{ $summary['csat_score'] !== null ? $summary['csat_score'] . '%' : '—' }}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <span class="text-xs text-gray-500">Avg Resolve</span>
+            <div class="text-2xl font-bold text-gray-900 mt-1">
+                {{ $summary['avg_resolution_hours'] !== null ? $summary['avg_resolution_hours'] . 'h' : '—' }}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <span class="text-xs text-gray-500">SLA Rate</span>
+            <div class="text-2xl font-bold mt-1
+                {{ ($summary['sla_rate'] ?? 100) >= 90 ? 'text-green-600' : (($summary['sla_rate'] ?? 100) >= 70 ? 'text-yellow-600' : 'text-red-600') }}">
+                {{ $summary['sla_rate'] !== null ? $summary['sla_rate'] . '%' : '—' }}
+            </div>
+        </div>
+
     </div>
 
     {{-- Tabs --}}
@@ -22,165 +83,137 @@
         <nav class="flex gap-4" aria-label="Tabs">
             @foreach(['overview' => 'Overview', 'agents' => 'Agent Performance', 'sla' => 'SLA Compliance'] as $tab => $label)
                 <button wire:click="setTab('{{ $tab }}')"
-                    class="py-2 px-1 border-b-2 text-sm font-medium {{ $activeTab === $tab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    class="py-2 px-1 border-b-2 text-sm font-medium
+                        {{ $activeTab === $tab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     {{ $label }}
                 </button>
             @endforeach
         </nav>
     </div>
 
-    {{-- Overview Tab --}}
+    {{-- ═══ OVERVIEW TAB ═══ --}}
     @if($activeTab === 'overview')
-        {{-- Summary Cards --}}
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white rounded-lg shadow p-4">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-500">Tickets Created</span>
-                    @if(($summary['created_change'] ?? 0) != 0)
-                        <span class="text-xs px-1.5 py-0.5 rounded {{ $summary['created_change'] > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
-                            {{ $summary['created_change'] > 0 ? '+' : '' }}{{ $summary['created_change'] }}%
-                        </span>
-                    @endif
-                </div>
-                <div class="text-2xl font-bold text-gray-900 mt-1">{{ number_format($summary['created'] ?? 0) }}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-4">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-500">Tickets Resolved</span>
-                    @if(($summary['resolved_change'] ?? 0) != 0)
-                        <span class="text-xs px-1.5 py-0.5 rounded {{ $summary['resolved_change'] > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                            {{ $summary['resolved_change'] > 0 ? '+' : '' }}{{ $summary['resolved_change'] }}%
-                        </span>
-                    @endif
-                </div>
-                <div class="text-2xl font-bold text-gray-900 mt-1">{{ number_format($summary['resolved'] ?? 0) }}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-4">
-                <span class="text-sm text-gray-500">Open Tickets</span>
-                <div class="text-2xl font-bold text-gray-900 mt-1">{{ number_format($summary['open'] ?? 0) }}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-4">
-                <span class="text-sm text-gray-500">CSAT Score</span>
-                <div class="text-2xl font-bold {{ ($summary['csat_score'] ?? 0) >= 80 ? 'text-green-600' : (($summary['csat_score'] ?? 0) >= 60 ? 'text-yellow-600' : 'text-red-600') }} mt-1">
-                    {{ $summary['csat_score'] !== null ? $summary['csat_score'] . '%' : '—' }}
-                </div>
-            </div>
-        </div>
 
-        {{-- Secondary Stats --}}
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-gray-50 rounded-lg p-4">
-                <span class="text-xs text-gray-500">Avg Resolution Time</span>
-                <div class="text-lg font-semibold text-gray-800">
-                    {{ $summary['avg_resolution_hours'] !== null ? $summary['avg_resolution_hours'] . 'h' : '—' }}
-                </div>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-4">
-                <span class="text-xs text-gray-500">Avg First Response</span>
-                <div class="text-lg font-semibold text-gray-800">
-                    {{ $summary['avg_frt_mins'] !== null ? $summary['avg_frt_mins'] . 'm' : '—' }}
-                </div>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-4">
-                <span class="text-xs text-gray-500">Incidents</span>
-                <div class="text-lg font-semibold text-gray-800">{{ $summary['by_type']['incident'] ?? 0 }}</div>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-4">
-                <span class="text-xs text-gray-500">Service Requests</span>
-                <div class="text-lg font-semibold text-gray-800">{{ $summary['by_type']['request'] ?? 0 }}</div>
-            </div>
-        </div>
-
+        {{-- Row 1: Volume line + Status doughnut --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {{-- Ticket Volume Chart --}}
+
             <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-md font-medium text-gray-900 mb-4">Ticket Volume Trends</h3>
-                <div class="h-64" x-data="volumeChart(@js($volumeTrends))" x-init="initChart()">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Ticket Volume Trends</h3>
+                <div class="h-64"
+                     wire:key="volume-{{ $period }}"
+                     x-data="volumeChart(@js($volumeTrends))"
+                     x-init="init()">
                     <canvas x-ref="chart"></canvas>
                 </div>
             </div>
 
-            {{-- Status Breakdown --}}
             <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-md font-medium text-gray-900 mb-4">Status Distribution</h3>
-                <div class="space-y-3">
-                    @php
-                        $statusColors = [
-                            'open' => 'bg-blue-500',
-                            'in_progress' => 'bg-yellow-500',
-                            'resolved' => 'bg-green-500',
-                            'closed' => 'bg-gray-500',
-                        ];
-                        $total = array_sum($summary['by_status'] ?? []);
-                    @endphp
-                    @foreach($summary['by_status'] ?? [] as $status => $count)
-                        @php $pct = $total > 0 ? round(($count / $total) * 100, 1) : 0; @endphp
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-600">{{ ucwords(str_replace('_', ' ', $status)) }}</span>
-                                <span class="font-medium">{{ $count }} ({{ $pct }}%)</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="{{ $statusColors[$status] ?? 'bg-gray-400' }} h-2 rounded-full" style="width: {{ $pct }}%"></div>
-                            </div>
-                        </div>
-                    @endforeach
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Status Distribution</h3>
+                <div class="h-64 flex items-center justify-center"
+                     wire:key="status-{{ $period }}"
+                     x-data="statusChart(@js($summary['by_status'] ?? []))"
+                     x-init="init()">
+                    @if(empty($summary['by_status']))
+                        <p class="text-sm text-gray-400">No data for this period.</p>
+                    @else
+                        <canvas x-ref="chart"></canvas>
+                    @endif
                 </div>
             </div>
+
         </div>
 
+        {{-- Row 2: Priority bar + Categories horizontal bar --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">By Priority</h3>
+                <div class="h-64"
+                     wire:key="priority-{{ $period }}"
+                     x-data="priorityChart(@js($summary['by_priority'] ?? []))"
+                     x-init="init()">
+                    <canvas x-ref="chart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Top Categories</h3>
+                <div class="h-64"
+                     wire:key="category-{{ $period }}"
+                     x-data="categoryChart(@js($topCategories))"
+                     x-init="init()">
+                    @if($topCategories->isEmpty())
+                        <p class="text-sm text-gray-400 pt-8 text-center">No categorized tickets in this period.</p>
+                    @else
+                        <canvas x-ref="chart"></canvas>
+                    @endif
+                </div>
+            </div>
+
+        </div>
+
+        {{-- Row 3: Incident vs Request doughnut + Quick stats --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {{-- Priority Breakdown --}}
+
             <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-md font-medium text-gray-900 mb-4">By Priority</h3>
-                <div class="space-y-3">
-                    @php
-                        $priorityColors = [
-                            'low' => 'bg-gray-400',
-                            'medium' => 'bg-blue-400',
-                            'high' => 'bg-orange-500',
-                            'critical' => 'bg-red-500',
-                        ];
-                        $priorityTotal = array_sum($summary['by_priority'] ?? []);
-                    @endphp
-                    @foreach(['critical', 'high', 'medium', 'low'] as $priority)
-                        @php
-                            $count = $summary['by_priority'][$priority] ?? 0;
-                            $pct = $priorityTotal > 0 ? round(($count / $priorityTotal) * 100, 1) : 0;
-                        @endphp
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-600">{{ ucfirst($priority) }}</span>
-                                <span class="font-medium">{{ $count }} ({{ $pct }}%)</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="{{ $priorityColors[$priority] }} h-2 rounded-full" style="width: {{ $pct }}%"></div>
-                            </div>
-                        </div>
-                    @endforeach
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Incident vs Service Request</h3>
+                <div class="h-64 flex items-center justify-center"
+                     wire:key="type-{{ $period }}"
+                     x-data="typeChart(@js($summary['by_type'] ?? []))"
+                     x-init="init()">
+                    @if(empty($summary['by_type']))
+                        <p class="text-sm text-gray-400">No data for this period.</p>
+                    @else
+                        <canvas x-ref="chart"></canvas>
+                    @endif
                 </div>
             </div>
 
-            {{-- Top Categories --}}
             <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-md font-medium text-gray-900 mb-4">Top Categories</h3>
-                @if($topCategories->isEmpty())
-                    <p class="text-sm text-gray-500">No categorized tickets in this period.</p>
-                @else
-                    <div class="space-y-2">
-                        @foreach($topCategories as $cat)
-                            <div class="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
-                                <span class="text-sm text-gray-700">{{ $cat['name'] }}</span>
-                                <span class="text-sm font-medium text-gray-900">{{ $cat['count'] }}</span>
-                            </div>
-                        @endforeach
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Quick Stats</h3>
+                <div class="space-y-3 mt-2">
+                    @php
+                        $resolutionRate = ($summary['created'] ?? 0) > 0
+                            ? round(($summary['resolved'] / $summary['created']) * 100, 1)
+                            : 0;
+                    @endphp
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-sm text-gray-600">Avg First Response</span>
+                        <span class="text-sm font-semibold text-gray-900">
+                            {{ $summary['avg_frt_mins'] !== null ? $summary['avg_frt_mins'] . ' min' : '—' }}
+                        </span>
                     </div>
-                @endif
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-sm text-gray-600">Incidents</span>
+                        <span class="text-sm font-semibold text-gray-900">{{ $summary['by_type']['incident'] ?? 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-sm text-gray-600">Service Requests</span>
+                        <span class="text-sm font-semibold text-gray-900">{{ $summary['by_type']['request'] ?? 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-sm text-gray-600">Resolution Rate</span>
+                        <span class="text-sm font-semibold
+                            {{ $resolutionRate >= 80 ? 'text-green-600' : ($resolutionRate >= 50 ? 'text-yellow-600' : 'text-red-600') }}">
+                            {{ $resolutionRate }}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-sm text-gray-600">Critical Tickets</span>
+                        <span class="text-sm font-semibold text-red-600">{{ $summary['by_priority']['critical'] ?? 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-sm text-gray-600">Scheduled</span>
+                        <span class="text-sm font-semibold text-purple-600">{{ $summary['by_status']['scheduled'] ?? 0 }}</span>
+                    </div>
+                </div>
             </div>
+
         </div>
+
     @endif
 
-    {{-- Agent Performance Tab --}}
+    {{-- ═══ AGENT PERFORMANCE TAB ═══ --}}
     @if($activeTab === 'agents')
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="px-6 py-4 border-b">
@@ -205,13 +238,12 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($agentPerformance as $agent)
                             <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="font-medium text-gray-900">{{ $agent['name'] }}</div>
-                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-900">{{ $agent['name'] }}</td>
                                 <td class="px-4 py-3 text-center text-sm text-gray-600">{{ $agent['assigned'] }}</td>
                                 <td class="px-4 py-3 text-center text-sm text-gray-600">{{ $agent['resolved'] }}</td>
                                 <td class="px-4 py-3 text-center">
-                                    <span class="text-sm font-medium {{ $agent['resolution_rate'] >= 80 ? 'text-green-600' : ($agent['resolution_rate'] >= 50 ? 'text-yellow-600' : 'text-red-600') }}">
+                                    <span class="text-sm font-medium
+                                        {{ $agent['resolution_rate'] >= 80 ? 'text-green-600' : ($agent['resolution_rate'] >= 50 ? 'text-yellow-600' : 'text-red-600') }}">
                                         {{ $agent['resolution_rate'] }}%
                                     </span>
                                 </td>
@@ -223,7 +255,8 @@
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     @if($agent['sla_compliance'] !== null)
-                                        <span class="px-2 py-1 rounded text-xs font-medium {{ $agent['sla_compliance'] >= 90 ? 'bg-green-100 text-green-800' : ($agent['sla_compliance'] >= 70 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        <span class="px-2 py-1 rounded text-xs font-medium
+                                            {{ $agent['sla_compliance'] >= 90 ? 'bg-green-100 text-green-800' : ($agent['sla_compliance'] >= 70 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                                             {{ $agent['sla_compliance'] }}%
                                         </span>
                                     @else
@@ -232,7 +265,8 @@
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     @if($agent['csat_score'] !== null)
-                                        <span class="text-sm font-medium {{ $agent['csat_score'] >= 80 ? 'text-green-600' : ($agent['csat_score'] >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
+                                        <span class="text-sm font-medium
+                                            {{ $agent['csat_score'] >= 80 ? 'text-green-600' : ($agent['csat_score'] >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
                                             {{ $agent['csat_score'] }}%
                                         </span>
                                         <span class="text-xs text-gray-400">({{ $agent['csat_total'] }})</span>
@@ -253,11 +287,14 @@
         </div>
     @endif
 
-    {{-- SLA Compliance Tab --}}
+    {{-- ═══ SLA COMPLIANCE TAB ═══ --}}
     @if($activeTab === 'sla')
+
+        {{-- Summary cards --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-white rounded-lg shadow p-6 text-center">
-                <div class="text-4xl font-bold {{ ($slaCompliance['compliance_rate'] ?? 0) >= 90 ? 'text-green-600' : (($slaCompliance['compliance_rate'] ?? 0) >= 70 ? 'text-yellow-600' : 'text-red-600') }}">
+                <div class="text-4xl font-bold
+                    {{ ($slaCompliance['compliance_rate'] ?? 0) >= 90 ? 'text-green-600' : (($slaCompliance['compliance_rate'] ?? 0) >= 70 ? 'text-yellow-600' : 'text-red-600') }}">
                     {{ $slaCompliance['compliance_rate'] ?? 0 }}%
                 </div>
                 <div class="text-sm text-gray-500 mt-1">Overall SLA Compliance</div>
@@ -272,110 +309,283 @@
             </div>
         </div>
 
+        {{-- Charts --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {{-- By Priority --}}
+
             <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-md font-medium text-gray-900 mb-4">SLA Compliance by Priority</h3>
-                <div class="space-y-4">
-                    @foreach($slaCompliance['by_priority'] ?? [] as $item)
-                        @if($item['total'] > 0)
-                            <div>
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="font-medium text-gray-700">{{ ucfirst($item['priority']) }}</span>
-                                    <span class="{{ $item['compliance_rate'] >= 90 ? 'text-green-600' : ($item['compliance_rate'] >= 70 ? 'text-yellow-600' : 'text-red-600') }} font-medium">
-                                        {{ $item['compliance_rate'] }}%
-                                    </span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3 relative">
-                                    <div class="{{ $item['compliance_rate'] >= 90 ? 'bg-green-500' : ($item['compliance_rate'] >= 70 ? 'bg-yellow-500' : 'bg-red-500') }} h-3 rounded-full" style="width: {{ $item['compliance_rate'] }}%"></div>
-                                </div>
-                                <div class="text-xs text-gray-500 mt-1">
-                                    {{ $item['compliant'] }} compliant / {{ $item['breached'] }} breached ({{ $item['total'] }} total)
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">SLA Compliance Trend</h3>
+                <div class="h-64"
+                     wire:key="sla-trend-{{ $period }}"
+                     x-data="slaTrendChart(@js($slaCompliance['trend'] ?? []))"
+                     x-init="init()">
+                    <canvas x-ref="chart"></canvas>
                 </div>
             </div>
 
-            {{-- Weekly Trend --}}
             <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-md font-medium text-gray-900 mb-4">Weekly SLA Trend</h3>
-                <div class="space-y-4">
-                    @foreach($slaCompliance['weekly_trend'] ?? [] as $week)
-                        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                            <div>
-                                <div class="font-medium text-gray-800">Week of {{ $week['week'] }}</div>
-                                <div class="text-xs text-gray-500">{{ $week['total'] }} tickets</div>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-lg font-bold {{ $week['compliance_rate'] >= 90 ? 'text-green-600' : ($week['compliance_rate'] >= 70 ? 'text-yellow-600' : 'text-red-600') }}">
-                                    {{ $week['compliance_rate'] }}%
-                                </div>
-                                <div class="text-xs text-gray-500">
-                                    <span class="text-green-600">{{ $week['compliant'] }} met</span> /
-                                    <span class="text-red-600">{{ $week['breached'] }} breach</span>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">SLA Compliance by Priority</h3>
+                <div class="h-64"
+                     wire:key="sla-priority-{{ $period }}"
+                     x-data="slaPriorityChart(@js($slaCompliance['by_priority'] ?? []))"
+                     x-init="init()">
+                    <canvas x-ref="chart"></canvas>
                 </div>
             </div>
+
         </div>
+
     @endif
+
 </div>
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
-    function volumeChart(data) {
-        return {
-            chart: null,
-            initChart() {
-                const ctx = this.$refs.chart.getContext('2d');
-                this.chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: data.map(d => d.label),
-                        datasets: [
-                            {
-                                label: 'Created',
-                                data: data.map(d => d.created),
-                                borderColor: '#3b82f6',
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                tension: 0.3,
-                                fill: true,
-                            },
-                            {
-                                label: 'Resolved',
-                                data: data.map(d => d.resolved),
-                                borderColor: '#22c55e',
-                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                                tension: 0.3,
-                                fill: true,
-                            },
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                            }
+// ─── Shared defaults ─────────────────────────────────────────────────────────
+const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+};
+
+// ─── Volume line chart (Created vs Resolved) ─────────────────────────────────
+function volumeChart(data) {
+    return {
+        chart: null,
+        init() {
+            this.chart = new Chart(this.$refs.chart.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.label),
+                    datasets: [
+                        {
+                            label: 'Created',
+                            data: data.map(d => d.created),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 3,
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        }
-    }
+                        {
+                            label: 'Resolved',
+                            data: data.map(d => d.resolved),
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34,197,94,0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 3,
+                        },
+                    ],
+                },
+                options: {
+                    ...chartDefaults,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                },
+            });
+        },
+    };
+}
+
+// ─── Status doughnut ─────────────────────────────────────────────────────────
+function statusChart(data) {
+    const colorMap = {
+        open: '#3b82f6',
+        in_progress: '#f59e0b',
+        resolved: '#22c55e',
+        closed: '#6b7280',
+        scheduled: '#8b5cf6',
+    };
+    return {
+        chart: null,
+        init() {
+            const keys   = Object.keys(data);
+            const values = Object.values(data);
+            if (!values.length) return;
+            this.chart = new Chart(this.$refs.chart.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: keys.map(s => s.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())),
+                    datasets: [{
+                        data: values,
+                        backgroundColor: keys.map(s => colorMap[s] ?? '#94a3b8'),
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                    }],
+                },
+                options: {
+                    ...chartDefaults,
+                    cutout: '65%',
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } },
+                },
+            });
+        },
+    };
+}
+
+// ─── Priority bar chart ───────────────────────────────────────────────────────
+function priorityChart(data) {
+    const order  = ['critical', 'high', 'medium', 'low'];
+    const colors = { critical: '#ef4444', high: '#f97316', medium: '#3b82f6', low: '#6b7280' };
+    return {
+        chart: null,
+        init() {
+            this.chart = new Chart(this.$refs.chart.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: order.map(p => p.charAt(0).toUpperCase() + p.slice(1)),
+                    datasets: [{
+                        label: 'Tickets',
+                        data: order.map(p => data[p] ?? 0),
+                        backgroundColor: order.map(p => colors[p]),
+                        borderRadius: 4,
+                    }],
+                },
+                options: {
+                    ...chartDefaults,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                },
+            });
+        },
+    };
+}
+
+// ─── Top categories horizontal bar ───────────────────────────────────────────
+function categoryChart(data) {
+    const arr = Array.isArray(data) ? data : Object.values(data);
+    return {
+        chart: null,
+        init() {
+            if (!arr.length) return;
+            this.chart = new Chart(this.$refs.chart.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: arr.map(d => d.name),
+                    datasets: [{
+                        label: 'Tickets',
+                        data: arr.map(d => d.count),
+                        backgroundColor: 'rgba(99,102,241,0.75)',
+                        borderColor: '#6366f1',
+                        borderWidth: 1,
+                        borderRadius: 3,
+                    }],
+                },
+                options: {
+                    indexAxis: 'y',
+                    ...chartDefaults,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                },
+            });
+        },
+    };
+}
+
+// ─── Incident vs Request doughnut ────────────────────────────────────────────
+function typeChart(data) {
+    return {
+        chart: null,
+        init() {
+            const incident = data['incident'] ?? 0;
+            const request  = data['request']  ?? 0;
+            if (!incident && !request) return;
+            this.chart = new Chart(this.$refs.chart.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Incident', 'Service Request'],
+                    datasets: [{
+                        data: [incident, request],
+                        backgroundColor: ['#ef4444', '#3b82f6'],
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                    }],
+                },
+                options: {
+                    ...chartDefaults,
+                    cutout: '65%',
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } },
+                },
+            });
+        },
+    };
+}
+
+// ─── SLA trend stacked bar ────────────────────────────────────────────────────
+function slaTrendChart(data) {
+    const arr = Array.isArray(data) ? data : Object.values(data);
+    return {
+        chart: null,
+        init() {
+            this.chart = new Chart(this.$refs.chart.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: arr.map(d => d.label),
+                    datasets: [
+                        {
+                            label: 'Compliant',
+                            data: arr.map(d => d.compliant),
+                            backgroundColor: 'rgba(34,197,94,0.75)',
+                            borderColor: '#22c55e',
+                            borderWidth: 1,
+                            borderRadius: 3,
+                            stack: 'sla',
+                        },
+                        {
+                            label: 'Breached',
+                            data: arr.map(d => d.breached),
+                            backgroundColor: 'rgba(239,68,68,0.75)',
+                            borderColor: '#ef4444',
+                            borderWidth: 1,
+                            borderRadius: 3,
+                            stack: 'sla',
+                        },
+                    ],
+                },
+                options: {
+                    ...chartDefaults,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+                    },
+                },
+            });
+        },
+    };
+}
+
+// ─── SLA by priority grouped bar ─────────────────────────────────────────────
+function slaPriorityChart(data) {
+    const arr = Array.isArray(data) ? data : Object.values(data);
+    return {
+        chart: null,
+        init() {
+            this.chart = new Chart(this.$refs.chart.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: arr.map(d => d.priority.charAt(0).toUpperCase() + d.priority.slice(1)),
+                    datasets: [
+                        {
+                            label: 'Compliant',
+                            data: arr.map(d => d.compliant),
+                            backgroundColor: 'rgba(34,197,94,0.75)',
+                            borderRadius: 3,
+                        },
+                        {
+                            label: 'Breached',
+                            data: arr.map(d => d.breached),
+                            backgroundColor: 'rgba(239,68,68,0.75)',
+                            borderRadius: 3,
+                        },
+                    ],
+                },
+                options: {
+                    ...chartDefaults,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                },
+            });
+        },
+    };
+}
 </script>
 @endpush

@@ -114,6 +114,17 @@
                     </div>
                 </div>
             </x-nav-link>
+
+            <!-- Reports: Privileged Access -->
+            <x-nav-link wire:navigate href="{{ route('controlPanel.reports.privilegedAccess') }}" class="group block rounded-lg border border-gray-200 dark:border-gray-700 p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-sm transition">
+                <div class="flex items-center gap-4">
+                    <span class="material-symbols-sharp text-purple-600 dark:text-purple-400">shield</span>
+                    <div>
+                        <h3 class="font-medium">Reports · Privileged Access</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Cross-role asset & access overview</p>
+                    </div>
+                </div>
+            </x-nav-link>
         </div>
     </div>
 </div>
