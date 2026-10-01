@@ -1,36 +1,66 @@
 <div class="p-6 max-w-7xl mx-auto">
 
     {{-- Header --}}
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Helpdesk Reports</h1>
-            <p class="text-sm text-gray-500">Analytics and performance metrics for helpdesk operations</p>
+    <div class="flex flex-col gap-3 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Helpdesk Reports</h1>
+                <p class="text-sm text-gray-500">Analytics and performance metrics for helpdesk operations</p>
+            </div>
+
+            <div class="flex items-center gap-3 flex-wrap">
+                {{-- Labels toggle --}}
+                <div x-data="{ on: false }">
+                    <button @click="on = !on; window.dispatchEvent(new CustomEvent('report-labels', { detail: on }))"
+                        :class="on ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'"
+                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                        </svg>
+                        <span x-text="on ? 'Labels: On' : 'Labels: Off'"></span>
+                    </button>
+                </div>
+
+                {{-- Period switcher --}}
+                <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                    @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $p => $label)
+                        <button wire:click="setPeriod('{{ $p }}')"
+                            class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors
+                                {{ (!$useCustomRange && $period === $p) ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700' }}">
+                            {{ $label }}
+                        </button>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
-        <div class="flex items-center gap-3">
-            {{-- Labels toggle --}}
-            <div x-data="{ on: false }">
-                <button @click="on = !on; window.dispatchEvent(new CustomEvent('report-labels', { detail: on }))"
-                    :class="on ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'"
-                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                    </svg>
-                    <span x-text="on ? 'Labels: On' : 'Labels: Off'"></span>
-                </button>
-            </div>
+        {{-- Date range row --}}
+        <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm text-gray-500 font-medium">Date Range:</span>
 
-            {{-- Period switcher --}}
-            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
-                @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $p => $label)
-                    <button wire:click="setPeriod('{{ $p }}')"
-                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors
-                            {{ $period === $p ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700' }}">
-                        {{ $label }}
-                    </button>
-                @endforeach
-            </div>
+            <input type="date" wire:model="dateFrom"
+                class="border border-gray-300 rounded-md text-sm px-3 py-1.5 focus:ring-blue-500 focus:border-blue-500">
+
+            <span class="text-gray-400 text-sm">to</span>
+
+            <input type="date" wire:model="dateTo"
+                class="border border-gray-300 rounded-md text-sm px-3 py-1.5 focus:ring-blue-500 focus:border-blue-500">
+
+            <button wire:click="applyDateRange"
+                class="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
+                Apply
+            </button>
+
+            @if($useCustomRange)
+                <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                    Custom: {{ \Carbon\Carbon::parse($dateFrom)->format('M j, Y') }} — {{ \Carbon\Carbon::parse($dateTo)->format('M j, Y') }}
+                </span>
+                <button wire:click="clearDateRange"
+                    class="text-xs text-gray-500 hover:text-red-600 underline transition-colors">
+                    Clear
+                </button>
+            @endif
         </div>
     </div>
 

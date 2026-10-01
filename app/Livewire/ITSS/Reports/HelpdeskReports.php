@@ -13,6 +13,12 @@ class HelpdeskReports extends Component
 
     public string $activeTab = 'overview';
 
+    public ?string $dateFrom = null;
+
+    public ?string $dateTo = null;
+
+    public bool $useCustomRange = false;
+
     protected HelpdeskReportingService $reportService;
 
     public function boot(HelpdeskReportingService $reportService): void
@@ -23,8 +29,25 @@ class HelpdeskReports extends Component
     public function setPeriod(string $period): void
     {
         if (in_array($period, ['daily', 'weekly', 'monthly', 'yearly'])) {
-            $this->period = $period;
+            $this->period         = $period;
+            $this->useCustomRange = false;
+            $this->dateFrom       = null;
+            $this->dateTo         = null;
         }
+    }
+
+    public function applyDateRange(): void
+    {
+        if ($this->dateFrom && $this->dateTo && $this->dateFrom <= $this->dateTo) {
+            $this->useCustomRange = true;
+        }
+    }
+
+    public function clearDateRange(): void
+    {
+        $this->useCustomRange = false;
+        $this->dateFrom       = null;
+        $this->dateTo         = null;
     }
 
     public function setTab(string $tab): void
@@ -34,11 +57,15 @@ class HelpdeskReports extends Component
 
     public function render()
     {
-        $summary          = $this->reportService->getSummaryStats($this->period);
-        $volumeTrends     = $this->reportService->getTicketVolumeTrends($this->period);
-        $agentPerformance = $this->reportService->getAgentPerformance($this->period);
-        $slaCompliance    = $this->reportService->getSlaCompliance($this->period);
-        $topCategories    = $this->reportService->getTopCategories($this->period);
+        $period = $this->useCustomRange ? 'custom' : $this->period;
+        $from   = $this->useCustomRange ? $this->dateFrom : null;
+        $to     = $this->useCustomRange ? $this->dateTo   : null;
+
+        $summary          = $this->reportService->getSummaryStats($period, $from, $to);
+        $volumeTrends     = $this->reportService->getTicketVolumeTrends($period, $from, $to);
+        $agentPerformance = $this->reportService->getAgentPerformance($period, $from, $to);
+        $slaCompliance    = $this->reportService->getSlaCompliance($period, $from, $to);
+        $topCategories    = $this->reportService->getTopCategories($period, 10, $from, $to);
 
         return view('livewire.i-t-s-s.reports.helpdesk-reports', [
             'summary'          => $summary,

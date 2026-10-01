@@ -12,8 +12,20 @@ use Illuminate\Support\Facades\DB;
 
 class HelpdeskReportingService
 {
-    public function getDateRange(string $period): array
+    public function getDateRange(string $period, ?string $from = null, ?string $to = null): array
     {
+        if ($from && $to) {
+            $start    = Carbon::parse($from)->startOfDay();
+            $end      = Carbon::parse($to)->endOfDay();
+            $diffDays = (int) $start->diffInDays($end) + 1;
+            return [
+                'start'     => $start,
+                'end'       => $end,
+                'prevStart' => $start->copy()->subDays($diffDays),
+                'prevEnd'   => $start->copy()->subDay()->endOfDay(),
+            ];
+        }
+
         return match ($period) {
             'daily' => [
                 'start'     => now()->startOfDay(),
@@ -42,19 +54,39 @@ class HelpdeskReportingService
         };
     }
 
+    private function resolveGroupBy(string $period, Carbon $start, Carbon $end): string
+    {
+        if ($period !== 'custom') {
+            return match ($period) {
+                'daily'  => 'hour',
+                'yearly' => 'month',
+                default  => 'day',
+            };
+        }
+
+        $days = (int) $start->diffInDays($end) + 1;
+
+        return match (true) {
+            $days <= 2   => 'hour',
+            $days <= 90  => 'day',
+            default      => 'month',
+        };
+    }
+
     /**
      * Get ticket volume trends grouped by the period's natural unit.
      *
      * @return Collection<int, array{label: string, created: int, resolved: int, closed: int}>
      */
-    public function getTicketVolumeTrends(string $period = 'monthly'): Collection
+    public function getTicketVolumeTrends(string $period = 'monthly', ?string $from = null, ?string $to = null): Collection
     {
-        $range = $this->getDateRange($period);
-        $start = $range['start'];
-        $end   = $range['end'];
-        $data  = collect();
+        $range   = $this->getDateRange($period, $from, $to);
+        $start   = $range['start'];
+        $end     = $range['end'];
+        $groupBy = $this->resolveGroupBy($period, $start, $end);
+        $data    = collect();
 
-        if ($period === 'daily') {
+        if ($groupBy === 'hour') {
             $created  = $this->fetchGrouped('created_at', $start, $end, 'H');
             $resolved = $this->fetchGrouped('resolved_at', $start, $end, 'H');
             $closed   = $this->fetchGrouped('closed_at', $start, $end, 'H');
@@ -68,22 +100,24 @@ class HelpdeskReportingService
                     'closed'   => $closed[$key] ?? 0,
                 ]);
             }
-        } elseif ($period === 'yearly') {
+        } elseif ($groupBy === 'month') {
             $created  = $this->fetchGrouped('created_at', $start, $end, 'Y-m');
             $resolved = $this->fetchGrouped('resolved_at', $start, $end, 'Y-m');
             $closed   = $this->fetchGrouped('closed_at', $start, $end, 'Y-m');
 
-            for ($m = 1; $m <= 12; $m++) {
-                $key = $start->year . '-' . str_pad($m, 2, '0', STR_PAD_LEFT);
+            $cursor = $start->copy()->startOfMonth();
+            while ($cursor->lte($end)) {
+                $key = $cursor->format('Y-m');
                 $data->push([
-                    'label'    => Carbon::createFromDate($start->year, $m, 1)->format('M'),
+                    'label'    => $cursor->format('M Y'),
                     'created'  => $created[$key] ?? 0,
                     'resolved' => $resolved[$key] ?? 0,
                     'closed'   => $closed[$key] ?? 0,
                 ]);
+                $cursor->addMonth();
             }
         } else {
-            // weekly & monthly: group by calendar date
+            // day-level grouping
             $created  = $this->fetchGrouped('created_at', $start, $end, 'Y-m-d');
             $resolved = $this->fetchGrouped('resolved_at', $start, $end, 'Y-m-d');
             $closed   = $this->fetchGrouped('closed_at', $start, $end, 'Y-m-d');
@@ -105,9 +139,9 @@ class HelpdeskReportingService
     }
 
     /** @return Collection<int, array> */
-    public function getAgentPerformance(string $period = 'monthly'): Collection
+    public function getAgentPerformance(string $period = 'monthly', ?string $from = null, ?string $to = null): Collection
     {
-        $range     = $this->getDateRange($period);
+        $range     = $this->getDateRange($period, $from, $to);
         $startDate = $range['start'];
         $endDate   = $range['end'];
 
@@ -190,9 +224,9 @@ class HelpdeskReportingService
         })->sortByDesc('resolved')->values();
     }
 
-    public function getSlaCompliance(string $period = 'monthly'): array
+    public function getSlaCompliance(string $period = 'monthly', ?string $from = null, ?string $to = null): array
     {
-        $range     = $this->getDateRange($period);
+        $range     = $this->getDateRange($period, $from, $to);
         $startDate = $range['start'];
         $endDate   = $range['end'];
 
@@ -227,13 +261,13 @@ class HelpdeskReportingService
             'breached'        => $breached,
             'compliance_rate' => $total > 0 ? round(($compliant / $total) * 100, 1) : 100,
             'by_priority'     => $byPriority,
-            'trend'           => $this->buildSlaTrend($period, $startDate, $endDate),
+            'trend'           => $this->buildSlaTrend($period, $startDate, $endDate, $this->resolveGroupBy($period, $startDate, $endDate)),
         ];
     }
 
-    public function getSummaryStats(string $period = 'monthly'): array
+    public function getSummaryStats(string $period = 'monthly', ?string $from = null, ?string $to = null): array
     {
-        $range         = $this->getDateRange($period);
+        $range         = $this->getDateRange($period, $from, $to);
         $startDate     = $range['start'];
         $endDate       = $range['end'];
         $prevStartDate = $range['prevStart'];
@@ -310,9 +344,9 @@ class HelpdeskReportingService
         ];
     }
 
-    public function getTopCategories(string $period = 'monthly', int $limit = 10): Collection
+    public function getTopCategories(string $period = 'monthly', int $limit = 10, ?string $from = null, ?string $to = null): Collection
     {
-        $range = $this->getDateRange($period);
+        $range = $this->getDateRange($period, $from, $to);
 
         return Ticket::with('category:id,name')
             ->whereBetween('created_at', [$range['start'], $range['end']])
@@ -365,25 +399,25 @@ class HelpdeskReportingService
         });
     }
 
-    private function buildSlaTrend(string $period, Carbon $start, Carbon $end): Collection
+    private function buildSlaTrend(string $period, Carbon $start, Carbon $end, string $groupBy = 'day'): Collection
     {
         $trend = collect();
 
-        if ($period === 'daily') {
+        if ($groupBy === 'hour') {
             for ($h = 0; $h <= 23; $h++) {
                 $from = $start->copy()->setHour($h)->startOfHour();
                 $to   = $start->copy()->setHour($h)->endOfHour();
                 $this->pushSlaTrendEntry($trend, $from, $to, $h . ':00');
             }
-        } elseif ($period === 'weekly') {
+        } elseif ($groupBy === 'day') {
             $current = $start->copy();
             while ($current->lte($end)) {
                 $from = $current->copy()->startOfDay();
                 $to   = $current->copy()->endOfDay();
-                $this->pushSlaTrendEntry($trend, $from, $to, $current->format('D'));
+                $this->pushSlaTrendEntry($trend, $from, $to, $current->format($period === 'weekly' ? 'D' : 'M j'));
                 $current->addDay();
             }
-        } elseif ($period === 'monthly') {
+        } elseif ($groupBy === 'month' && $period === 'monthly') {
             $weekNum = 1;
             $current = $start->copy()->startOfWeek();
             while ($current->lte($end)) {
@@ -394,11 +428,13 @@ class HelpdeskReportingService
                 $weekNum++;
             }
         } else {
-            // yearly: monthly breakdown
-            for ($m = 1; $m <= 12; $m++) {
-                $from = Carbon::createFromDate($start->year, $m, 1)->startOfMonth();
-                $to   = $from->copy()->endOfMonth();
-                $this->pushSlaTrendEntry($trend, $from, $to, $from->format('M'));
+            // monthly grouping (yearly or custom wide range)
+            $cursor = $start->copy()->startOfMonth();
+            while ($cursor->lte($end)) {
+                $from = $cursor->copy()->startOfMonth();
+                $to   = $cursor->copy()->endOfMonth();
+                $this->pushSlaTrendEntry($trend, $from, $to, $cursor->format('M Y'));
+                $cursor->addMonth();
             }
         }
 
